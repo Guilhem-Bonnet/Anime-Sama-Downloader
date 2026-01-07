@@ -58,7 +58,6 @@ def check_ffmpeg_installed():
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
-        return False
 
 
 def install_ffmpeg_with_winget():
@@ -134,6 +133,13 @@ def package_check(ask_install=False, first_run=False):
 
 if not package_check(ask_install=True, first_run=True):
     print_status("Some required packages were missing. Would you like to install them now? (y/n): ", "warning")
+    if not sys.stdin.isatty():
+        print_status(
+            "Cannot prompt for installation in non-interactive mode. Install deps and re-run: pip install -r requirements.txt",
+            "error",
+        )
+        sys.exit(1)
+
     ask_user = input().strip().lower()
     if ask_user in ['y', 'yes', '1']:
         if not package_check(ask_install=True, first_run=False):

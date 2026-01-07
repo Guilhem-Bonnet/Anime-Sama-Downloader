@@ -34,13 +34,8 @@ def download_video(video_url, save_path, use_ts_threading=False, url='',automati
             temp_ts_path = save_path.replace('.mp4', '.ts')
             random_string = os.path.basename(save_path).replace('.mp4', '.ts')
 
-            if automatic_mp4 is False and use_ts_threading is False:
-                print(f"\n{Colors.BOLD}{Colors.OKCYAN}Threaded Download Option{Colors.ENDC}")
-                print_status("Threaded downloading is faster but should not be used on weak Wi-Fi.", "info")
-                use_threads = input(f"{Colors.BOLD}Use threaded download for faster performance? (y/n, default: n): {Colors.ENDC}").strip().lower()
-                use_threads = use_threads in ['y', 'yes', '1']
-            else:
-                use_threads = use_ts_threading
+            # Never prompt here; the caller (main.py) decides.
+            use_threads = use_ts_threading
             
             if use_threads:
                 segment_data = []
