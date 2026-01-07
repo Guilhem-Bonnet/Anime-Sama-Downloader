@@ -48,6 +48,7 @@ Examples:
     parser.add_argument('--moviepy', action='store_true', help='Use moviepy for conversion (slower but lighter)')
     parser.add_argument('--no-tutorial', action='store_true', help='Skip tutorial prompt')
     parser.add_argument('--quick', action='store_true', help='Quick mode: use smart defaults, minimal prompts')
+    parser.add_argument('--tui', action='store_true', help='Launch modern terminal UI (Textual). CLI remains default.')
     parser.add_argument('--version', action='version', version='Anime-Sama Downloader v2.5-optimized')
     
     return parser.parse_args()
@@ -354,6 +355,17 @@ def parse_episode_range(episode_str, max_episodes):
 
 def main():
     args = parse_arguments()
+
+    # Optional Textual TUI (keeps CLI as default behavior)
+    if getattr(args, 'tui', False):
+        try:
+            from utils.tui import run_tui
+        except Exception as e:
+            print_status(f"TUI failed to start: {e}", "error")
+            print_status("Install dependencies: pip install -r requirements.txt", "info")
+            return 1
+
+        return run_tui()
     
     # Check if running in CLI mode or interactive mode
     cli_mode = args.url is not None or args.search is not None
