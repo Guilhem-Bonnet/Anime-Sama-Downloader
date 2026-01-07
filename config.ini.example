@@ -1,0 +1,35 @@
+[DEFAULT]
+# Default save directory for downloaded videos
+save_directory = ./videos
+
+# Number of concurrent downloads (1-10)
+max_concurrent_downloads = 3
+
+# Use threaded .ts segment downloads by default
+ts_threading = true
+
+# Auto-convert .ts to .mp4 after download
+auto_convert_mp4 = false
+
+# Conversion tool (ffmpeg or moviepy)
+conversion_tool = ffmpeg
+
+[NETWORK]
+# Request timeout in seconds
+timeout = 15
+
+# Maximum retries for failed requests
+max_retries = 3
+
+# Connection pool size
+pool_size = 20
+
+[ADVANCED]
+# Enable HTTP response caching
+enable_cache = true
+
+# Maximum cache size (number of responses)
+max_cache_size = 100
+
+# Show tutorial on startup
+show_tutorial = false
