@@ -4,10 +4,14 @@ Scrapes the catalogue dynamically to find animes
 """
 
 import re
+import unicodedata
 import requests
 from difflib import SequenceMatcher
 from bs4 import BeautifulSoup
 from utils.var import print_status, Colors
+from utils.http_pool import cached_get
+from utils.config import load_config, save_config
+from utils.anime_db import anilist_search_titles
 
 
 SITE_BASE_URL = "https://anime-sama.tv"
@@ -117,9 +121,145 @@ TRANSLATIONS = {
     "promised neverland": "yakusoku no neverland",
 }
 
+def _slugify_title_for_anime_sama(title: str) -> str:
+    """Best-effort slugify to match anime-sama catalogue URLs."""
+    s = (title or "").strip().lower()
+    if not s:
+        return ""
+
+    # Normalize unicode (remove accents)
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+
+    # Replace common separators/punctuations
+    s = s.replace("'", " ")
+    s = re.sub(r"[/:+&]", " ", s)
+    s = re.sub(r"[^a-z0-9\s-]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+
+    s = s.replace(" ", "-")
+    s = re.sub(r"-+", "-", s).strip("-")
+    return s
+
+
+def _config_get(config: dict, *path: str, default=None):
+    cur = config
+    for key in path:
+        if not isinstance(cur, dict) or key not in cur:
+            return default
+        cur = cur[key]
+    return cur
+
+
+def _config_set(config: dict, value, *path: str) -> None:
+    cur = config
+    for key in path[:-1]:
+        cur = cur.setdefault(key, {})
+    cur[path[-1]] = value
+
+
+def _looks_like_cloudflare(resp: requests.Response) -> bool:
+    try:
+        if "cdn-cgi" in (resp.url or ""):
+            return True
+        server = (resp.headers.get("server") or "").lower()
+        if "cloudflare" in server:
+            text = (resp.text or "").lower()
+            if "attention required" in text or "cf-browser-verification" in text:
+                return True
+    except Exception:
+        return False
+    return False
+
+
+def _probe_anime_sama_catalogue_slug(slug: str) -> str | None:
+    """Return canonical anime-sama URL if slug exists, else None."""
+    slug = (slug or "").strip().strip("/")
+    if not slug:
+        return None
+
+    url = f"{SITE_BASE_URL}/catalogue/{slug}/"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/119.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3",
+        "Connection": "keep-alive",
+    }
+
+    try:
+        resp = cached_get(url, headers=headers, use_cache=True, timeout=10, allow_redirects=True)
+        if resp.status_code != 200:
+            return None
+        if _looks_like_cloudflare(resp):
+            return None
+        return url
+    except Exception:
+        return None
+
+
+def resolve_anime_sama_base_url(query: str, provider: str = "anilist") -> str | None:
+    """Resolve a base catalogue URL (no season/lang) from a free-text query.
+
+    Strategy:
+    1) Use an external DB (default AniList) to get title variants/synonyms.
+    2) Slugify and probe anime-sama.tv/catalogue/<slug>/.
+    3) Fallback to existing fuzzy search + cache/homepage scraping.
+    """
+
+    q = (query or "").strip()
+    if not q:
+        return None
+
+    config = load_config()
+    cache_key = q.lower()
+    cached_url = _config_get(config, "search", "resolved_urls", cache_key)
+    if isinstance(cached_url, str) and cached_url.startswith(SITE_BASE_URL):
+        return cached_url
+
+    titles: list[str] = [q]
+    if provider == "anilist":
+        try:
+            titles.extend(anilist_search_titles(q).as_list())
+        except Exception:
+            # Silent fallback to local search
+            pass
+
+    # Generate slug candidates (bounded to avoid many probes)
+    slug_candidates: list[str] = []
+    seen: set[str] = set()
+    for t in titles:
+        slug = _slugify_title_for_anime_sama(t)
+        if not slug:
+            continue
+        if slug in seen:
+            continue
+        seen.add(slug)
+        slug_candidates.append(slug)
+        if len(slug_candidates) >= 15:
+            break
+
+    for slug in slug_candidates:
+        found = _probe_anime_sama_catalogue_slug(slug)
+        if found:
+            _config_set(config, found, "search", "resolved_urls", cache_key)
+            save_config(config)
+            return found
+
+    # Fallback: existing fuzzy search
+    results = search_anime(q, limit=1)
+    if results and results[0]["score"] > 0.5:
+        url = results[0]["url"]
+        url = _canonicalize_anime_sama_url(url)
+        _config_set(config, url, "search", "resolved_urls", cache_key)
+        save_config(config)
+        return url
+
+    return None
+
+
 def get_anime_list():
     """
-    Récupère dynamiquement la liste des animes depuis anime-sama.org
+    Récupère dynamiquement la liste des animes depuis anime-sama.tv
     Combine le cache local + scraping de la page d'accueil
     Utilise la page d'accueil qui n'est pas protégée par Cloudflare
     """
@@ -269,6 +409,18 @@ def interactive_search():
     if not query:
         print_status("Skipping search", "info")
         return None
+
+    # Try a direct resolution (DB-backed) first to reduce friction.
+    try:
+        direct = resolve_anime_sama_base_url(query, provider="anilist")
+    except Exception:
+        direct = None
+
+    if direct:
+        print_status(f"Direct match found: {direct}", "success")
+        confirm = input(f"{Colors.BOLD}Use this URL? (Y/n): {Colors.ENDC}").strip().lower()
+        if confirm != 'n':
+            return direct
     
     results = search_anime(query, limit=10)
     
@@ -320,7 +472,7 @@ def interactive_search():
         except ValueError:
             print_status("Please enter a valid number", "error")
 
-def quick_search(query):
+def quick_search(query: str, provider: str = "anilist"):
     """
     Quick search - returns best match URL or None
     
@@ -330,9 +482,10 @@ def quick_search(query):
     Returns:
         URL of best match, or None if no good match found
     """
-    results = search_anime(query, limit=1)
-    
-    if results and results[0]['score'] > 0.5:
-        return results[0]['url']
-    
-    return None
+    if provider == "local":
+        results = search_anime(query, limit=1)
+        if results and results[0]['score'] > 0.5:
+            return _canonicalize_anime_sama_url(results[0]['url'])
+        return None
+
+    return resolve_anime_sama_base_url(query, provider="anilist")

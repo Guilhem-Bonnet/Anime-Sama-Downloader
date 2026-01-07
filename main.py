@@ -34,6 +34,7 @@ Examples:
     )
     
     parser.add_argument('-s', '--search', type=str, help='Search anime by name (e.g., "kaiju", "attack on titan")')
+    parser.add_argument('--search-provider', type=str, choices=['anilist', 'local'], default='anilist', help='Search provider for --search (default: anilist)')
     parser.add_argument('--season', type=int, help='Season number when using --search (default: 1)', default=1)
     parser.add_argument('--lang', type=str, choices=['vostfr', 'vf', 'vo'], help='Language when using --search (default: vostfr)', default='vostfr')
     parser.add_argument('-u', '--url', type=str, help='Anime-Sama URL (e.g., https://anime-sama.tv/catalogue/...)')
@@ -367,7 +368,7 @@ def main():
             # CLI search mode
             from utils.search import quick_search
             print_status(f"Searching for: {args.search}", "loading")
-            search_result = quick_search(args.search)
+            search_result = quick_search(args.search, provider=args.search_provider)
             
             if not search_result:
                 print_status(f"No good match found for '{args.search}'", "error")
