@@ -1,4 +1,19 @@
-# Changelog - Version Optimisée v2.5
+# Changelog - Version Optimisée
+
+## v2.6 (Janvier 2026)
+
+### 🔍 Recherche améliorée (AniList)
+- Recherche enrichie par titres + synonymes (AniList, sans clé)
+- Résolution automatique de l'URL anime-sama (`/catalogue/<slug>/`) avec cache local
+- Option `--search-provider anilist|local`
+
+### 🖥️ TUI (Terminal UI) moderne
+- Interface terminal moderne (Textual), optionnelle via `--tui`
+- La CLI reste le comportement par défaut
+
+---
+
+## v2.5 (Optimized)
 
 ## 🚀 Nouvelles Fonctionnalités
 
@@ -36,6 +51,8 @@ python main.py -u "URL" -e 1-10 -p 2 --threaded
 - `--ffmpeg` : Utiliser ffmpeg pour la conversion (plus rapide, défaut)
 - `--moviepy` : Utiliser moviepy pour la conversion (plus lent mais plus léger)
 - `--no-tutorial` : Ignorer l'invite du tutoriel
+- `--search-provider` : Provider pour `--search` (anilist/local)
+- `--tui` : Lancer la TUI (Textual)
 - `--version` : Afficher la version
 
 ## 🐛 Corrections de Bugs
@@ -121,33 +138,28 @@ python main.py -u "URL_ANIME" -e all -d ~/Animes/SwordArtOnline --threaded
 
 ## 📝 Notes de Version
 
-**Version** : 2.5-optimized  
-**Date** : 11 novembre 2025  
-**Branche** : `optimized` (main reste inchangée)  
-**Status** : Beta - Tests recommandés
+**Version** : 2.6-optimized  
+**Date** : Janvier 2026  
+**Branche** : `main`  
+**Status** : Stable
 
 ---
 
 ## 🙏 Comment Tester
 
-1. Basculer sur la branche optimized :
-   ```bash
-   git checkout optimized
-   ```
-
-2. Tester le mode CLI :
+1. Tester le mode CLI :
    ```bash
    python main.py -u "https://anime-sama.tv/catalogue/roshidere/saison1/vostfr/" -e 1 --no-tutorial
    ```
 
-3. Tester le mode interactif (doit fonctionner comme avant) :
+2. Tester le mode interactif (doit fonctionner comme avant) :
    ```bash
    python main.py
    ```
 
-4. Pour revenir à la version stable :
+3. Tester la TUI :
    ```bash
-   git checkout main
+   python main.py --tui
    ```
 
 ## 📮 Feedback

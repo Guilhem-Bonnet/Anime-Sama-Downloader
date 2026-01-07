@@ -11,6 +11,7 @@ Le moteur de recherche intégré permet de trouver rapidement des animes sans av
 - **Traductions automatiques** : reconnaît les titres français et japonais
 - **Scoring de pertinence** : affiche un pourcentage de correspondance
 - **Cache local** : résultats instantanés (pas de scraping web)
+- **AniList (par défaut)** : enrichit la recherche avec titres + synonymes pour résoudre l'URL anime-sama plus facilement
 
 ### 🌍 Traductions Supportées
 
@@ -81,7 +82,19 @@ python main.py -s "l'attaque des titans" -e 1 --quick
 
 # Recherche avec options complètes
 python main.py -s "demon slayer" -e 1-10 -t --auto-mp4
+
+# Forcer le mode local (sans AniList)
+python main.py -s "kaiju" --search-provider local -e 1-5
 ```
+
+## Comment l'URL est trouvée ?
+
+Le moteur tente (dans cet ordre) :
+1. **AniList** (titres + synonymes) → génère des slugs plausibles
+2. Teste l'existence de `https://anime-sama.tv/catalogue/<slug>/`
+3. Fallback sur la recherche fuzzy existante
+
+Les résultats sont mis en cache dans `~/.anime-sama-downloader.json`.
 
 ### Mode CLI Rapide (Quick Search)
 
@@ -188,9 +201,8 @@ ANIME_CACHE = [
 
 ## Limitations
 
-1. **Cache uniquement** : seuls les animes dans le cache sont trouvables
-2. **URLs de base** : retourne l'URL principale (pas la saison/langue spécifique)
-3. **Pas de mise à jour auto** : le cache doit être mis à jour manuellement
+1. **URLs de base** : retourne l'URL principale (pas la saison/langue spécifique)
+2. **Réseau requis (AniList)** : le mode par défaut utilise AniList (désactivable via `--search-provider local`)
 
 ## Tips & Astuces
 
@@ -306,9 +318,9 @@ Usage :
 
 ## Version et Compatibilité
 
-- **Disponible depuis** : v2.5-optimized
+- **Disponible depuis** : v2.6-optimized
 - **Nécessite** : Python 3.6+
-- **Dépendances** : Aucune (pas de scraping web)
+- **Cache** : `~/.anime-sama-downloader.json`
 
 ---
 

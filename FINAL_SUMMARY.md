@@ -218,17 +218,19 @@ Le projet Anime-Sama-Downloader est maintenant :
 
 ## 📝 Conclusion
 
-**Version 2.5-optimized** transforme le projet en un outil :
+**Version 2.6-optimized** transforme le projet en un outil :
 - 🚀 **Plus rapide** : Pool HTTP, cache, optimisations
 - 😊 **Plus simple** : Moins de questions, meilleurs défauts
 - 💪 **Plus puissant** : CLI, automation, scripting
+- 🔍 **Plus intelligent** : Recherche enrichie AniList + résolution d'URL
+- 🖥️ **Plus moderne** : TUI optionnelle (`--tui`)
 - 📚 **Mieux documenté** : 11 fichiers de doc
 - 🔄 **Toujours compatible** : Rien ne casse
 
 ---
 
-**Version** : 2.5-optimized  
-**Date** : 11 novembre 2025  
+**Version** : 2.6-optimized  
+**Date** : Janvier 2026  
 **Statut** : ✅ Production Ready  
 **Recommandation** : Utilisez `--quick` pour le meilleur équilibre
 

@@ -5,7 +5,7 @@
 <img src="https://img.shields.io/badge/Python-3.6+-blue.svg?style=for-the-badge&logo=python" alt="Python Version">
 <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux_(mostly_windows)-lightgrey.svg?style=for-the-badge" alt="Platform">
 <img src="https://img.shields.io/badge/License-GPL_V3-green.svg?style=for-the-badge" alt="License">
-<img src="https://img.shields.io/badge/Version-2.5_Optimized-orange.svg?style=for-the-badge" alt="Version">
+<img src="https://img.shields.io/badge/Version-2.6_Optimized-orange.svg?style=for-the-badge" alt="Version">
 
 **🚀 A powerful, beautiful and simple CLI tool to download anime episodes from anime-sama.tv**
 
@@ -17,7 +17,7 @@
 
 ![Website Support](https://img.shields.io/badge/Website%20Support-100%25-brightgreen)
 
-> **✨ NEW in v2.5**: CLI mode, Quick mode, Smart defaults, 30% faster, 60% fewer questions!  
+> **✨ NEW in v2.6**: AniList-backed search + URL resolution, optional modern TUI (`--tui`)  
 > See [CHANGELOG.md](CHANGELOG.md) for full details | [UX improvements](UX_IMPROVEMENTS.md)
 
 ### Scans support ? 5 stars and it will be added !
@@ -31,6 +31,8 @@
 - 🌈 **Beautiful CLI Interface** with colors and emojis
 - 💻 **Triple Mode**: Interactive / Quick / CLI (NEW!)
 - 🔍 **Smart Search Engine** - Find animes by name! (NEW!)
+- 🧠 **AniList-backed Search** - Better titles & synonyms (NEW!)
+- 🖥️ **Modern Terminal UI (TUI)** - Optional `--tui` mode (NEW!)
 - 🎯 **Smart Defaults** - Just press Enter! (NEW!)
 - ✅ **Auto URL Validation** with helpful error messages
 - 📝 **Built-in Tutorial** for first-time users
@@ -79,7 +81,7 @@ Make sure you have **Python 3.6+** installed:
 python --version
 
 # Install required packages
-pip install requests beautifulsoup4 tqdm
+pip install -r requirements.txt
 ```
 
 **Required Libraries:**
@@ -93,10 +95,13 @@ pip install requests beautifulsoup4 tqdm
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/SertraFurr/Anime-Sama-Downloader.git
+git clone https://github.com/Guilhem-Bonnet/Anime-Sama-Downloader.git
 
 # 2. Navigate into the project directory
 cd Anime-Sama-Downloader
+
+# 3. Install dependencies
+python3 -m pip install -r requirements.txt
 
 # 3. Run the magic! ✨
 python3 main.py
@@ -106,6 +111,9 @@ python3 main.py -s "kaiju" -e 1-5 --quick
 
 # OR use CLI mode with URL
 python3 main.py -u "ANIME_URL" -e 1-5 -t --auto-mp4
+
+# OR launch the modern TUI (optional)
+python3 main.py --tui
 ```
 
 ### 💡 Three Ways to Use
@@ -160,6 +168,9 @@ python main.py -s "demon slayer" -e 1-26 -t --auto-mp4
 python main.py -s "sword art online" --season 2 --lang vf -e 1-5
 python main.py -s "naruto" --season 1 --lang vostfr -e 1-10 --quick
 
+# Force legacy local search (no AniList)
+python main.py -s "kaiju" --search-provider local -e 1-3
+
 # Download episodes 1 to 5 with threading
 python main.py -u "https://anime-sama.tv/catalogue/sword-art-online/saison1/vostfr/" -e 1-5 -t
 
@@ -171,6 +182,9 @@ python main.py -u "URL" -e all --auto-mp4 --ffmpeg -d ~/Downloads
 
 # Get help
 python main.py --help
+
+# Launch TUI
+python main.py --tui
 ```
 
 > **🔍 See [SEARCH_GUIDE.md](SEARCH_GUIDE.md) for complete search documentation**

@@ -214,10 +214,11 @@ L'expérience utilisateur est maintenant :
 - ✅ **Plus claire** : Prompts simplifiés
 - ✅ **Plus intelligente** : Défauts optimaux
 - ✅ **Flexible** : 3 modes (standard, quick, CLI)
+- ✅ **Moderne** : TUI optionnelle (`--tui`)
 - ✅ **Toujours rétrocompatible** : Ancien comportement disponible
 
 ---
 
-**Version** : 2.5-optimized  
-**Date** : 11 novembre 2025  
+**Version** : 2.6-optimized  
+**Date** : Janvier 2026  
 **Impact** : Amélioration significative de l'UX 🎯

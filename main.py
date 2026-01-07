@@ -49,7 +49,7 @@ Examples:
     parser.add_argument('--no-tutorial', action='store_true', help='Skip tutorial prompt')
     parser.add_argument('--quick', action='store_true', help='Quick mode: use smart defaults, minimal prompts')
     parser.add_argument('--tui', action='store_true', help='Launch modern terminal UI (Textual). CLI remains default.')
-    parser.add_argument('--version', action='version', version='Anime-Sama Downloader v2.5-optimized')
+    parser.add_argument('--version', action='version', version='Anime-Sama Downloader v2.6-optimized')
     
     return parser.parse_args()
 

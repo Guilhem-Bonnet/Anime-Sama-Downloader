@@ -2,26 +2,18 @@
 
 ## ✨ Ce qui a été fait
 
-Vous avez maintenant **deux versions** de votre projet :
+Vous avez maintenant une **version optimisée sur `main` (v2.6)** :
 
-### 📦 Branche `main` (Stable - v2.4)
-- ✅ Version fonctionnelle d'origine
-- ✅ Mode interactif uniquement
-- ✅ Fiable et testée
-- 🔒 **Conservée intacte**
-
-### 🚀 Branche `optimized` (Avancée - v2.5)
-- ✅ **Tous les bugs corrigés** (expansion ~, imports dupliqués)
-- ✅ **Nouveau mode CLI** avec arguments complets
-- ✅ **30% plus rapide** avec pool HTTP et cache
-- ✅ **100% rétrocompatible** avec la version précédente
-- ✅ **Documentation complète** (4 nouveaux fichiers)
+- ✅ Mode interactif / quick / CLI
+- ✅ Recherche par nom (avec AniList par défaut)
+- ✅ TUI optionnelle via `python main.py --tui`
+- ✅ Optimisations HTTP (pool + cache)
 
 ## 📊 Améliorations Principales
 
 | Feature | Avant | Après |
 |---------|-------|-------|
-| **Modes disponibles** | Interactif seulement | Interactif + CLI |
+| **Modes disponibles** | Interactif seulement | Interactif + CLI (+ TUI optionnelle) |
 | **Bug expansion ~** | ❌ Créait `~/folder/` | ✅ Utilise `/home/user/folder/` |
 | **Performance (5 épisodes)** | ~25 min | ~17 min (-32%) |
 | **Connexions HTTP** | Nouvelles à chaque fois | Réutilisées (pool) |
@@ -47,6 +39,9 @@ python main.py -u "URL" -e all --auto-mp4 --ts-threaded -d ~/Downloads
 
 # Aide
 python main.py --help
+
+# TUI (optionnel)
+python main.py --tui
 ```
 
 ## 📁 Nouveaux Fichiers Créés

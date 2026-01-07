@@ -55,6 +55,23 @@ python main.py -u "URL_ANIME" -e 1-10 -t --auto-mp4 --ts-threaded
 
 ---
 
+## Mode 4 : UI Terminal Moderne (TUI) 🖥️
+**Interface moderne en terminal (optionnelle)**
+
+```bash
+python main.py --tui
+```
+
+**Note :** la TUI est optionnelle. La CLI reste le mode par défaut.
+
+Si tu n'as pas encore installé les dépendances :
+
+```bash
+python3 -m pip install -r requirements.txt
+```
+
+---
+
 ## 📊 Comparaison Rapide
 
 | Mode | Questions | Temps Setup | Idéal Pour |
@@ -150,6 +167,7 @@ anime-get -u "URL" -e 1-10  # CLI full
 | Argument | Court | Description | Exemple |
 |----------|-------|-------------|---------|
 | `--url` | `-u` | URL anime-sama | `-u "https://..."` |
+| `--search` | `-s` | Recherche par nom | `-s "kaiju"` |
 | `--episodes` | `-e` | Episodes (range/liste/all) | `-e 1-5` `-e 3,5,7` `-e all` |
 | `--player` | `-p` | Numéro player | `-p 2` |
 | `--directory` | `-d` | Dossier de sauvegarde | `-d ~/Downloads` |
@@ -157,6 +175,8 @@ anime-get -u "URL" -e 1-10  # CLI full
 | `--ts-threaded` | - | Threading .ts segments | `--ts-threaded` |
 | `--auto-mp4` | - | Conversion auto MP4 | `--auto-mp4` |
 | `--quick` | - | Mode quick (défauts smart) | `--quick` |
+| `--search-provider` | - | Provider recherche (anilist/local) | `--search-provider anilist` |
+| `--tui` | - | UI terminal moderne (Textual) | `--tui` |
 | `--ffmpeg` | - | Force ffmpeg | `--ffmpeg` |
 | `--moviepy` | - | Force moviepy | `--moviepy` |
 | `--no-tutorial` | - | Skip tutoriel | `--no-tutorial` |
@@ -175,6 +195,6 @@ anime-get -u "URL" -e 1-10  # CLI full
 
 ---
 
-**Version** : 2.5-optimized  
-**Date** : 11 novembre 2025  
+**Version** : 2.6-optimized  
+**Date** : Janvier 2026  
 **🎯 Recommandation** : Mode `--quick` pour 90% des cas d'usage

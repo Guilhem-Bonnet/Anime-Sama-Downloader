@@ -39,20 +39,17 @@ Les chemins comme `~/Téléchargements` fonctionnent maintenant correctement !
 
 ## Installation / Mise à jour
 
-### Depuis la branche main (stable)
-
-Aucune action requise, tout fonctionne comme avant.
-
-### Vers la branche optimized (nouvelles fonctionnalités)
+La version optimisée est maintenant sur la branche `main`.
 
 ```bash
-# Si vous avez git
 cd Anime-Sama-Downloader
-git checkout optimized
-
-# Sans git
-# Téléchargez simplement la version optimisée et remplacez les fichiers
+git pull
+python3 -m pip install -r requirements.txt
 ```
+
+Nouveautés optionnelles disponibles après mise à jour :
+- Recherche enrichie via AniList (par défaut)
+- TUI (UI terminal moderne) via `python main.py --tui`
 
 ## Exemples de Migration
 
@@ -100,7 +97,7 @@ $ python main.py -u "URL" -e 1-5 -t --auto-mp4
 
 ## Performance Comparée
 
-| Scénario | v2.4 (main) | v2.5 (optimized) | Gain |
+| Scénario | v2.4 | v2.6 | Gain |
 |----------|-------------|------------------|------|
 | 1 épisode | ~5 min | ~5 min | = |
 | 5 épisodes (séquentiel) | ~25 min | ~17 min | **-32%** |
@@ -111,9 +108,8 @@ $ python main.py -u "URL" -e 1-5 -t --auto-mp4
 ## Support
 
 - **Version stable** : Utilisez la branche `main`
-- **Version avancée** : Utilisez la branche `optimized`
 - **Problèmes** : Ouvrez une issue sur GitHub
 
 ---
 
-**Note** : Cette version optimisée est en phase de test. Si vous rencontrez des problèmes, revenez à la branche `main` qui reste stable et supportée.
+**Note** : Si vous rencontrez des problèmes, ouvrez une issue avec l'URL et les logs; la CLI et la TUI restent optionnelles.

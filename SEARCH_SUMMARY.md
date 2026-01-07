@@ -328,7 +328,7 @@ url = quick_search("kaiju")  # Retourne URL ou None
 
 ---
 
-**Version** : 2.5-optimized  
-**Date** : 11 novembre 2025  
+**Version** : 2.6-optimized  
+**Date** : Janvier 2026  
 **Auteur** : SertraFurr (+ optimizations)  
 **Status** : ✅ Production ready
