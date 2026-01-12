@@ -11,6 +11,12 @@
 - Interface terminal moderne (Textual), optionnelle via `--tui`
 - La CLI reste le comportement par défaut
 
+### 🧵 Queue + Parallélisme + Annulation
+- Mode batch: `-u/--url` et `-s/--search` répétables
+- `--jobs` (1 à 10) pour limiter les téléchargements parallèles (max 10)
+- Annulation: Ctrl+C en CLI, “Annuler tout” / “Vider file” en TUI
+- Annulation coopérative + nettoyage des fichiers partiels
+
 ---
 
 ## v2.5 (Optimized)

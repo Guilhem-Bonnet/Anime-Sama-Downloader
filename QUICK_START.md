@@ -72,6 +72,21 @@ python3 -m pip install -r requirements.txt
 
 ---
 
+## Mode 5 : Queue / Batch (Plusieurs animes) 🧵
+**Plusieurs animes dans une seule commande, avec parallélisme (jusqu’à 10)**
+
+```bash
+python main.py --jobs 10 \
+  -s "one piece" -s "naruto" \
+  -u "https://anime-sama.si/catalogue/roshidere/saison1/vostfr/" \
+  -e 1-12 --mp4-threaded --yes
+```
+
+**Notes :**
+- `--jobs 10` = 10 téléchargements en parallèle (max)
+- Ctrl+C annule tous les téléchargements en cours
+- `--yes` évite les confirmations de recherche (utile en script)
+
 ## 📊 Comparaison Rapide
 
 | Mode | Questions | Temps Setup | Idéal Pour |
@@ -108,13 +123,10 @@ python main.py \
 
 ### Batch Download - Plusieurs Animes
 ```bash
-# Script shell pour télécharger plusieurs animes
-#!/bin/bash
-python main.py -u "URL_ANIME1" -e 1-12 -t --auto-mp4 &
-python main.py -u "URL_ANIME2" -e 1-12 -t --auto-mp4 &
-python main.py -u "URL_ANIME3" -e 1-12 -t --auto-mp4 &
-wait
-echo "Tous les téléchargements terminés!"
+# Nouveau: batch/queue intégré (sans lancer plusieurs process)
+python main.py --jobs 10 \
+  -u "URL_ANIME1" -u "URL_ANIME2" -u "URL_ANIME3" \
+  -e 1-12 --mp4-threaded
 ```
 
 ---
@@ -173,8 +185,11 @@ anime-get -u "URL" -e 1-10  # CLI full
 | `--directory` | `-d` | Dossier de sauvegarde | `-d ~/Downloads` |
 | `--threaded` | `-t` | Threading épisodes | `-t` |
 | `--ts-threaded` | - | Threading .ts segments | `--ts-threaded` |
+| `--mp4-threaded` | - | Multi-part MP4 (Range) | `--mp4-threaded` |
 | `--auto-mp4` | - | Conversion auto MP4 | `--auto-mp4` |
 | `--quick` | - | Mode quick (défauts smart) | `--quick` |
+| `--jobs` | `-j` | Max jobs parallèles (1-10) | `--jobs 10` |
+| `--yes` | `-y` | Skip confirmations (batch) | `--yes` |
 | `--search-provider` | - | Provider recherche (anilist/local) | `--search-provider anilist` |
 | `--tui` | - | UI terminal moderne (Textual) | `--tui` |
 | `--ffmpeg` | - | Force ffmpeg | `--ffmpeg` |

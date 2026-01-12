@@ -14,12 +14,16 @@ from utils.config import load_config, save_config
 from utils.anime_db import anilist_search_titles
 
 
-SITE_BASE_URL = "https://anime-sama.tv"
+SITE_BASE_URL = "https://anime-sama.si"
 
 
-def _canonicalize_anime_sama_url(url: str) -> str:
-    """Force anime-sama.tv comme domaine canonique (org/fr -> tv)."""
-    return re.sub(r"^https://anime-sama\.(?:org|fr)/", "https://anime-sama.tv/", url)
+def canonicalize_site_url(url: str) -> str:
+    """Force le domaine canonique Anime-Sama.
+
+    Note: anime-sama.tv redirige actuellement vers anime-sama.si sans conserver le chemin,
+    donc on remplace explicitement le domaine pour préserver /catalogue/.../.
+    """
+    return re.sub(r"^https://anime-sama\.(?:tv|org|fr|si)/", SITE_BASE_URL + "/", (url or ""))
 
 # Local cache of popular animes (canonicalized to anime-sama.tv)
 # This avoids scraping issues and provides instant search
@@ -142,6 +146,36 @@ def _slugify_title_for_anime_sama(title: str) -> str:
     return s
 
 
+def _slug_variants(slug: str) -> list[str]:
+    """Génère quelques variantes de slug réalistes (borné).
+
+    Exemple: "hells-paradise" <-> "hell-s-paradise".
+    """
+    base = (slug or "").strip().lower()
+    if not base:
+        return []
+
+    variants: list[str] = [base]
+
+    # normaliser les doubles hyphens
+    variants.append(re.sub(r"-+", "-", base))
+
+    # apostrophe-s fréquent: hells-... vs hell-s-...
+    variants.append(re.sub(r"([a-z])s-([a-z])", r"\1-s-\2", base))
+    variants.append(re.sub(r"([a-z])-s-([a-z])", r"\1s-\2", base))
+
+    # dédoublonne en conservant l'ordre
+    out: list[str] = []
+    seen: set[str] = set()
+    for v in variants:
+        v = v.strip("-")
+        if not v or v in seen:
+            continue
+        seen.add(v)
+        out.append(v)
+    return out[:6]
+
+
 def _config_get(config: dict, *path: str, default=None):
     cur = config
     for key in path:
@@ -228,14 +262,17 @@ def resolve_anime_sama_base_url(query: str, provider: str = "anilist") -> str | 
     slug_candidates: list[str] = []
     seen: set[str] = set()
     for t in titles:
-        slug = _slugify_title_for_anime_sama(t)
-        if not slug:
-            continue
-        if slug in seen:
-            continue
-        seen.add(slug)
-        slug_candidates.append(slug)
-        if len(slug_candidates) >= 15:
+        base_slug = _slugify_title_for_anime_sama(t)
+        for slug in _slug_variants(base_slug):
+            if not slug:
+                continue
+            if slug in seen:
+                continue
+            seen.add(slug)
+            slug_candidates.append(slug)
+            if len(slug_candidates) >= 25:
+                break
+        if len(slug_candidates) >= 25:
             break
 
     for slug in slug_candidates:
@@ -249,7 +286,7 @@ def resolve_anime_sama_base_url(query: str, provider: str = "anilist") -> str | 
     results = search_anime(q, limit=1)
     if results and results[0]["score"] > 0.5:
         url = results[0]["url"]
-        url = _canonicalize_anime_sama_url(url)
+        url = canonicalize_site_url(url)
         _config_set(config, url, "search", "resolved_urls", cache_key)
         save_config(config)
         return url
@@ -266,7 +303,7 @@ def get_anime_list():
     # Commencer avec le cache local (animes populaires)
     all_animes = {}
     for anime in ANIME_CACHE:
-        canon = _canonicalize_anime_sama_url(anime["url"])
+        canon = canonicalize_site_url(anime["url"])
         all_animes[canon] = {"title": anime["title"], "url": canon}
     
     try:
@@ -289,8 +326,8 @@ def get_anime_list():
         # Extraire les animes uniques (sans saison/langue)
         for a in soup.find_all('a', href=True):
             href = a['href']
-            href_canon = _canonicalize_anime_sama_url(href) if href.startswith("http") else href
-            if '/catalogue/' in href_canon and 'anime-sama.tv' in href_canon:
+            href_canon = canonicalize_site_url(href) if href.startswith("http") else href
+            if '/catalogue/' in href_canon and href_canon.startswith(SITE_BASE_URL):
                 # Extraire le nom de l'anime (avant /saison ou /scan)
                 match = re.search(r'/catalogue/([^/]+)', href_canon)
                 if match:
@@ -485,7 +522,7 @@ def quick_search(query: str, provider: str = "anilist"):
     if provider == "local":
         results = search_anime(query, limit=1)
         if results and results[0]['score'] > 0.5:
-            return _canonicalize_anime_sama_url(results[0]['url'])
+            return canonicalize_site_url(results[0]['url'])
         return None
 
     return resolve_anime_sama_base_url(query, provider="anilist")

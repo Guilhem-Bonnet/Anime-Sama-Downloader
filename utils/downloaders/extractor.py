@@ -1,7 +1,8 @@
 from utils.var import print_status, Colors
 import re
 from bs4 import BeautifulSoup
-import requests, time, re
+import requests
+import time
 
 def extract_sendvid_video_source(html_content):
     if not html_content:
@@ -98,13 +99,13 @@ def extract_packed_code_for_ts(html_content):
 def fetch_html_for_ts(url):
     try:
         headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Referer': url.split('/embed/')[0],
-    'Connection': 'keep-alive',
-}
-        response = requests.get(url, headers=headers)
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Referer': url.split('/embed/')[0],
+            'Connection': 'keep-alive',
+        }
+        response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         return response.text
     except requests.exceptions.RequestException as e:

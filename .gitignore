@@ -12,6 +12,13 @@ env/
 *.log
 "$LOG_FILE"
 
+# Downloads / media artifacts
+videos/
+*.mp4
+*.mkv
+*.ts
+*.part
+
 # Local user folder accidentally committed
 ~/
 

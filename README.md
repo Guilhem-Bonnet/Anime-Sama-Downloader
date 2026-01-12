@@ -7,7 +7,7 @@
 <img src="https://img.shields.io/badge/License-GPL_V3-green.svg?style=for-the-badge" alt="License">
 <img src="https://img.shields.io/badge/Version-2.6_Optimized-orange.svg?style=for-the-badge" alt="Version">
 
-**🚀 A powerful, beautiful and simple CLI tool to download anime episodes from anime-sama.tv**
+**🚀 A powerful, beautiful and simple CLI tool to download anime episodes from anime-sama.si**
 
 *Enhanced with colorful interface, smart source detection, CLI mode, and robust error handling*
 
@@ -19,6 +19,8 @@
 
 > **✨ NEW in v2.6**: AniList-backed search + URL resolution, optional modern TUI (`--tui`)  
 > See [CHANGELOG.md](CHANGELOG.md) for full details | [UX improvements](UX_IMPROVEMENTS.md)
+
+> **⚡ NEW**: Queue + téléchargements parallèles (jusqu’à `--jobs 10`) + annulation (Ctrl+C)
 
 ### Scans support ? 5 stars and it will be added !
 ## ✨ Features
@@ -37,6 +39,8 @@
 - ✅ **Auto URL Validation** with helpful error messages
 - 📝 **Built-in Tutorial** for first-time users
 - ⚡ **Multi-threaded Downloads** for blazing fast performance
+- 🧵 **Download Queue (1–10 jobs)** - Plusieurs animes/épisodes en parallèle (NEW!)
+- 🛑 **Cancel/Stop** - Ctrl+C en CLI, “Annuler tout” en TUI (NEW!)
 </td>
 <td width="50%">
 
@@ -109,6 +113,12 @@ python3 main.py
 # OR use search to find animes! (NEW!)
 python3 main.py -s "kaiju" -e 1-5 --quick
 
+# OR batch mode: multiple animes in one command (NEW!)
+python3 main.py --jobs 10 \
+  -s "kaiju" -s "one piece" \
+  -u "https://anime-sama.si/catalogue/roshidere/saison1/vostfr/" \
+  -e 1-5 --mp4-threaded --yes
+
 # OR use CLI mode with URL
 python3 main.py -u "ANIME_URL" -e 1-5 -t --auto-mp4
 
@@ -172,7 +182,7 @@ python main.py -s "naruto" --season 1 --lang vostfr -e 1-10 --quick
 python main.py -s "kaiju" --search-provider local -e 1-3
 
 # Download episodes 1 to 5 with threading
-python main.py -u "https://anime-sama.tv/catalogue/sword-art-online/saison1/vostfr/" -e 1-5 -t
+python main.py -u "https://anime-sama.si/catalogue/sword-art-online/saison1/vostfr/" -e 1-5 -t
 
 # Download specific episodes
 python main.py -u "URL" -e 3,5,7,10 --ts-threaded
@@ -185,6 +195,9 @@ python main.py --help
 
 # Launch TUI
 python main.py --tui
+
+# Batch download (queue) - 10 parallèles
+python main.py --jobs 10 -s "one piece" -s "naruto" -e 1-12 --mp4-threaded --yes
 ```
 
 > **🔍 See [SEARCH_GUIDE.md](SEARCH_GUIDE.md) for complete search documentation**

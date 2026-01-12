@@ -8,7 +8,9 @@ import urllib.request
 import zipfile
 import tarfile
 import argparse
+import threading
 from utils.var import Colors, print_status, print_separator, print_header, print_tutorial
+from utils.download_manager import DownloadJob, DownloadManager
 
 # PLEASE DO NOT REMOVE: Original code from https://github.com/sertrafurr/Anime-Sama-Downloader
 
@@ -23,7 +25,7 @@ Examples:
   python main.py
   
   # CLI mode with URL
-    python main.py -u "https://anime-sama.tv/catalogue/sword-art-online/saison1/vostfr/" -e 1-5
+        python main.py -u "https://anime-sama.si/catalogue/sword-art-online/saison1/vostfr/" -e 1-5
   
   # Download specific episodes with threading
   python main.py -u "URL" -e 3,5,7 -t -d ~/Downloads
@@ -33,22 +35,26 @@ Examples:
         """
     )
     
-    parser.add_argument('-s', '--search', type=str, help='Search anime by name (e.g., "kaiju", "attack on titan")')
+    parser.add_argument('-s', '--search', type=str, action='append', help='Search anime by name (repeatable)')
     parser.add_argument('--search-provider', type=str, choices=['anilist', 'local'], default='anilist', help='Search provider for --search (default: anilist)')
     parser.add_argument('--season', type=int, help='Season number when using --search (default: 1)', default=1)
     parser.add_argument('--lang', type=str, choices=['vostfr', 'vf', 'vo'], help='Language when using --search (default: vostfr)', default='vostfr')
-    parser.add_argument('-u', '--url', type=str, help='Anime-Sama URL (e.g., https://anime-sama.tv/catalogue/...)')
+    parser.add_argument('-u', '--url', type=str, action='append', help='Anime-Sama URL (repeatable)')
     parser.add_argument('-e', '--episodes', type=str, help='Episodes to download (e.g., "1-5", "3,5,7", "all")')
     parser.add_argument('-p', '--player', type=int, help='Player number to use (e.g., 1, 2, 3). If omitted, auto-select best player.', default=None)
     parser.add_argument('-d', '--directory', type=str, help='Save directory (default: ./videos)', default='./videos')
     parser.add_argument('-t', '--threaded', action='store_true', help='Use threaded downloads (faster)')
     parser.add_argument('--ts-threaded', action='store_true', help='Use threaded .ts segment downloads (much faster for M3U8)')
+    parser.add_argument('--mp4-threaded', action='store_true', help='Use multi-part Range downloads for MP4 when supported (can be faster)')
     parser.add_argument('--auto-mp4', action='store_true', help='Automatically convert .ts files to .mp4')
     parser.add_argument('--ffmpeg', action='store_true', help='Use ffmpeg for conversion (default, faster)')
     parser.add_argument('--moviepy', action='store_true', help='Use moviepy for conversion (slower but lighter)')
     parser.add_argument('--no-tutorial', action='store_true', help='Skip tutorial prompt')
     parser.add_argument('--quick', action='store_true', help='Quick mode: use smart defaults, minimal prompts')
+    parser.add_argument('-j', '--jobs', type=int, default=1, help='Max téléchargements en parallèle (1-10). Recommandé: 10')
+    parser.add_argument('-y', '--yes', action='store_true', help='Ne pas demander de confirmation (utile pour --search)')
     parser.add_argument('--tui', action='store_true', help='Launch modern terminal UI (Textual). CLI remains default.')
+    parser.add_argument('--ui', type=str, default=None, help='Launch a UI plugin by name (e.g. "textual"). Overrides --tui.')
     parser.add_argument('--version', action='version', version='Anime-Sama Downloader v2.6-optimized')
     
     return parser.parse_args()
@@ -208,19 +214,29 @@ def get_save_directory():
 
 def validate_anime_sama_url(url):
     pattern = re.compile(
-        r'^https://anime-sama\.(?:tv|fr|org)/catalogue/[^/]+/saison\d+/(?:vostfr|vf|vo)/?$', re.IGNORECASE
+        r'^https://anime-sama\.(?:tv|fr|org|si)/catalogue/[^/]+/saison\d+/(?:vostfr|vf|vo)/?$', re.IGNORECASE
     )
     if pattern.match(url):
         return True, ""
     else:
         return False, (
             "Invalid URL. Format should be:\n"
-            "  https://anime-sama.tv/catalogue/<anime-name>/saison<NUMBER>/<language>/\n"
-            "Where <language> is VOSTFR, VF, VO, etc. Domains .tv/.org/.fr are accepted."
+            "  https://anime-sama.si/catalogue/<anime-name>/saison<NUMBER>/<language>/\n"
+            "Where <language> is VOSTFR, VF, VO, etc. Domains .si/.tv/.org/.fr are accepted."
         )
 
 
-def download_episode(episode_num, url, video_source, anime_name, save_dir, use_ts_threading=False, automatic_mp4=False, pre_selected_tool=None):
+def download_episode(
+    episode_num,
+    url,
+    video_source,
+    anime_name,
+    save_dir,
+    use_ts_threading=False,
+    use_mp4_threading=False,
+    automatic_mp4=False,
+    pre_selected_tool=None,
+):
     if not video_source:
         print_status(f"Could not extract video source for episode {episode_num}", "error")
         return False, None
@@ -235,7 +251,14 @@ def download_episode(episode_num, url, video_source, anime_name, save_dir, use_t
     print_separator()
     
     try:
-        success, output_path = download_video(video_source, save_path, use_ts_threading=use_ts_threading, url=url, automatic_mp4=automatic_mp4)
+        success, output_path = download_video(
+            video_source,
+            save_path,
+            use_ts_threading=use_ts_threading,
+            use_mp4_threading=use_mp4_threading,
+            url=url,
+            automatic_mp4=automatic_mp4,
+        )
     except Exception as e:
         print_status(f"Download failed for episode {episode_num}: {str(e)}", "error")
         return False, None
@@ -353,22 +376,205 @@ def parse_episode_range(episode_str, max_episodes):
     
     return valid_indices
 
+
+def _clamp_jobs(n: int) -> int:
+    try:
+        n = int(n)
+    except Exception:
+        return 1
+    return max(1, min(10, n))
+
+
+def _ensure_list(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [v for v in value if v]
+    return [value]
+
+
+def _slug_from_catalogue_url(url: str) -> str:
+    m = re.search(r"/catalogue/([^/]+)/", url)
+    return m.group(1) if m else "anime"
+
+
+def run_batch_download(args, urls: list[str], searches: list[str]) -> int:
+    """Mode batch/queue: plusieurs animes + jobs parallèles (max 10)."""
+    from utils.fetch import select_best_player
+
+    jobs = _clamp_jobs(getattr(args, 'jobs', 1))
+
+    # Résoudre les searches en URLs catalogue
+    targets: list[str] = []
+    if searches:
+        from utils.search import quick_search
+        for q in searches:
+            print_status(f"Searching for: {q}", "loading")
+            found = quick_search(q, provider=args.search_provider)
+            if not found:
+                print_status(f"No good match found for '{q}'", "error")
+                continue
+
+            found = found.rstrip('/')
+            base_url = f"{found}/saison{args.season}/{args.lang}/"
+            print_status(f"Found match: {base_url}", "success")
+
+            if (not args.yes) and sys.stdin.isatty():
+                ans = input(f"Télécharger '{q}' → {base_url} ? (Y/n): ").strip().lower()
+                if ans == 'n':
+                    print_status("Skipped.", "info")
+                    continue
+
+            targets.append(base_url)
+
+    targets.extend(urls)
+
+    if not targets:
+        print_status("Aucune URL à traiter.", "error")
+        return 1
+
+    # Répertoire racine
+    save_root = os.path.abspath(os.path.expanduser(args.directory or './videos'))
+    os.makedirs(save_root, exist_ok=True)
+    print_status(f"Save directory: {save_root}", "info")
+
+    # Canonicalize domain (anime-sama.tv → .si)
+    try:
+        from utils.search import canonicalize_site_url
+        targets = [canonicalize_site_url(u) for u in targets]
+    except Exception:
+        pass
+
+    # Construire et enqueuer les jobs
+    mgr = DownloadManager(max_parallel=jobs, executor_name="cli-dl")
+
+    # On limite la concurrence interne quand jobs est élevé.
+    mp4_workers = 2 if jobs >= 5 else 4
+    ts_workers = 2 if jobs >= 5 else 10
+    use_ts_threading = bool(getattr(args, 'ts_threaded', False)) and jobs <= 3
+    use_mp4_threading = bool(getattr(args, 'mp4_threaded', False))
+    automatic_mp4 = bool(getattr(args, 'auto_mp4', False))
+
+    enqueued = 0
+    try:
+        for base_url in targets:
+            is_valid, error_msg = validate_anime_sama_url(base_url)
+            if not is_valid:
+                print_status(error_msg, "error")
+                continue
+
+            slug = _slug_from_catalogue_url(base_url)
+            print_status(f"Fetching episodes for: {slug}", "loading")
+            episodes = fetch_episodes(base_url)
+            if not episodes:
+                print_status(f"Failed to fetch episodes for {base_url}", "error")
+                continue
+
+            player_choice, _ = select_best_player(episodes)
+            if not player_choice:
+                print_status(f"No valid player found for {slug}", "error")
+                continue
+
+            max_eps = len(episodes[player_choice])
+            wanted = args.episodes or 'all'
+            episode_indices = parse_episode_range(wanted, max_eps)
+            if not episode_indices:
+                print_status(f"No valid episodes selected for {slug}", "error")
+                continue
+
+            page_urls = [episodes[player_choice][i] for i in episode_indices]
+            episode_numbers = [i + 1 for i in episode_indices]
+
+            dest_dir = os.path.join(save_root, slug)
+            os.makedirs(dest_dir, exist_ok=True)
+
+            for ep_num, page_url in zip(episode_numbers, page_urls):
+                if not page_url:
+                    continue
+
+                save_path = os.path.join(dest_dir, f"{slug}_episode_{ep_num}.mp4")
+                label = f"{slug} E{ep_num}"
+
+                def _make_runner(page_url=page_url, save_path=save_path, label=label):
+                    def _runner(cancel_event: threading.Event):
+                        if cancel_event.is_set():
+                            return None
+
+                        try:
+                            src = fetch_video_source(page_url)
+                        except Exception as e:
+                            print_status(f"{label}: source error: {e}", "error")
+                            return None
+
+                        if not src:
+                            print_status(f"{label}: no source", "error")
+                            return None
+
+                        def _cb(message: str, status_type: str = "info") -> None:
+                            # Sortie CLI simple (peut s'entremêler en parallèle)
+                            print_status(f"{label}: {message}", status_type if status_type else "info")
+
+                        ok, out = download_video(
+                            src,
+                            save_path,
+                            use_ts_threading=use_ts_threading,
+                            url=page_url,
+                            automatic_mp4=automatic_mp4,
+                            log_callback=_cb,
+                            use_tqdm=False,
+                            use_mp4_threading=use_mp4_threading,
+                            mp4_workers=mp4_workers,
+                            ts_workers=ts_workers,
+                            cancel_event=cancel_event,
+                        )
+                        return out if ok else None
+
+                    return _runner
+
+                mgr.enqueue(DownloadJob(label=label, run=_make_runner()))
+                enqueued += 1
+
+        if not enqueued:
+            print_status("Aucun job n'a été ajouté à la file.", "error")
+            return 1
+
+        print_status(f"Queue démarrée: {enqueued} job(s), {jobs} en parallèle.", "success")
+        mgr.wait()
+        return 0
+
+    except KeyboardInterrupt:
+        print_status("\nAnnulation demandée (Ctrl+C)…", "warning")
+        mgr.cancel_all()
+        mgr.shutdown()
+        return 1
+
+
 def main():
     args = parse_arguments()
 
-    # Optional Textual TUI (keeps CLI as default behavior)
-    if getattr(args, 'tui', False):
+    # Optional UI plugin (keeps CLI as default behavior)
+    ui_name = (getattr(args, 'ui', None) or '').strip()
+    if ui_name or getattr(args, 'tui', False):
+        if not ui_name:
+            ui_name = 'textual'
         try:
-            from utils.tui import run_tui
+            from utils.ui.registry import run_ui
+            return int(run_ui(ui_name))
         except Exception as e:
-            print_status(f"TUI failed to start: {e}", "error")
+            print_status(f"UI failed to start: {e}", "error")
             print_status("Install dependencies: pip install -r requirements.txt", "info")
             return 1
-
-        return run_tui()
     
+    urls = _ensure_list(getattr(args, 'url', None))
+    searches = _ensure_list(getattr(args, 'search', None))
+    jobs = _clamp_jobs(getattr(args, 'jobs', 1))
+
+    # Batch mode: multiple animes or explicit parallel jobs
+    if (len(urls) + len(searches) > 1) or (jobs > 1):
+        return run_batch_download(args, urls, searches)
+
     # Check if running in CLI mode or interactive mode
-    cli_mode = args.url is not None or args.search is not None
+    cli_mode = bool(urls) or bool(searches)
 
     try:
         # Print header (skip in quick mode for cleaner output)
@@ -376,14 +582,14 @@ def main():
             print_header()
         
         # Get URL (from args, search, or interactive input)
-        if cli_mode and args.search:
+        if cli_mode and searches:
             # CLI search mode
             from utils.search import quick_search
-            print_status(f"Searching for: {args.search}", "loading")
-            search_result = quick_search(args.search, provider=args.search_provider)
+            print_status(f"Searching for: {searches[0]}", "loading")
+            search_result = quick_search(searches[0], provider=args.search_provider)
             
             if not search_result:
-                print_status(f"No good match found for '{args.search}'", "error")
+                print_status(f"No good match found for '{searches[0]}'", "error")
                 print_status("Try being more specific or use interactive search", "info")
                 return 1
             
@@ -393,9 +599,15 @@ def main():
             search_result = search_result.rstrip('/')
             base_url = f"{search_result}/saison{args.season}/{args.lang}/"
             print_status(f"Complete URL: {base_url}", "info")
+
+            if (not getattr(args, 'yes', False)) and sys.stdin.isatty():
+                ans = input(f"Confirmer le téléchargement: {base_url} ? (Y/n): ").strip().lower()
+                if ans == 'n':
+                    print_status("Annulé.", "warning")
+                    return 1
             
         elif cli_mode:
-            base_url = args.url
+            base_url = urls[0]
             print_status(f"Using URL from arguments: {base_url}", "info")
         else:
             # Interactive mode: always start with search
@@ -423,11 +635,19 @@ def main():
                     is_valid, error_msg = validate_anime_sama_url(base_url)
                     if not is_valid:
                         print_status(error_msg, "error")
-                        print_status("Example: https://anime-sama.tv/catalogue/roshidere/saison1/vostfr/", "info")
+                        print_status("Example: https://anime-sama.si/catalogue/roshidere/saison1/vostfr/", "info")
                         continue
                     
                     break
         
+        # Canonicalize domain (anime-sama.tv currently redirects to .si without preserving path)
+        try:
+            from utils.search import canonicalize_site_url
+            if base_url:
+                base_url = canonicalize_site_url(base_url)
+        except Exception:
+            pass
+
         # Validate URL
         is_valid, error_msg = validate_anime_sama_url(base_url)
         if not is_valid:
@@ -511,6 +731,7 @@ def main():
         if cli_mode:
             use_threading = args.threaded
             use_ts_threading = args.ts_threaded
+            use_mp4_threading = args.mp4_threaded
             automatic_mp4 = args.auto_mp4
             pre_selected_tool = None
             
@@ -526,12 +747,15 @@ def main():
                 print_status("Using threaded episode downloads", "info")
             if use_ts_threading:
                 print_status("Using threaded .ts segment downloads", "info")
+            if use_mp4_threading:
+                print_status("Using multi-part MP4 downloads (Range)", "info")
             if automatic_mp4:
                 print_status(f"Auto-converting to MP4 using {pre_selected_tool}", "info")
         else:
             # Interactive mode with smart defaults
             use_threading = False
             use_ts_threading = False
+            use_mp4_threading = False
             automatic_mp4 = False
             pre_selected_tool = None
             
@@ -544,6 +768,7 @@ def main():
                 print_status("Quick mode: Using optimal defaults", "info")
                 use_threading = len(episode_indices) > 1  # Auto-thread if multiple episodes
                 use_ts_threading = has_m3u8  # Auto-thread .ts if M3U8
+                use_mp4_threading = True  # Try to speed up direct MP4 when server supports Range
                 automatic_mp4 = has_m3u8  # Auto-convert M3U8
                 pre_selected_tool = 'ffmpeg' if check_ffmpeg_installed() else 'moviepy'
                 
@@ -595,7 +820,18 @@ def main():
                 print_status("Starting threaded downloads...", "info")
                 with ThreadPoolExecutor() as executor:
                     future_to_episode = {
-                        executor.submit(download_episode, ep_num, url, video_src, anime_name, save_dir, use_ts_threading, automatic_mp4, pre_selected_tool): ep_num
+                        executor.submit(
+                            download_episode,
+                            ep_num,
+                            url,
+                            video_src,
+                            anime_name,
+                            save_dir,
+                            use_ts_threading,
+                            use_mp4_threading,
+                            automatic_mp4,
+                            pre_selected_tool,
+                        ): ep_num
                         for ep_num, url, video_src in zip(episode_numbers, urls, video_sources)
                     }
                     for future in as_completed(future_to_episode):
@@ -609,7 +845,17 @@ def main():
                             failed_downloads += 1
             else:
                 for episode_num, url, video_source in zip(episode_numbers, urls, video_sources):
-                    success, _ = download_episode(episode_num, url, video_source, anime_name, save_dir, use_ts_threading, automatic_mp4, pre_selected_tool)
+                    success, _ = download_episode(
+                        episode_num,
+                        url,
+                        video_source,
+                        anime_name,
+                        save_dir,
+                        use_ts_threading,
+                        use_mp4_threading,
+                        automatic_mp4,
+                        pre_selected_tool,
+                    )
                     if not success:
                         failed_downloads += 1
 

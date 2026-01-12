@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 import time
 from typing import Dict, List, Optional, Tuple, Union
+from urllib.parse import parse_qs, urlparse
 
 import requests
 
@@ -29,15 +30,12 @@ from utils.var import print_status
 http_pool = get_http_pool()
 
 
-def select_best_player(episodes: Dict[str, List[str]]) -> Tuple[Optional[str], Optional[str]]:
-    """Automatically select the best player based on availability and quality.
+def _canonicalize_anime_sama_domain(url: str) -> str:
+    # anime-sama.tv redirige actuellement vers .si sans conserver le path.
+    return re.sub(r"^https://anime-sama\.(?:tv|org|fr|si)/", "https://anime-sama.si/", (url or ""))
 
-    Priority: player with most episodes available, prefer known reliable sources.
-    Returns: (player_name, player_key) (same value for backward compatibility).
-    """
-    if not episodes:
-        return None, None
 
+def _player_score(player_name: str, urls: List[str]) -> int:
     source_quality = {
         "sendvid": 10,
         "sibnet": 9,
@@ -49,49 +47,137 @@ def select_best_player(episodes: Dict[str, List[str]]) -> Tuple[Optional[str], O
         "mivalyo": 4,
     }
 
-    best_player: Optional[str] = None
-    best_score = -1
+    available_count = sum(1 for u in urls if u and u.strip())
 
+    quality_score = 0
+    for u in urls:
+        if not u:
+            continue
+        u_lower = u.lower()
+        for source, score in source_quality.items():
+            if source in u_lower:
+                quality_score += score
+                break
+        else:
+            quality_score += 3
+
+    return (available_count * 100) + quality_score
+
+
+def rank_players(episodes: Dict[str, List[str]]) -> List[str]:
+    """Return players ordered by heuristics (availability + likely quality).
+
+    This is used for automatic selection and fallback when a host fails.
+    """
+    if not episodes:
+        return []
+
+    scored: List[Tuple[int, str]] = []
     for player_name, urls in episodes.items():
         if not urls:
             continue
+        scored.append((_player_score(player_name, urls), player_name))
 
-        available_count = sum(1 for u in urls if u and u.strip())
-        quality_score = 0
-        for u in urls:
-            if not u:
-                continue
-            u_lower = u.lower()
-            for source, score in source_quality.items():
-                if source in u_lower:
-                    quality_score += score
-                    break
-            else:
-                quality_score += 3
+    scored.sort(reverse=True)
+    return [name for _, name in scored]
 
-        total_score = (available_count * 100) + quality_score
-        if total_score > best_score:
-            best_score = total_score
-            best_player = player_name
+
+def select_best_player(episodes: Dict[str, List[str]]) -> Tuple[Optional[str], Optional[str]]:
+    """Automatically select the best player based on availability and quality.
+
+    Priority: player with most episodes available, prefer known reliable sources.
+    Returns: (player_name, player_key) (same value for backward compatibility).
+    """
+    if not episodes:
+        return None, None
+
+    ranked = rank_players(episodes)
+    best_player = ranked[0] if ranked else None
 
     return best_player, best_player
 
 
-def fetch_episodes(base_url: str) -> Optional[Dict[str, List[str]]]:
-    """Fetch and parse episodes.js for a season/language URL."""
+def fetch_episodes(base_url: str, quiet: bool = False, timeout: int = 20) -> Optional[Dict[str, List[str]]]:
+    """Fetch and parse episodes.js for a season/language URL.
+
+    Args:
+        base_url: season/language URL
+        quiet: suppress stdout logs
+        timeout: requests timeout in seconds
+    """
+    base_url = _canonicalize_anime_sama_domain(base_url)
     js_url = base_url.rstrip("/") + "/episodes.js"
-    print_status("Fetching episode list...", "loading")
+    if not quiet:
+        print_status("Fetching episode list...", "loading")
 
     try:
-        response = cached_get(js_url, timeout=20, use_cache=False)
+        headers = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0",
+            "Accept": "text/javascript,*/*;q=0.1",
+            "Referer": base_url,
+        }
+        response = cached_get(js_url, headers=headers, timeout=timeout, use_cache=False)
         response.raise_for_status()
     except Exception as e:
-        print_status(f"Failed to fetch episodes.js: {e}", "error")
+        if not quiet:
+            print_status(f"Failed to fetch episodes.js: {e}", "error")
         return None
 
     js_content = response.text
     pattern = re.compile(r"var\s+(eps\d+)\s*=\s*\[([^\]]*)\];", re.MULTILINE)
     matches = pattern.findall(js_content)
+
+    def _is_plausible_episode_url(u: str) -> bool:
+        u = (u or "").strip()
+        if not (u.startswith("http://") or u.startswith("https://")):
+            return False
+
+        # Common placeholder forms when a season exists structurally but has no real videos.
+        if u.endswith("="):
+            return False
+        if u.endswith("/embed/"):
+            return False
+
+        # Anime-Sama sometimes exposes placeholder VK embeds for non-existing seasons.
+        # Example: https://vk.com/video_ext.php?oid=&hd=3
+        if "vk.com/video_ext.php" in u:
+            try:
+                q = parse_qs(urlparse(u).query)
+                oid = (q.get("oid") or [""])[0]
+                vid = (q.get("id") or [""])[0]
+            except Exception:
+                return False
+            if not re.fullmatch(r"-?\d+", oid or ""):
+                return False
+            if vid and not re.fullmatch(r"\d+", vid):
+                return False
+
+        # Sibnet placeholder: missing videoid
+        if "video.sibnet.ru" in u and "shell.php" in u:
+            try:
+                q = parse_qs(urlparse(u).query)
+                videoid = (q.get("videoid") or [""])[0]
+            except Exception:
+                return False
+            if not re.fullmatch(r"\d+", videoid or ""):
+                return False
+
+        # Vidmoly placeholder: embed-.html or empty id
+        if "vidmoly" in u and "/embed-" in u:
+            p = urlparse(u).path
+            m = re.match(r"^/embed-([A-Za-z0-9]+)\.html$", p or "")
+            if not m:
+                return False
+
+        # SendVid placeholder: embed/ with empty id
+        if "sendvid.com" in u and "/embed/" in u:
+            p = urlparse(u).path or ""
+            # /embed/<id>
+            parts = [x for x in p.split("/") if x]
+            if len(parts) < 2 or parts[0] != "embed" or not parts[1].strip():
+                return False
+
+        return True
 
     episodes: Dict[str, List[str]] = {}
     for name, content in matches:
@@ -100,15 +186,27 @@ def fetch_episodes(base_url: str) -> Optional[Dict[str, List[str]]]:
             continue
         player_num = player_num_match.group()
         player_name = f"Player {player_num}"
-        urls = re.findall(r"'(https?://[^']+)'", content)
+        # Preserve indexes: episodes.js may contain empty strings for missing episodes.
+        raw_items = re.findall(r"'([^']*)'", content)
+        urls: List[str] = []
+        for item in raw_items:
+            item = (item or "").strip()
+            if _is_plausible_episode_url(item):
+                urls.append(item)
+            else:
+                urls.append("")
         episodes[player_name] = urls
 
-    if episodes:
-        print_status(f"Found {len(episodes)} players with episodes!", "success")
-        return episodes
+    # Some seasons exist as empty arrays (no episodes). Treat as missing.
+    has_any_url = any(_is_plausible_episode_url(u) for urls in episodes.values() for u in (urls or []))
+    if not has_any_url:
+        if not quiet:
+            print_status("No episodes found in episodes.js", "error")
+        return None
 
-    print_status("No episodes found in episodes.js", "error")
-    return None
+    if not quiet:
+        print_status(f"Found {len(episodes)} players with episodes!", "success")
+    return episodes
 
 
 def get_sibnet_redirect_location(video_url: str) -> Optional[str]:
