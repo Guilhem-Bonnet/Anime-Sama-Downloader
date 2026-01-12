@@ -1,0 +1,62 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev: backend (web)",
+      "type": "shell",
+      "command": "${workspaceFolder}/venv/bin/python",
+      "args": [
+        "-m",
+        "uvicorn",
+        "utils.ui.web.app:create_app",
+        "--factory",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8000",
+        "--reload"
+      ],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: frontend (vite)",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "options": {
+        "cwd": "${workspaceFolder}/webapp"
+      },
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: fullstack",
+      "dependsOn": ["dev: backend (web)", "dev: frontend (vite)"],
+      "dependsOrder": "parallel"
+    },
+    {
+      "label": "docker: up",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "up", "--build"],
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: down",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "down", "-v"],
+      "problemMatcher": []
+    },
+    {
+      "label": "docker: prod up",
+      "type": "shell",
+      "command": "docker",
+      "args": ["compose", "-f", "docker-compose.prod.yml", "up", "--build"],
+      "isBackground": true,
+      "problemMatcher": []
+    }
+  ]
+}

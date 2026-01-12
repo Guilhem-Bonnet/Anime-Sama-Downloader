@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: asd-backend
+    command: >-
+      uvicorn utils.ui.web.app:create_app
+      --factory
+      --host 0.0.0.0
+      --port 8000
+      --reload
+    ports:
+      - "8000:8000"
+    environment:
+      ASD_WEB_HOST: 0.0.0.0
+      ASD_WEB_PORT: "8000"
+      ASD_DOWNLOAD_ROOT: /data/videos
+      # Optionnel: pointe vers un config.ini monté
+      # ASD_CONFIG: /app/config.ini
+    volumes:
+      - .:/app
+      - ./videos:/data/videos
+
+  frontend:
+    image: node:20-alpine
+    container_name: asd-frontend
+    working_dir: /webapp
+    command: sh -lc "npm ci && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    environment:
+      # Important: en Docker, le backend n'est pas sur 127.0.0.1
+      VITE_PROXY_TARGET: http://backend:8000
+    volumes:
+      - ./webapp:/webapp
+      - asd_webapp_node_modules:/webapp/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  asd_webapp_node_modules:

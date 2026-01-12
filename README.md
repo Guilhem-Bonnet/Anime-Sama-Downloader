@@ -124,7 +124,74 @@ python3 main.py -u "ANIME_URL" -e 1-5 -t --auto-mp4
 
 # OR launch the modern TUI (optional)
 python3 main.py --tui
+
+# OR launch the web UI (backend)
+python3 main.py --ui web
 ```
+
+---
+
+## ⚙️ Configuration (INI + variables d'env)
+
+Un fichier prêt à l'emploi est fourni : [config.ini](config.ini). Tu peux aussi partir de [config.ini.example](config.ini.example).
+
+### Ordre de priorité
+
+1) Arguments CLI (ex: `--directory`, `--jobs`)
+2) Variables d'environnement (ex: `ASD_DOWNLOAD_ROOT`)
+3) `config.ini` (ou un autre INI via `--config` / `ASD_CONFIG`)
+
+### Variables d'environnement supportées
+
+- `ASD_CONFIG` : chemin vers un `config.ini` à utiliser
+- `ASD_DOWNLOAD_ROOT` : dossier racine de sortie (équivalent à `save_directory`)
+- `ASD_MAX_CONCURRENT_DOWNLOADS` : concurrence globale (1–10)
+- `ASD_SITE_BASE_URL` / `ASD_SITE_DOMAIN` : override du domaine Anime‑Sama si ça change
+- `ASD_WEB_HOST` / `ASD_WEB_PORT` : bind du serveur web
+
+### Exemples
+
+```bash
+# Utiliser un autre fichier de config
+python3 main.py --config ./config.ini --ui web
+
+# Override rapide sans toucher au fichier
+ASD_SITE_BASE_URL=https://anime-sama.si ASD_MAX_CONCURRENT_DOWNLOADS=10 python3 main.py --ui web
+```
+
+---
+
+## 🌐 Web UI (Dev / Docker)
+
+### Dev local (2 terminaux)
+
+Backend:
+```bash
+./scripts/dev-backend.sh
+```
+
+Frontend:
+```bash
+./scripts/dev-frontend.sh
+```
+
+Ouvre `http://127.0.0.1:5173`.
+
+### Dev Docker
+
+```bash
+docker compose up --build
+```
+
+Ouvre `http://127.0.0.1:5173`.
+
+### Prod Docker (SPA servie par le backend)
+
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Ouvre `http://127.0.0.1:8000/`.
 
 ### 💡 Three Ways to Use
 

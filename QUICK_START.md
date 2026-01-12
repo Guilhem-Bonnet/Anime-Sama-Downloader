@@ -200,6 +200,50 @@ anime-get -u "URL" -e 1-10  # CLI full
 
 ---
 
+## Mode 6 : Web UI (Dev) 🌐
+
+### Option A — Dev local (recommandé)
+
+Backend (FastAPI):
+```bash
+./scripts/dev-backend.sh
+```
+
+Frontend (Vite/React):
+```bash
+./scripts/dev-frontend.sh
+```
+
+Ouvre ensuite :
+- `http://127.0.0.1:5173` (SPA)
+- `http://127.0.0.1:8000` (fallback minimal si la SPA n'est pas build)
+
+### Option B — Dev via VS Code
+
+Lance la tâche : `dev: fullstack` (dans “Run Task…”).
+
+### Option C — Dev via Docker
+
+```bash
+docker compose up --build
+```
+
+Puis ouvre `http://127.0.0.1:5173`.
+
+---
+
+## Mode 7 : Docker (Prod) 🐳
+
+Le mode prod build automatiquement la SPA (`webapp/dist`) dans l'image et le backend sert le frontend.
+
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Ouvre ensuite `http://127.0.0.1:8000/`.
+
+---
+
 ## ⚡ Quick Tips
 
 1. **Juste appuyez sur Enter** : Les défauts sont optimaux
