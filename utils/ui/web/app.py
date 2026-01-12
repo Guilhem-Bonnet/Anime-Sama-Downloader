@@ -202,6 +202,10 @@ refreshJobs();
         base = resolve_anime_sama_base_url(query, provider="anilist")
         return {"base_url": base}
 
+    @app.get("/api/health")
+    def api_health() -> dict[str, Any]:
+        return {"status": "ok"}
+
     @app.post("/api/seasons")
     def api_seasons(payload: dict[str, Any]) -> dict[str, Any]:
         base_url = str(payload.get("base_url") or "").strip().rstrip("/")
@@ -336,8 +340,17 @@ refreshJobs();
     @app.post("/api/enqueue")
     def api_enqueue(payload: dict[str, Any]) -> dict[str, Any]:
         base_url = str(payload.get("base_url") or "").strip().rstrip("/")
-        lang = str(payload.get("lang") or "vostfr")
-        season_default = int(payload.get("season") or 1)
+        lang = str(payload.get("lang") or "vostfr").strip().lower()
+        if lang not in {"vostfr", "vf", "vo"}:
+            raise HTTPException(400, "lang must be one of: vostfr, vf, vo")
+
+        try:
+            season_default = int(payload.get("season") or 1)
+        except Exception:
+            raise HTTPException(400, "season must be an integer")
+
+        if season_default <= 0:
+            raise HTTPException(400, "season must be >= 1")
         selection = str(payload.get("selection") or "").strip()
         dest_root = str(payload.get("dest_root") or "").strip()
 
