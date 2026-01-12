@@ -16,7 +16,6 @@ env/
 videos/
 *.mp4
 *.mkv
-*.ts
 *.part
 
 # Local user folder accidentally committed
@@ -26,3 +25,7 @@ videos/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Webapp build artefacts
+webapp/tsconfig.tsbuildinfo
+webapp/dist/

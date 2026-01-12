@@ -13,7 +13,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from utils.download_manager import DownloadJob, DownloadManager
-from utils.config import get_max_concurrent_downloads
+from utils.config import get_default_download_path, get_max_concurrent_downloads
 from utils.fetch import fetch_episodes, fetch_video_source, rank_players
 from utils.output_paths import build_episode_output_path
 from utils.search import resolve_anime_sama_base_url
@@ -205,6 +205,42 @@ refreshJobs();
     @app.get("/api/health")
     def api_health() -> dict[str, Any]:
         return {"status": "ok"}
+
+    @app.get("/api/defaults")
+    def api_defaults() -> dict[str, Any]:
+        return {
+            "download_root": get_default_download_path(),
+            "max_concurrent_downloads": get_max_concurrent_downloads(default=10),
+        }
+
+    @app.post("/api/season_info")
+    def api_season_info(payload: dict[str, Any]) -> dict[str, Any]:
+        base_url = str(payload.get("base_url") or "").strip().rstrip("/")
+        lang = str(payload.get("lang") or "vostfr").strip().lower()
+        try:
+            season = int(payload.get("season") or 1)
+        except Exception:
+            raise HTTPException(400, "season must be an integer")
+
+        if not base_url:
+            raise HTTPException(400, "base_url required")
+        if lang not in {"vostfr", "vf", "vo"}:
+            raise HTTPException(400, "lang must be one of: vostfr, vf, vo")
+        if season <= 0:
+            raise HTTPException(400, "season must be >= 1")
+
+        full_url = f"{base_url}/saison{season}/{lang}/"
+        eps = fetch_episodes(full_url, quiet=True)
+        if not eps:
+            return {"season": season, "max_episodes": 0, "available": []}
+
+        max_eps = max((len(v) for v in eps.values() if v), default=0)
+        available: list[int] = []
+        for n in range(1, max_eps + 1):
+            idx0 = n - 1
+            if any(((idx0 < len(urls)) and bool(urls[idx0])) for urls in eps.values() if urls):
+                available.append(n)
+        return {"season": season, "max_episodes": max_eps, "available": available}
 
     @app.post("/api/seasons")
     def api_seasons(payload: dict[str, Any]) -> dict[str, Any]:

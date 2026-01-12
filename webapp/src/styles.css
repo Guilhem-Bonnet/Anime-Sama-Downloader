@@ -41,4 +41,9 @@ body{
 .log{height:320px; overflow:auto; background: rgba(0,0,0,.35); border:1px solid var(--border); border-radius:12px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:12px}
 .logline{white-space:pre-wrap; margin:0 0 6px 0}
 .small{font-size:12px}
+.epgrid{display:grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap:8px; margin-top:8px}
+.ep{display:flex; align-items:center; gap:6px; padding:8px 10px; border:1px solid var(--border); border-radius:12px; background: rgba(0,0,0,.18); user-select:none}
+.ep.off{opacity:.45}
+.ep input{accent-color: var(--accent)}
 @media (max-width: 980px){.grid{grid-template-columns:1fr}}
+@media (max-width: 620px){.epgrid{grid-template-columns: repeat(4, minmax(0, 1fr));}}

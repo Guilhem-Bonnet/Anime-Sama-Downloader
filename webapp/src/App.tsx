@@ -4,10 +4,12 @@ import {
   apiCancelJob,
   apiClearFinished,
   apiClearPending,
+  apiDefaults,
   apiEnqueue,
   apiJobs,
   apiRetryJob,
   apiSearch,
+  apiSeasonInfo,
   apiSeasons,
   type JobItem,
   type JobsSnapshot,
@@ -59,11 +61,15 @@ export function App() {
   const [seasons, setSeasons] = useState<number[]>([]);
   const [season, setSeason] = useState<number>(1);
 
-  const [selectionMode, setSelectionMode] = useState<'simple' | 'advanced'>('simple');
+  const [selectionMode, setSelectionMode] = useState<'simple' | 'checkboxes' | 'advanced'>('simple');
   const [selAll, setSelAll] = useState(true);
   const [selFrom, setSelFrom] = useState(1);
   const [selTo, setSelTo] = useState(1);
   const [advancedSel, setAdvancedSel] = useState('ALL');
+
+  const [maxEpisodes, setMaxEpisodes] = useState<number>(0);
+  const [availableEpisodes, setAvailableEpisodes] = useState<number[]>([]);
+  const [selectedEpisodes, setSelectedEpisodes] = useState<number[]>([]);
 
   const [destRoot, setDestRoot] = useState('');
 
@@ -74,13 +80,41 @@ export function App() {
   const [logLines, setLogLines] = useState<string[]>([]);
   const logRef = useRef<HTMLDivElement | null>(null);
 
+  function encodeEpisodeSpecFromList(list: number[], max?: number, available?: number[]) {
+    const uniq = Array.from(new Set(list.filter((n) => Number.isFinite(n) && n > 0))).sort((a, b) => a - b);
+    if (!uniq.length) return 'ALL';
+
+    if (max && available && available.length) {
+      const availSet = new Set(available);
+      const allAvail = available.every((n) => uniq.includes(n)) && uniq.every((n) => availSet.has(n));
+      if (allAvail) return 'ALL';
+    }
+
+    const parts: string[] = [];
+    let i = 0;
+    while (i < uniq.length) {
+      const start = uniq[i];
+      let end = start;
+      while (i + 1 < uniq.length && uniq[i + 1] === end + 1) {
+        i++;
+        end = uniq[i];
+      }
+      parts.push(start === end ? String(start) : `${start}-${end}`);
+      i++;
+    }
+    return parts.join(',');
+  }
+
   const selectionText = useMemo(() => {
     if (selectionMode === 'advanced') return advancedSel.trim() || 'ALL';
+    if (selectionMode === 'checkboxes') {
+      return encodeEpisodeSpecFromList(selectedEpisodes, maxEpisodes, availableEpisodes);
+    }
     if (selAll) return 'ALL';
     const a = Math.max(1, selFrom);
     const b = Math.max(1, selTo);
     return a === b ? String(a) : `${Math.min(a, b)}-${Math.max(a, b)}`;
-  }, [selectionMode, advancedSel, selAll, selFrom, selTo]);
+  }, [selectionMode, advancedSel, selAll, selFrom, selTo, selectedEpisodes, maxEpisodes, availableEpisodes]);
 
   async function refreshJobs() {
     const snap = await apiJobs();
@@ -89,6 +123,13 @@ export function App() {
 
   useEffect(() => {
     refreshJobs().catch(() => void 0);
+
+    // Defaults (download root, etc.)
+    apiDefaults()
+      .then((d) => {
+        if (!destRoot.trim()) setDestRoot(d.download_root || '');
+      })
+      .catch(() => void 0);
 
     const es = new EventSource('/api/events');
     es.onmessage = (ev) => {
@@ -137,6 +178,27 @@ export function App() {
       es.close();
     };
   }, []);
+
+  useEffect(() => {
+    if (!baseUrl) return;
+    apiSeasonInfo(baseUrl, lang, season)
+      .then((info) => {
+        const max = Number(info.max_episodes || 0);
+        const avail = (info.available || []).map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0);
+        setMaxEpisodes(max);
+        setAvailableEpisodes(avail);
+
+        // Default selection = all available in checkbox mode.
+        setSelectedEpisodes((prev) => {
+          if (selectionMode !== 'checkboxes') return prev;
+          return avail.slice();
+        });
+      })
+      .catch(() => {
+        setMaxEpisodes(0);
+        setAvailableEpisodes([]);
+      });
+  }, [baseUrl, lang, season]);
 
   useEffect(() => {
     // auto scroll logs
@@ -230,6 +292,7 @@ export function App() {
             <div className="row" style={{ flex: 1 }}>
               <select className="select" value={selectionMode} onChange={(e) => setSelectionMode(e.target.value as any)}>
                 <option value="simple">Sélection simple</option>
+                <option value="checkboxes">Sélection par épisodes</option>
                 <option value="advanced">Sélection avancée</option>
               </select>
 
@@ -248,7 +311,61 @@ export function App() {
                   ) : null}
                 </>
               ) : (
-                <input className="input" value={advancedSel} onChange={(e) => setAdvancedSel(e.target.value)} placeholder="ALL | 1-6 | S1E1-6 | ALLSEASONS" />
+                selectionMode === 'checkboxes' ? (
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <div className="row" style={{ justifyContent: 'space-between' }}>
+                      <div className="muted small">
+                        Dispo: {availableEpisodes.length ? `${availableEpisodes.length}/${maxEpisodes || '—'}` : '—'}
+                      </div>
+                      <div className="row">
+                        <button
+                          className="btn"
+                          type="button"
+                          onClick={() => setSelectedEpisodes(availableEpisodes.slice())}
+                          disabled={!availableEpisodes.length}
+                        >
+                          Tout
+                        </button>
+                        <button className="btn" type="button" onClick={() => setSelectedEpisodes([])} disabled={!availableEpisodes.length}>
+                          Aucun
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="epgrid">
+                      {Array.from({ length: Math.max(0, maxEpisodes || 0) }).slice(0, 400).map((_, i) => {
+                        const ep = i + 1;
+                        const isAvailable = availableEpisodes.includes(ep);
+                        const checked = selectedEpisodes.includes(ep);
+                        return (
+                          <label key={ep} className={`ep ${isAvailable ? '' : 'off'}`}>
+                            <input
+                              type="checkbox"
+                              disabled={!isAvailable}
+                              checked={checked}
+                              onChange={(e) => {
+                                const on = e.target.checked;
+                                setSelectedEpisodes((prev) => {
+                                  const set = new Set(prev);
+                                  if (on) set.add(ep);
+                                  else set.delete(ep);
+                                  return Array.from(set).sort((a, b) => a - b);
+                                });
+                              }}
+                            />
+                            <span>EP {ep}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    <div className="muted small" style={{ marginTop: 6 }}>
+                      Envoi: <span className="badge">{selectionText}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <input className="input" value={advancedSel} onChange={(e) => setAdvancedSel(e.target.value)} placeholder="ALL | 1-6 | S1E1-6 | ALLSEASONS" />
+                )
               )}
             </div>
           </div>

@@ -57,6 +57,13 @@
       "args": ["compose", "-f", "docker-compose.prod.yml", "up", "--build"],
       "isBackground": true,
       "problemMatcher": []
+    },
+    {
+      "label": "smoke: py",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/smoke.sh",
+      "args": ["py"],
+      "problemMatcher": []
     }
   ]
 }
