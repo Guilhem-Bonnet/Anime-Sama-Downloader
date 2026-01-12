@@ -1,11 +1,166 @@
-"""Configuration management for favorite paths and settings."""
+"""Configuration management for favorite paths and settings.
 
+This project historically used a JSON file in the user's home directory.
+We keep that for backward compatibility (favorites/last used path) and add
+optional INI-based configuration for global settings (download root, site URL
+override, etc.).
+"""
+
+import configparser
 import json
 import os
 import shutil
 from pathlib import Path
 
 CONFIG_FILE = os.path.expanduser("~/.anime-sama-downloader.json")
+
+
+def _first_existing(paths: list[str]) -> str | None:
+    for p in paths:
+        if p and os.path.exists(p):
+            return p
+    return None
+
+
+def find_config_ini(explicit_path: str | None = None) -> str | None:
+    """Find an INI config file.
+
+    Precedence:
+    - explicit_path (if provided)
+    - env ASD_CONFIG
+    - ./config.ini (repo/local)
+    - ~/.config/anime-sama-downloader/config.ini
+    - ~/.anime-sama-downloader.ini
+    """
+    env_path = os.environ.get("ASD_CONFIG")
+    home = os.path.expanduser("~")
+    return _first_existing(
+        [
+            explicit_path,
+            env_path,
+            os.path.abspath("config.ini"),
+            os.path.join(home, ".config", "anime-sama-downloader", "config.ini"),
+            os.path.join(home, ".anime-sama-downloader.ini"),
+        ]
+    )
+
+
+def load_ini_config(explicit_path: str | None = None) -> configparser.ConfigParser:
+    cfg = configparser.ConfigParser()
+    cfg.read_dict({"DEFAULT": {}})
+    path = find_config_ini(explicit_path)
+    if not path:
+        return cfg
+    try:
+        cfg.read(path, encoding="utf-8")
+    except Exception:
+        # Never crash on config read errors.
+        return configparser.ConfigParser()
+    return cfg
+
+
+def _ini_get(
+    cfg: configparser.ConfigParser,
+    section: str,
+    key: str,
+    default: str | None = None,
+) -> str | None:
+    try:
+        if cfg.has_option(section, key):
+            v = cfg.get(section, key)
+            return v
+        if cfg.has_option("DEFAULT", key):
+            return cfg.get("DEFAULT", key)
+    except Exception:
+        return default
+    return default
+
+
+def _env_get(key: str) -> str | None:
+    v = os.environ.get(key)
+    if v is None:
+        return None
+    v = str(v).strip()
+    return v or None
+
+
+def get_site_base_url_override(config_path: str | None = None) -> str | None:
+    """Override Anime-Sama base URL if DNS/domain changes.
+
+    Supported:
+    - env ASD_SITE_BASE_URL (e.g. https://anime-sama.si)
+    - env ASD_SITE_DOMAIN (e.g. anime-sama.si)
+    - INI [SITE] base_url or domain
+    """
+    base = _env_get("ASD_SITE_BASE_URL")
+    if base:
+        return base.rstrip("/")
+
+    domain = _env_get("ASD_SITE_DOMAIN")
+    if domain:
+        domain = domain.replace("https://", "").replace("http://", "").strip("/")
+        return f"https://{domain}" if domain else None
+
+    ini = load_ini_config(config_path)
+    base = _ini_get(ini, "SITE", "base_url")
+    if base:
+        return str(base).strip().rstrip("/")
+
+    domain = _ini_get(ini, "SITE", "domain")
+    if domain:
+        domain = str(domain).replace("https://", "").replace("http://", "").strip().strip("/")
+        return f"https://{domain}" if domain else None
+
+    return None
+
+
+def get_max_concurrent_downloads(config_path: str | None = None, default: int = 3) -> int:
+    """Max téléchargements en parallèle (1-10)."""
+    env_v = _env_get("ASD_MAX_CONCURRENT_DOWNLOADS")
+    if env_v is not None:
+        try:
+            v = int(env_v)
+            return max(1, min(v, 10))
+        except ValueError:
+            pass
+
+    ini = load_ini_config(config_path)
+    ini_v = _ini_get(ini, "DEFAULT", "max_concurrent_downloads")
+    if ini_v is not None:
+        try:
+            v = int(str(ini_v).strip())
+            return max(1, min(v, 10))
+        except ValueError:
+            pass
+
+    try:
+        return max(1, min(int(default), 10))
+    except Exception:
+        return 3
+
+
+def get_web_bind(config_path: str | None = None) -> tuple[str, int]:
+    """Retourne (host, port) pour l'UI web."""
+    host = _env_get("ASD_WEB_HOST")
+    port_s = _env_get("ASD_WEB_PORT")
+
+    ini = load_ini_config(config_path)
+    if not host:
+        host = _ini_get(ini, "WEB", "host")
+    if not port_s:
+        port_s = _ini_get(ini, "WEB", "port")
+
+    if not host:
+        host = "127.0.0.1"
+
+    port = 8000
+    if port_s:
+        try:
+            port = int(str(port_s).strip())
+        except ValueError:
+            port = 8000
+
+    return (str(host).strip() or "127.0.0.1", port)
 
 
 def _config_get(config: dict, *path: str, default=None):
@@ -185,6 +340,15 @@ def set_last_used_path(path):
 
 def get_default_download_path():
     """Get the default download path with smart defaults."""
+    # INI/env override (new)
+    ini_root = _env_get("ASD_DOWNLOAD_ROOT")
+    if not ini_root:
+        ini_cfg = load_ini_config()
+        ini_root = _ini_get(ini_cfg, "DEFAULT", "save_directory")
+    if isinstance(ini_root, str) and ini_root.strip():
+        expanded = os.path.abspath(os.path.expanduser(ini_root.strip()))
+        return expanded
+
     # Explicit user preference
     preferred = get_preferred_download_root()
     if preferred and os.path.exists(preferred):

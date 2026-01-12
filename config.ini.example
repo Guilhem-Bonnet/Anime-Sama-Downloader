@@ -14,6 +14,19 @@ auto_convert_mp4 = false
 # Conversion tool (ffmpeg or moviepy)
 conversion_tool = ffmpeg
 
+[SITE]
+# Override Anime-Sama base URL if the domain changes.
+# Examples:
+# base_url = https://anime-sama.si
+# domain = anime-sama.si
+base_url = https://anime-sama.si
+
+[WEB]
+# Host/port used by the web UI (`python main.py --ui web`).
+# In Docker, you generally want host = 0.0.0.0
+host = 127.0.0.1
+port = 8000
+
 [NETWORK]
 # Request timeout in seconds
 timeout = 15

@@ -12,6 +12,7 @@ from textual.widgets import Button, Footer, Header, Input, Label, RichLog, Selec
 
 from utils.config import (
     get_default_download_path,
+    get_max_concurrent_downloads,
     get_preferred_download_root,
     set_last_used_path,
     set_preferred_download_root,
@@ -20,6 +21,7 @@ from utils.downloaders.downloader import download_video
 from utils.fetch import fetch_episodes, fetch_video_source, rank_players
 from utils.search import resolve_anime_sama_base_url
 from utils.download_manager import DownloadJob, DownloadManager
+from utils.output_paths import build_episode_output_path
 from utils.selection import parse_episode_expr, parse_tracker_selection
 
 
@@ -165,8 +167,11 @@ class AnimeSamaTUI(App):
             except Exception:
                 pass
 
-        # 10 max demandé.
-        self._dl_manager = DownloadManager(max_parallel=10, on_event=_on_event, executor_name="tui-dl")
+        self._dl_manager = DownloadManager(
+            max_parallel=get_max_concurrent_downloads(default=10),
+            on_event=_on_event,
+            executor_name="tui-dl",
+        )
 
     def _append_queue_log(self, msg: str) -> None:
         try:
@@ -365,14 +370,8 @@ class AnimeSamaTUI(App):
         ranked = rank_players(episodes) or list(episodes.keys())
 
         slug = self._anime_slug() or "anime"
-        dest_dir = os.path.join(
-            os.path.abspath(os.path.expanduser(dest_root)),
-            slug,
-            f"S{season}",
-            lang,
-        )
+        dest_dir, save_path = build_episode_output_path(dest_root, slug, season, lang, ep_num, ext="mp4")
         os.makedirs(dest_dir, exist_ok=True)
-        save_path = os.path.join(dest_dir, f"episode_{ep_num}.mp4")
 
         # Avec 10 jobs en parallèle, on réduit la fan-out interne par job.
         ts_workers = 2

@@ -13,7 +13,9 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from utils.download_manager import DownloadJob, DownloadManager
+from utils.config import get_max_concurrent_downloads
 from utils.fetch import fetch_episodes, fetch_video_source, rank_players
+from utils.output_paths import build_episode_output_path
 from utils.search import resolve_anime_sama_base_url
 from utils.selection import parse_episode_expr, parse_tracker_selection
 from utils.downloaders.downloader import download_video
@@ -41,7 +43,7 @@ def create_app() -> FastAPI:
                     pass
 
     mgr = DownloadManager(
-        max_parallel=10,
+        max_parallel=get_max_concurrent_downloads(default=10),
         executor_name="web-dl",
         on_event=lambda job, evt: publish({
             "type": "job",
@@ -246,10 +248,9 @@ refreshJobs();
         ranked = rank_players(episodes) or list(episodes.keys())
         slug = base_catalogue_url.rstrip("/").split("/")[-1] or "anime"
 
-        dest_root = (dest_root or "./videos").strip()
-        dest_dir = os.path.join(os.path.abspath(os.path.expanduser(dest_root)), slug, f"S{season}", lang)
+        dest_root = (dest_root or "").strip()
+        dest_dir, save_path = build_episode_output_path(dest_root, slug, season, lang, ep_num, ext="mp4")
         os.makedirs(dest_dir, exist_ok=True)
-        save_path = os.path.join(dest_dir, f"episode_{ep_num}.mp4")
 
         # With 10 jobs parallel, keep per-job fanout low.
         ts_workers = 2
@@ -507,6 +508,15 @@ refreshJobs();
 def run_web(host: str = "127.0.0.1", port: int = 8000) -> int:
     # Lazy import so core can be used without uvicorn.
     import uvicorn
+
+    try:
+        from utils.config import get_web_bind
+
+        cfg_host, cfg_port = get_web_bind()
+        host = cfg_host or host
+        port = int(cfg_port or port)
+    except Exception:
+        pass
 
     uvicorn.run(create_app(), host=host, port=port, log_level="info")
     return 0

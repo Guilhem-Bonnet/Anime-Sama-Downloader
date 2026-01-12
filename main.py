@@ -11,6 +11,8 @@ import argparse
 import threading
 from utils.var import Colors, print_status, print_separator, print_header, print_tutorial
 from utils.download_manager import DownloadJob, DownloadManager
+from utils.config import get_default_download_path, get_max_concurrent_downloads, get_site_base_url_override
+from utils.output_paths import build_episode_output_path
 
 # PLEASE DO NOT REMOVE: Original code from https://github.com/sertrafurr/Anime-Sama-Downloader
 
@@ -36,13 +38,14 @@ Examples:
     )
     
     parser.add_argument('-s', '--search', type=str, action='append', help='Search anime by name (repeatable)')
+    parser.add_argument('--config', type=str, default=None, help='Chemin vers un config.ini (sinon auto-detect)')
     parser.add_argument('--search-provider', type=str, choices=['anilist', 'local'], default='anilist', help='Search provider for --search (default: anilist)')
     parser.add_argument('--season', type=int, help='Season number when using --search (default: 1)', default=1)
     parser.add_argument('--lang', type=str, choices=['vostfr', 'vf', 'vo'], help='Language when using --search (default: vostfr)', default='vostfr')
     parser.add_argument('-u', '--url', type=str, action='append', help='Anime-Sama URL (repeatable)')
     parser.add_argument('-e', '--episodes', type=str, help='Episodes to download (e.g., "1-5", "3,5,7", "all")')
     parser.add_argument('-p', '--player', type=int, help='Player number to use (e.g., 1, 2, 3). If omitted, auto-select best player.', default=None)
-    parser.add_argument('-d', '--directory', type=str, help='Save directory (default: ./videos)', default='./videos')
+    parser.add_argument('-d', '--directory', type=str, help='Dossier racine de sortie (défaut: config.ini ou smart default)', default=None)
     parser.add_argument('-t', '--threaded', action='store_true', help='Use threaded downloads (faster)')
     parser.add_argument('--ts-threaded', action='store_true', help='Use threaded .ts segment downloads (much faster for M3U8)')
     parser.add_argument('--mp4-threaded', action='store_true', help='Use multi-part Range downloads for MP4 when supported (can be faster)')
@@ -51,7 +54,7 @@ Examples:
     parser.add_argument('--moviepy', action='store_true', help='Use moviepy for conversion (slower but lighter)')
     parser.add_argument('--no-tutorial', action='store_true', help='Skip tutorial prompt')
     parser.add_argument('--quick', action='store_true', help='Quick mode: use smart defaults, minimal prompts')
-    parser.add_argument('-j', '--jobs', type=int, default=1, help='Max téléchargements en parallèle (1-10). Recommandé: 10')
+    parser.add_argument('-j', '--jobs', type=int, default=None, help='Max téléchargements en parallèle (1-10). Défaut: config.ini')
     parser.add_argument('-y', '--yes', action='store_true', help='Ne pas demander de confirmation (utile pour --search)')
     parser.add_argument('--tui', action='store_true', help='Launch modern terminal UI (Textual). CLI remains default.')
     parser.add_argument('--ui', type=str, default=None, help='Launch a UI plugin by name (e.g. "textual"). Overrides --tui.')
@@ -191,7 +194,7 @@ def get_save_directory():
     print(f"\n{Colors.BOLD}{Colors.HEADER}📁 SAVE LOCATION{Colors.ENDC}")
     print_separator()
     
-    default_dir = "./videos"
+    default_dir = get_default_download_path()
     save_dir = input(f"{Colors.OKCYAN}Enter directory to save videos (default: {default_dir}): {Colors.ENDC}").strip()
     
     if not save_dir:
@@ -213,17 +216,32 @@ def get_save_directory():
         return default_dir
 
 def validate_anime_sama_url(url):
-    pattern = re.compile(
-        r'^https://anime-sama\.(?:tv|fr|org|si)/catalogue/[^/]+/saison\d+/(?:vostfr|vf|vo)/?$', re.IGNORECASE
-    )
-    if pattern.match(url):
-        return True, ""
-    else:
+    from urllib.parse import urlparse
+
+    parsed = urlparse(url or "")
+    if parsed.scheme not in {"http", "https"}:
+        return False, "URL invalide (http/https requis)."
+
+    # Allow default anime-sama.* domains + optional override from config/env.
+    override = get_site_base_url_override() or ""
+    override_netloc = urlparse(override).netloc if override else ""
+    allowed = {"anime-sama.tv", "anime-sama.fr", "anime-sama.org", "anime-sama.si"}
+    if override_netloc:
+        allowed.add(override_netloc)
+
+    if (parsed.netloc or "").lower() not in {d.lower() for d in allowed}:
         return False, (
-            "Invalid URL. Format should be:\n"
-            "  https://anime-sama.si/catalogue/<anime-name>/saison<NUMBER>/<language>/\n"
-            "Where <language> is VOSTFR, VF, VO, etc. Domains .si/.tv/.org/.fr are accepted."
+            "Domaine non autorisé. Configure [SITE] base_url/domain dans config.ini si le domaine a changé."
         )
+
+    path_ok = re.match(r"^/catalogue/[^/]+/saison\d+/(?:vostfr|vf|vo)/?$", parsed.path or "", re.IGNORECASE)
+    if not path_ok:
+        return False, (
+            "URL invalide. Format attendu:\n"
+            "  https://<domaine>/catalogue/<anime-name>/saison<NUMBER>/<language>/\n"
+            "Où <language> ∈ {vostfr, vf, vo}."
+        )
+    return True, ""
 
 
 def download_episode(
@@ -245,7 +263,21 @@ def download_episode(
     print_status(f"Processing episode: {episode_num}", "info")
     print_status(f"Source: {url[:60]}...", "info")
     
-    save_path = os.path.join(save_dir, f"{anime_name}_episode_{episode_num}.mp4")
+    # New naming/layout: <root>/<anime>/Saison <n>/<lang>/<anime>-S<n>E<ep>.mp4
+    season = 1
+    lang = "vostfr"
+    m = re.search(r"/saison(?P<s>\d+)/(?:vostfr|vf|vo)/", url or "")
+    if m:
+        try:
+            season = int(m.group("s"))
+        except Exception:
+            season = 1
+    m2 = re.search(r"/saison\d+/(?P<lang>vostfr|vf|vo)/", url or "", re.IGNORECASE)
+    if m2:
+        lang = str(m2.group("lang")).lower()
+
+    dest_dir, save_path = build_episode_output_path(save_dir, anime_name, season, lang, episode_num, ext="mp4")
+    os.makedirs(dest_dir, exist_ok=True)
     
     print(f"\n{Colors.BOLD}{Colors.HEADER}⬇️ DOWNLOADING EPISODE {episode_num}{Colors.ENDC}")
     print_separator()
@@ -552,6 +584,10 @@ def run_batch_download(args, urls: list[str], searches: list[str]) -> int:
 def main():
     args = parse_arguments()
 
+    # If user passed --config, expose it to config loader via env.
+    if getattr(args, "config", None):
+        os.environ["ASD_CONFIG"] = str(args.config)
+
     # Optional UI plugin (keeps CLI as default behavior)
     ui_name = (getattr(args, 'ui', None) or '').strip()
     if ui_name or getattr(args, 'tui', False):
@@ -567,7 +603,7 @@ def main():
     
     urls = _ensure_list(getattr(args, 'url', None))
     searches = _ensure_list(getattr(args, 'search', None))
-    jobs = _clamp_jobs(getattr(args, 'jobs', 1))
+    jobs = _clamp_jobs(getattr(args, 'jobs', None) or get_max_concurrent_downloads(default=1))
 
     # Batch mode: multiple animes or explicit parallel jobs
     if (len(urls) + len(searches) > 1) or (jobs > 1):
@@ -575,6 +611,10 @@ def main():
 
     # Check if running in CLI mode or interactive mode
     cli_mode = bool(urls) or bool(searches)
+
+    # Resolve default output root from config if user didn't pass --directory.
+    if not getattr(args, "directory", None):
+        args.directory = get_default_download_path()
 
     try:
         # Print header (skip in quick mode for cleaner output)

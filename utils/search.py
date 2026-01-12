@@ -10,11 +10,11 @@ from difflib import SequenceMatcher
 from bs4 import BeautifulSoup
 from utils.var import print_status, Colors
 from utils.http_pool import cached_get
-from utils.config import load_config, save_config
+from utils.config import get_site_base_url_override, load_config, save_config
 from utils.anime_db import anilist_search_titles
 
 
-SITE_BASE_URL = "https://anime-sama.si"
+SITE_BASE_URL = get_site_base_url_override() or "https://anime-sama.si"
 
 
 def canonicalize_site_url(url: str) -> str:
