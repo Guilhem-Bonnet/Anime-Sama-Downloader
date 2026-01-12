@@ -319,14 +319,14 @@ export function App() {
                       </div>
                       <div className="row">
                         <button
-                          className="btn"
+                          className="btn sm"
                           type="button"
                           onClick={() => setSelectedEpisodes(availableEpisodes.slice())}
                           disabled={!availableEpisodes.length}
                         >
-                          Tout
+                          Tout dispo
                         </button>
-                        <button className="btn" type="button" onClick={() => setSelectedEpisodes([])} disabled={!availableEpisodes.length}>
+                        <button className="btn sm" type="button" onClick={() => setSelectedEpisodes([])} disabled={!availableEpisodes.length}>
                           Aucun
                         </button>
                       </div>
