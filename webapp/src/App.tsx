@@ -70,6 +70,8 @@ export function App() {
   const [maxEpisodes, setMaxEpisodes] = useState<number>(0);
   const [availableEpisodes, setAvailableEpisodes] = useState<number[]>([]);
   const [selectedEpisodes, setSelectedEpisodes] = useState<number[]>([]);
+  const [rangeFrom, setRangeFrom] = useState<number>(1);
+  const [rangeTo, setRangeTo] = useState<number>(12);
 
   const [destRoot, setDestRoot] = useState('');
 
@@ -103,6 +105,17 @@ export function App() {
       i++;
     }
     return parts.join(',');
+  }
+
+  function buildRangeList(a: number, b: number, available: number[]) {
+    const start = Math.max(1, Math.min(a, b));
+    const end = Math.max(1, Math.max(a, b));
+    const avail = new Set(available);
+    const out: number[] = [];
+    for (let n = start; n <= end; n++) {
+      if (avail.has(n)) out.push(n);
+    }
+    return out;
   }
 
   const selectionText = useMemo(() => {
@@ -330,6 +343,61 @@ export function App() {
                           Aucun
                         </button>
                       </div>
+                    </div>
+
+                    <div className="row" style={{ marginTop: 8 }}>
+                      <span className="muted small">Range:</span>
+                      <input
+                        className="input"
+                        style={{ maxWidth: 110, minWidth: 90 }}
+                        value={rangeFrom}
+                        onChange={(e) => setRangeFrom(Number(e.target.value || '1'))}
+                        type="number"
+                        min={1}
+                      />
+                      <span className="muted small">→</span>
+                      <input
+                        className="input"
+                        style={{ maxWidth: 110, minWidth: 90 }}
+                        value={rangeTo}
+                        onChange={(e) => setRangeTo(Number(e.target.value || '1'))}
+                        type="number"
+                        min={1}
+                      />
+                      <button
+                        className="btn sm"
+                        type="button"
+                        disabled={!availableEpisodes.length}
+                        onClick={() => {
+                          const list = buildRangeList(rangeFrom, rangeTo, availableEpisodes);
+                          setSelectedEpisodes(list);
+                        }}
+                      >
+                        Remplacer
+                      </button>
+                      <button
+                        className="btn sm"
+                        type="button"
+                        disabled={!availableEpisodes.length}
+                        onClick={() => {
+                          const list = buildRangeList(rangeFrom, rangeTo, availableEpisodes);
+                          setSelectedEpisodes((prev) => Array.from(new Set([...prev, ...list])).sort((a, b) => a - b));
+                        }}
+                      >
+                        Ajouter
+                      </button>
+                      <button
+                        className="btn sm"
+                        type="button"
+                        disabled={!availableEpisodes.length}
+                        onClick={() => {
+                          const list = buildRangeList(rangeFrom, rangeTo, availableEpisodes);
+                          const toRemove = new Set(list);
+                          setSelectedEpisodes((prev) => prev.filter((n) => !toRemove.has(n)));
+                        }}
+                      >
+                        Retirer
+                      </button>
                     </div>
 
                     <div className="epgrid">
