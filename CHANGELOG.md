@@ -17,9 +17,19 @@
 - Annulation: Ctrl+C en CLI, “Annuler tout” / “Vider file” en TUI
 - Annulation coopérative + nettoyage des fichiers partiels
 
+### 🌐 Interface Web (FastAPI + SPA)
+- Backend FastAPI + événements (SSE) + SPA React (dev/prod)
+- Endpoints utilitaires: `/api/defaults` (valeurs par défaut + infos Docker), `/api/season_info`
+
+### 🐳 Docker (sortie fiable + garde-fous)
+- En conteneur, la sortie est fixée à `/data/videos` (montée sur l’hôte)
+- Variable `.env` côté hôte via `ASD_HOST_DOWNLOAD_ROOT` (exemple fourni dans `.env.example`)
+- Garde-fous backend via `ASD_ALLOWED_DEST_PREFIXES` pour éviter d’écrire hors du volume
+- En interface Web sous Docker: destination **sous-dossier** uniquement (pas de chemin absolu hôte)
+
 ---
 
-## v2.5 (Optimized)
+## v2.5 (Optimisée)
 
 ## 🚀 Nouvelles Fonctionnalités
 
@@ -33,7 +43,7 @@ Vous pouvez maintenant utiliser le script avec des arguments en ligne de command
 python main.py
 
 # Télécharger des épisodes spécifiques avec URL
-python main.py -u "https://anime-sama.tv/catalogue/sword-art-online/saison1/vostfr/" -e 1-5
+python main.py -u "https://anime-sama.si/catalogue/sword-art-online/saison1/vostfr/" -e 1-5
 
 # Télécharger avec threading activé
 python main.py -u "URL" -e 3,5,7 -t -d ~/Downloads
@@ -47,7 +57,7 @@ python main.py -u "URL" -e 1-10 -p 2 --threaded
 
 **Arguments disponibles :**
 
-- `-u, --url` : URL anime-sama (ex: https://anime-sama.tv/catalogue/...)
+- `-u, --url` : URL anime-sama (ex: https://anime-sama.si/catalogue/...)
 - `-e, --episodes` : Épisodes à télécharger (ex: "1-5", "3,5,7", "all")
 - `-p, --player` : Numéro du player à utiliser (si omis: auto-sélection)
 - `-d, --directory` : Répertoire de sauvegarde (défaut: ./videos)
@@ -57,7 +67,7 @@ python main.py -u "URL" -e 1-10 -p 2 --threaded
 - `--ffmpeg` : Utiliser ffmpeg pour la conversion (plus rapide, défaut)
 - `--moviepy` : Utiliser moviepy pour la conversion (plus lent mais plus léger)
 - `--no-tutorial` : Ignorer l'invite du tutoriel
-- `--search-provider` : Provider pour `--search` (anilist/local)
+- `--search-provider` : fournisseur pour `--search` (anilist/local)
 - `--tui` : Lancer la TUI (Textual)
 - `--version` : Afficher la version
 
@@ -137,7 +147,7 @@ python main.py -u "URL_ANIME" -e all -d ~/Animes/SwordArtOnline --threaded
 ## 🚧 Prochaines Améliorations Prévues
 
 - [ ] Reprise des téléchargements interrompus
-- [ ] Fichier de configuration (config.json/yaml)
+- [ ] Améliorer/compléter la configuration (actuellement: `config.ini` + variables d'environnement)
 - [ ] Progress bar global pour les téléchargements multiples
 - [ ] Export/import de listes d'épisodes
 - [ ] Notification de fin de téléchargement
@@ -155,7 +165,7 @@ python main.py -u "URL_ANIME" -e all -d ~/Animes/SwordArtOnline --threaded
 
 1. Tester le mode CLI :
    ```bash
-   python main.py -u "https://anime-sama.tv/catalogue/roshidere/saison1/vostfr/" -e 1 --no-tutorial
+   python main.py -u "https://anime-sama.si/catalogue/roshidere/saison1/vostfr/" -e 1 --no-tutorial
    ```
 
 2. Tester le mode interactif (doit fonctionner comme avant) :

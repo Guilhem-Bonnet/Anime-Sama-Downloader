@@ -1,256 +1,115 @@
-# 🚀 Guide Rapide - 3 Façons d'Utiliser
+# 🚀 Quick Start (CLI / TUI / Web / Docker)
 
-## Mode 1 : Interactif Standard (Pour Débutants)
-**Le plus simple, avec aide intégrée**
+Ce guide donne les commandes “prêtes à copier-coller”. Pour le détail : [README.md](README.md).
 
-```bash
-python main.py
-```
-
-**Ce qui se passe :**
-1. Besoin d'aide ? Appuyez sur `h` (ou Enter pour passer)
-2. Entrez l'URL de l'anime
-3. Choisissez le player
-4. Sélectionnez les épisodes
-5. Questions avec défauts intelligents (juste appuyez sur Enter !)
-
-**Temps : ~1 minute d'interaction**
-
----
-
-## Mode 2 : Quick Mode (Recommandé) ⚡
-**Optimal avec minimum de questions**
-
-```bash
-python main.py --quick
-```
-
-**Ce qui se passe :**
-1. Entrez l'URL
-2. Choisissez player et épisodes
-3. **C'est tout !** Le reste est automatique avec les meilleurs réglages
-
-**Temps : ~30 secondes d'interaction**
-
-**Utilise automatiquement :**
-- ✓ Threading si plusieurs épisodes
-- ✓ Fast .ts downloads pour M3U8
-- ✓ Conversion MP4 automatique
-- ✓ ffmpeg si installé, sinon moviepy
-
----
-
-## Mode 3 : CLI Full Auto (Pour Experts) 🔥
-**Zéro interaction, scriptable**
-
-```bash
-python main.py -u "URL_ANIME" -e 1-10 -t --auto-mp4 --ts-threaded
-```
-
-**Ce qui se passe :**
-1. Rien ! Tout est spécifié en arguments
-2. Le téléchargement démarre immédiatement
-
-**Temps : 0 seconde d'interaction**
-
----
-
-## Mode 4 : UI Terminal Moderne (TUI) 🖥️
-**Interface moderne en terminal (optionnelle)**
-
-```bash
-python main.py --tui
-```
-
-**Note :** la TUI est optionnelle. La CLI reste le mode par défaut.
-
-Si tu n'as pas encore installé les dépendances :
+## 1) Installer
 
 ```bash
 python3 -m pip install -r requirements.txt
 ```
 
----
+Optionnel (recommandé) : installer `ffmpeg` pour convertir les flux `.ts` en `.mp4` plus rapidement.
 
-## Mode 5 : Queue / Batch (Plusieurs animes) 🧵
-**Plusieurs animes dans une seule commande, avec parallélisme (jusqu’à 10)**
+## 2) Télécharger (CLI)
 
-```bash
-python main.py --jobs 10 \
-  -s "one piece" -s "naruto" \
-  -u "https://anime-sama.si/catalogue/roshidere/saison1/vostfr/" \
-  -e 1-12 --mp4-threaded --yes
-```
+### Mode interactif (simple)
 
-**Notes :**
-- `--jobs 10` = 10 téléchargements en parallèle (max)
-- Ctrl+C annule tous les téléchargements en cours
-- `--yes` évite les confirmations de recherche (utile en script)
-
-## 📊 Comparaison Rapide
-
-| Mode | Questions | Temps Setup | Idéal Pour |
-|------|-----------|-------------|------------|
-| **Interactif** | 5 | ~1 min | Débutants, découverte |
-| **Quick** | 3 | ~30 sec | Utilisation quotidienne ⭐ |
-| **CLI** | 0 | 0 sec | Scripts, automation |
-
----
-
-## 💡 Exemples Concrets
-
-### Débutant - Première fois
 ```bash
 python main.py
-# Suivez les instructions, appuyez sur Enter pour les défauts
 ```
 
-### Utilisateur Régulier - Téléchargement Rapide
-```bash
-python main.py --quick
-# URL + Player + Episodes = c'est parti !
-```
+### Mode rapide (recommandé au quotidien)
 
-### Power User - Script Quotidien
-```bash
-# Télécharger les nouveaux épisodes automatiquement
-python main.py \
-  -u "https://anime-sama.tv/catalogue/one-piece/saison1/vostfr/" \
-  -e 1010-1015 \
-  -t --auto-mp4 --ts-threaded \
-  -d ~/Videos/OnePiece
-```
-
-### Batch Download - Plusieurs Animes
-```bash
-# Nouveau: batch/queue intégré (sans lancer plusieurs process)
-python main.py --jobs 10 \
-  -u "URL_ANIME1" -u "URL_ANIME2" -u "URL_ANIME3" \
-  -e 1-12 --mp4-threaded
-```
-
----
-
-## 🎯 Recommandations
-
-### Pour 90% des Utilisateurs
 ```bash
 python main.py --quick
 ```
-**Pourquoi ?** : Parfait équilibre entre simplicité et contrôle.
 
-### Pour Automatisation / Cron Jobs
-```bash
-python main.py -u "URL" -e all -t --auto-mp4 -d ~/Videos
-```
-**Pourquoi ?** : Scriptable, aucune interaction requise.
-
-### Pour Première Utilisation
-```bash
-python main.py
-# Tapez 'h' pour voir le tutoriel
-```
-**Pourquoi ?** : Guidé pas à pas avec aide intégrée.
-
----
-
-## 🔥 Alias Pratique
-
-Ajoutez à votre `~/.zshrc` ou `~/.bashrc` :
+### Recherche par nom (AniList)
 
 ```bash
-# Mode quick par défaut
-alias anime-dl="cd ~/Anime-Sama-Downloader && python main.py --quick"
-
-# Mode CLI complet
-alias anime-get="cd ~/Anime-Sama-Downloader && python main.py"
+python main.py -s "one piece" --season 1 --lang vostfr -e 1-12
 ```
 
-Utilisation :
+### URL directe
+
 ```bash
-anime-dl                    # Lance en mode quick
-anime-get -u "URL" -e 1-10  # CLI full
+python main.py -u "https://anime-sama.si/catalogue/roshidere/saison1/vostfr/" -e 1-12 -t
 ```
 
----
+### Batch / parallèle (jusqu’à 10)
 
-## 📝 Tableau des Arguments
+```bash
+python main.py --jobs 5 \
+  -s "kaiju" \
+  -s "naruto" \
+  -e 1-6 --yes
+```
 
-| Argument | Court | Description | Exemple |
-|----------|-------|-------------|---------|
-| `--url` | `-u` | URL anime-sama | `-u "https://..."` |
-| `--search` | `-s` | Recherche par nom | `-s "kaiju"` |
-| `--episodes` | `-e` | Episodes (range/liste/all) | `-e 1-5` `-e 3,5,7` `-e all` |
-| `--player` | `-p` | Numéro player | `-p 2` |
-| `--directory` | `-d` | Dossier de sauvegarde | `-d ~/Downloads` |
-| `--threaded` | `-t` | Threading épisodes | `-t` |
-| `--ts-threaded` | - | Threading .ts segments | `--ts-threaded` |
-| `--mp4-threaded` | - | Multi-part MP4 (Range) | `--mp4-threaded` |
-| `--auto-mp4` | - | Conversion auto MP4 | `--auto-mp4` |
-| `--quick` | - | Mode quick (défauts smart) | `--quick` |
-| `--jobs` | `-j` | Max jobs parallèles (1-10) | `--jobs 10` |
-| `--yes` | `-y` | Skip confirmations (batch) | `--yes` |
-| `--search-provider` | - | Provider recherche (anilist/local) | `--search-provider anilist` |
-| `--tui` | - | UI terminal moderne (Textual) | `--tui` |
-| `--ffmpeg` | - | Force ffmpeg | `--ffmpeg` |
-| `--moviepy` | - | Force moviepy | `--moviepy` |
-| `--no-tutorial` | - | Skip tutoriel | `--no-tutorial` |
-| `--help` | `-h` | Aide complète | `--help` |
-| `--version` | - | Version du programme | `--version` |
+## 3) Interface terminal (TUI)
 
----
+```bash
+python main.py --tui
+```
 
-## Mode 6 : Web UI (Dev) 🌐
+## 4) Interface Web (dev local)
 
-### Option A — Dev local (recommandé)
-
-Backend (FastAPI):
+Backend :
 ```bash
 ./scripts/dev-backend.sh
 ```
 
-Frontend (Vite/React):
+Variables optionnelles (par défaut : `127.0.0.1:8000`) : `ASD_WEB_HOST`, `ASD_WEB_PORT`.
+
+Frontend :
 ```bash
 ./scripts/dev-frontend.sh
 ```
 
+Variables optionnelles (par défaut : `127.0.0.1:5173`) : `ASD_WEBAPP_HOST`, `ASD_WEBAPP_PORT`.
+
 Ouvre ensuite :
-- `http://127.0.0.1:5173` (SPA)
-- `http://127.0.0.1:8000` (fallback minimal si la SPA n'est pas build)
+- http://127.0.0.1:5173 (SPA)
+- http://127.0.0.1:8000 (API + fallback minimal)
 
-### Option B — Dev via VS Code
+## 5) Docker
 
-Lance la tâche : `dev: fullstack` (dans “Run Task…”).
-
-### Option C — Dev via Docker
+### Dev
 
 ```bash
 docker compose up --build
 ```
 
-Puis ouvre `http://127.0.0.1:5173`.
+Accès : http://localhost:5173
 
----
-
-## Mode 7 : Docker (Prod) 🐳
-
-Le mode prod build automatiquement la SPA (`webapp/dist`) dans l'image et le backend sert le frontend.
+### Prod
 
 ```bash
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-Ouvre ensuite `http://127.0.0.1:8000/`.
+Accès : http://localhost:8000
+
+### Dossier de sortie (Docker)
+
+- Dans le conteneur : `/data/videos`
+- Sur l’hôte : configuré par `ASD_HOST_DOWNLOAD_ROOT`
+
+```bash
+cp .env.example .env
+# éditer .env puis relancer docker compose
+```
+
+Dans l’interface Web en Docker : la destination est un **sous-dossier** sous `/data/videos` (pas un chemin absolu hôte).
 
 ---
 
-## ⚡ Quick Tips
+## ⚡ Astuces
 
-1. **Juste appuyez sur Enter** : Les défauts sont optimaux
+1. **Appuie sur Entrée** : les défauts sont optimaux
 2. **Besoin d'aide ?** : Tapez `h` quand demandé
-3. **Pressé ?** : Utilisez `--quick`
+3. **Pressé ?** : utilise `--quick`
 4. **Automatiser ?** : Mode CLI complet
-5. **Erreur ?** : Le programme retry automatiquement
+5. **Erreur ?** : retries automatiques (si temporaire)
 
 ---
 

@@ -16,11 +16,13 @@ services:
       ASD_WEB_HOST: 0.0.0.0
       ASD_WEB_PORT: "8000"
       ASD_DOWNLOAD_ROOT: /data/videos
+      # En Docker, on refuse par défaut toute destination en dehors de /data/videos
+      ASD_ALLOWED_DEST_PREFIXES: /data/videos
       # Optionnel: pointe vers un config.ini monté
       # ASD_CONFIG: /app/config.ini
     volumes:
       - .:/app
-      - ./videos:/data/videos
+      - ${ASD_HOST_DOWNLOAD_ROOT:-./videos}:/data/videos
 
   frontend:
     image: node:20-alpine

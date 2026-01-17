@@ -24,6 +24,49 @@ from utils.downloaders.downloader import download_video
 def create_app() -> FastAPI:
     app = FastAPI(title="Anime-Sama Downloader", version="0.1")
 
+    def _is_docker() -> bool:
+        # Heuristique simple et suffisante pour éviter d'écrire dans un chemin "hôte" non monté.
+        return os.path.exists("/.dockerenv") or os.environ.get("ASD_IN_DOCKER", "").strip() == "1"
+
+    def _allowed_dest_prefixes() -> list[str]:
+        raw = os.environ.get("ASD_ALLOWED_DEST_PREFIXES", "").strip()
+        if raw:
+            parts = [p.strip() for p in raw.split(",") if p.strip()]
+        else:
+            parts = [get_default_download_path()]
+
+        out: list[str] = []
+        for p in parts:
+            np = os.path.normpath(p)
+            if np not in out:
+                out.append(np)
+        return out
+
+    def _normalize_dest_root(dest_root: str) -> str:
+        dest_root = (dest_root or "").strip()
+        if not dest_root:
+            return os.path.normpath(get_default_download_path())
+        if not os.path.isabs(dest_root):
+            return os.path.normpath(os.path.join(get_default_download_path(), dest_root))
+        return os.path.normpath(dest_root)
+
+    def _validate_dest_root_or_400(dest_root: str) -> str:
+        dest_root = _normalize_dest_root(dest_root)
+        if _is_docker():
+            allowed = _allowed_dest_prefixes()
+
+            def _within(root: str, prefix: str) -> bool:
+                return root == prefix or root.startswith(prefix + os.sep)
+
+            if not any(_within(dest_root, p) for p in allowed):
+                raise HTTPException(
+                    400,
+                    "Destination non autorisée en Docker. "
+                    f"Utilise un chemin sous: {', '.join(allowed)} "
+                    "(ou ajuste les volumes Docker + ASD_ALLOWED_DEST_PREFIXES).",
+                )
+        return dest_root
+
     # Event bus for job updates (SSE)
     subscribers: set[asyncio.Queue[str]] = set()
     subscribers_lock = threading.Lock()
@@ -208,9 +251,13 @@ refreshJobs();
 
     @app.get("/api/defaults")
     def api_defaults() -> dict[str, Any]:
+        is_docker = _is_docker()
+        allowed = _allowed_dest_prefixes() if is_docker else []
         return {
             "download_root": get_default_download_path(),
             "max_concurrent_downloads": get_max_concurrent_downloads(default=10),
+            "is_docker": is_docker,
+            "allowed_dest_prefixes": allowed,
         }
 
     @app.post("/api/season_info")
@@ -388,7 +435,7 @@ refreshJobs();
         if season_default <= 0:
             raise HTTPException(400, "season must be >= 1")
         selection = str(payload.get("selection") or "").strip()
-        dest_root = str(payload.get("dest_root") or "").strip()
+        dest_root = _validate_dest_root_or_400(str(payload.get("dest_root") or "").strip())
 
         if not base_url:
             raise HTTPException(400, "base_url required")

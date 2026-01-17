@@ -46,7 +46,12 @@ export async function apiSeasons(base_url: string, lang: string): Promise<{ seas
   return await r.json();
 }
 
-export async function apiDefaults(): Promise<{ download_root: string; max_concurrent_downloads: number }> {
+export async function apiDefaults(): Promise<{
+  download_root: string;
+  max_concurrent_downloads: number;
+  is_docker?: boolean;
+  allowed_dest_prefixes?: string[];
+}> {
   const r = await fetch('/api/defaults');
   if (!r.ok) throw new Error(await r.text());
   return await r.json();

@@ -58,7 +58,7 @@ Examples:
     parser.add_argument('-y', '--yes', action='store_true', help='Ne pas demander de confirmation (utile pour --search)')
     parser.add_argument('--tui', action='store_true', help='Launch modern terminal UI (Textual). CLI remains default.')
     parser.add_argument('--ui', type=str, default=None, help='Launch a UI plugin by name (e.g. "textual"). Overrides --tui.')
-    parser.add_argument('--version', action='version', version='Anime-Sama Downloader v2.6-optimized')
+    parser.add_argument('--version', action='version', version='Anime-Sama Downloader v2.6.0')
     
     return parser.parse_args()
 

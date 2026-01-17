@@ -12,6 +12,9 @@ env/
 *.log
 "$LOG_FILE"
 
+# Docker compose / local env
+.env
+
 # Downloads / media artifacts
 videos/
 *.mp4

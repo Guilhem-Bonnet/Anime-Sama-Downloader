@@ -74,6 +74,14 @@ export function App() {
   const [rangeTo, setRangeTo] = useState<number>(12);
 
   const [destRoot, setDestRoot] = useState('');
+  const [defaultDestRoot, setDefaultDestRoot] = useState('');
+
+  // En Docker, on n'autorise pas de chemin absolu "hôte" dans l'UI.
+  // On propose uniquement un sous-dossier relatif (optionnel) sous /data/videos.
+  const [dockerSubdir, setDockerSubdir] = useState('');
+
+  const [isDocker, setIsDocker] = useState(false);
+  const [allowedDestPrefixes, setAllowedDestPrefixes] = useState<string[]>([]);
 
   const [jobs, setJobs] = useState<JobsSnapshot>({ pending: 0, running: 0, total: 0, jobs: [] });
   const [busy, setBusy] = useState(false);
@@ -140,7 +148,10 @@ export function App() {
     // Defaults (download root, etc.)
     apiDefaults()
       .then((d) => {
+        setDefaultDestRoot(d.download_root || '');
         if (!destRoot.trim()) setDestRoot(d.download_root || '');
+        setIsDocker(Boolean(d.is_docker));
+        setAllowedDestPrefixes(Array.isArray(d.allowed_dest_prefixes) ? (d.allowed_dest_prefixes as string[]) : []);
       })
       .catch(() => void 0);
 
@@ -191,6 +202,18 @@ export function App() {
       es.close();
     };
   }, []);
+
+  const destProblem = useMemo(() => {
+    if (!isDocker) return null;
+    const d = destRoot.trim();
+    if (!d) return null;
+    // Les chemins relatifs sont résolus côté backend sous le download_root.
+    if (!d.startsWith('/')) return null;
+    if (!allowedDestPrefixes.length) return null;
+      const ok = allowedDestPrefixes.some((p) => d === p || d.startsWith(p.replace(/\/+$/, '') + '/'));
+    if (ok) return null;
+    return `En Docker, la destination doit être sous: ${allowedDestPrefixes.join(', ')} (sinon ça écrit dans le FS du conteneur).`;
+  }, [isDocker, destRoot, allowedDestPrefixes]);
 
   useEffect(() => {
     if (!baseUrl) return;
@@ -249,12 +272,13 @@ export function App() {
     setError(null);
     setBusy(true);
     try {
+      const dockerDest = dockerSubdir.trim();
       const r = await apiEnqueue({
         base_url: baseUrl,
         lang,
         season,
         selection: selectionText,
-        dest_root: destRoot,
+        dest_root: isDocker ? dockerDest : destRoot,
       });
       if (r.error) {
         setError(r.error);
@@ -439,11 +463,39 @@ export function App() {
           </div>
 
           <div className="row" style={{ marginTop: 10 }}>
-            <input className="input" value={destRoot} onChange={(e) => setDestRoot(e.target.value)} placeholder="Dossier destination (optionnel)" />
-            <button className="btn primary" onClick={onEnqueue} disabled={busy || !baseUrl}>
+            {isDocker ? (
+              <input
+                className="input"
+                value={dockerSubdir}
+                onChange={(e) => setDockerSubdir(e.target.value)}
+                placeholder="Sous-dossier (optionnel) sous /data/videos"
+              />
+            ) : (
+              <input className="input" value={destRoot} onChange={(e) => setDestRoot(e.target.value)} placeholder="Dossier destination (optionnel)" />
+            )}
+            <button className="btn primary" onClick={onEnqueue} disabled={busy || !baseUrl || (!isDocker && Boolean(destProblem))}>
               Ajouter à la file
             </button>
           </div>
+
+          {isDocker ? (
+            <div className="muted small" style={{ marginTop: 6 }}>
+              Docker: sortie = <span className="badge">/data/videos</span> (monté sur l’hôte). Pour changer le dossier hôte, définis <span className="badge">ASD_HOST_DOWNLOAD_ROOT</span> dans <span className="badge">.env</span>.
+            </div>
+          ) : null}
+
+          {destProblem ? (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ color: '#ffb3ad' }} className="small">{destProblem}</div>
+              {defaultDestRoot ? (
+                <div className="row" style={{ marginTop: 6 }}>
+                  <button className="btn sm" type="button" onClick={() => setDestRoot(defaultDestRoot)}>
+                    Réinitialiser au défaut
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="row" style={{ marginTop: 10 }}>
             <button
