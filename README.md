@@ -7,6 +7,8 @@ Téléchargeur d’épisodes depuis **anime-sama.si** avec plusieurs interfaces 
 
 **Fork de :** https://github.com/sertrafurr/Anime-Sama-Downloader
 
+**Version :** v2.6.1
+
 ## Points clés
 
 - Recherche par nom (AniList) + résolution automatique d’URL
