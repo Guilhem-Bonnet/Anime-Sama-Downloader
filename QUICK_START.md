@@ -113,6 +113,6 @@ Dans l’interface Web en Docker : la destination est un **sous-dossier** sous `
 
 ---
 
-**Version** : 2.6-optimized  
+**Version** : 2.6.1  
 **Date** : Janvier 2026  
 **🎯 Recommandation** : Mode `--quick` pour 90% des cas d'usage

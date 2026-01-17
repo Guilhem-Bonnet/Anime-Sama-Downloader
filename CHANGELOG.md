@@ -1,5 +1,23 @@
 # Changelog - Version Optimisée
 
+## v2.6.1 (Janvier 2026)
+
+### 🌐 Interface Web (FastAPI + SPA)
+- Backend FastAPI + événements (SSE) + SPA React (dev/prod)
+- Endpoints utilitaires: `/api/defaults` (valeurs par défaut + infos Docker), `/api/season_info`
+
+### 🐳 Docker (sortie fiable + garde-fous)
+- En conteneur, la sortie est fixée à `/data/videos` (montée sur l’hôte)
+- Variable `.env` côté hôte via `ASD_HOST_DOWNLOAD_ROOT` (exemple fourni dans `.env.example`)
+- Garde-fous backend via `ASD_ALLOWED_DEST_PREFIXES` pour éviter d’écrire hors du volume
+- Dans l’interface Web sous Docker: destination **sous-dossier** uniquement (pas de chemin absolu hôte)
+
+### 🧾 Documentation
+- Refonte/clean des docs (README, Quick Start, Search Guide, Migration)
+- Suppression des documents redondants/obsolètes
+
+---
+
 ## v2.6 (Janvier 2026)
 
 ### 🔍 Recherche améliorée (AniList)
@@ -16,16 +34,6 @@
 - `--jobs` (1 à 10) pour limiter les téléchargements parallèles (max 10)
 - Annulation: Ctrl+C en CLI, “Annuler tout” / “Vider file” en TUI
 - Annulation coopérative + nettoyage des fichiers partiels
-
-### 🌐 Interface Web (FastAPI + SPA)
-- Backend FastAPI + événements (SSE) + SPA React (dev/prod)
-- Endpoints utilitaires: `/api/defaults` (valeurs par défaut + infos Docker), `/api/season_info`
-
-### 🐳 Docker (sortie fiable + garde-fous)
-- En conteneur, la sortie est fixée à `/data/videos` (montée sur l’hôte)
-- Variable `.env` côté hôte via `ASD_HOST_DOWNLOAD_ROOT` (exemple fourni dans `.env.example`)
-- Garde-fous backend via `ASD_ALLOWED_DEST_PREFIXES` pour éviter d’écrire hors du volume
-- En interface Web sous Docker: destination **sous-dossier** uniquement (pas de chemin absolu hôte)
 
 ---
 
