@@ -13,13 +13,14 @@ import (
 )
 
 type Server struct {
-	logger zerolog.Logger
-	jobs   *app.JobService
-	bus    ports.EventBus
+	logger   zerolog.Logger
+	jobs     *app.JobService
+	settings *app.SettingsService
+	bus      ports.EventBus
 }
 
-func NewServer(logger zerolog.Logger, jobs *app.JobService, bus ports.EventBus) *Server {
-	return &Server{logger: logger, jobs: jobs, bus: bus}
+func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, bus ports.EventBus) *Server {
+	return &Server{logger: logger, jobs: jobs, settings: settings, bus: bus}
 }
 
 func (s *Server) Router() http.Handler {
@@ -38,10 +39,14 @@ func (s *Server) Router() http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", s.handleHealth)
 		r.Get("/version", s.handleVersion)
+		r.Get("/openapi.json", s.handleOpenAPI)
 		r.Get("/events", s.handleEvents)
 
 		if s.jobs != nil {
 			NewJobsHandler(s.jobs).Routes(r)
+		}
+		if s.settings != nil {
+			NewSettingsHandler(s.settings).Routes(r)
 		}
 	})
 

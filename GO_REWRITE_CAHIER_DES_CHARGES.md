@@ -38,7 +38,7 @@ Contraintes clés :
 ### 2.2 Hors-périmètre initial (post-V1)
 - Multi-user / auth avancée (OAuth) (V1.1+)
 - Plugins third-party (V2)
-- Scheduler “calendrier” (V1.1+)
+- Scheduler “calendrier” (V1.1+) (+auto dl)
 
 ## 3) Livrables
 - `asd-server` : service HTTP (API + events + UI statique)
@@ -187,5 +187,5 @@ Base : `/api/v1`
   - A) `asd` = client CLI uniquement (reco)
   - B) `asd` = standalone executor (plus lourd mais autonome)
 - Transport events : SSE vs WebSocket (SSE recommandé pour simplicité)
-- Front : garder React/Vite (probable), ou UI plus simple
+- Front : garder React/Vite => oui
 

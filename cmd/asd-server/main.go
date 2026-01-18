@@ -41,8 +41,10 @@ func main() {
 	bus := memorybus.New()
 	jobsRepo := sqlite.NewJobsRepository(db.SQL)
 	jobsSvc := app.NewJobService(jobsRepo, bus)
+	settingsRepo := sqlite.NewSettingsRepository(db.SQL)
+	settingsSvc := app.NewSettingsService(settingsRepo)
 
-	srv := httpapi.NewServer(logger, jobsSvc, bus)
+	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, bus)
 	httpServer := &http.Server{
 		Addr:              *addr,
 		Handler:           srv.Router(),
