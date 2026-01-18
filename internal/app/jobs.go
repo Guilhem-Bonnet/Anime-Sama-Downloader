@@ -34,7 +34,7 @@ type JobDTO struct {
 	Params    json.RawMessage `json:"params,omitempty"`
 }
 
-func toDTO(j domain.Job) JobDTO {
+func ToJobDTO(j domain.Job) JobDTO {
 	return JobDTO{
 		ID:        j.ID,
 		Type:      j.Type,
@@ -44,6 +44,17 @@ func toDTO(j domain.Job) JobDTO {
 		UpdatedAt: j.UpdatedAt,
 		Params:    json.RawMessage(j.ParamsJSON),
 	}
+}
+
+func PublishJobEvent(bus ports.EventBus, topic string, job domain.Job) {
+	if bus == nil {
+		return
+	}
+	b, err := json.Marshal(ToJobDTO(job))
+	if err != nil {
+		return
+	}
+	bus.Publish(topic, b)
 }
 
 func (s *JobService) Create(ctx context.Context, req CreateJobRequest) (JobDTO, error) {
@@ -61,8 +72,8 @@ func (s *JobService) Create(ctx context.Context, req CreateJobRequest) (JobDTO, 
 	if err != nil {
 		return JobDTO{}, err
 	}
-	s.publish("job.created", created)
-	return toDTO(created), nil
+	PublishJobEvent(s.bus, "job.created", created)
+	return ToJobDTO(created), nil
 }
 
 func (s *JobService) Get(ctx context.Context, id string) (JobDTO, error) {
@@ -70,7 +81,7 @@ func (s *JobService) Get(ctx context.Context, id string) (JobDTO, error) {
 	if err != nil {
 		return JobDTO{}, err
 	}
-	return toDTO(job), nil
+	return ToJobDTO(job), nil
 }
 
 func (s *JobService) List(ctx context.Context, limit int) ([]JobDTO, error) {
@@ -80,7 +91,7 @@ func (s *JobService) List(ctx context.Context, limit int) ([]JobDTO, error) {
 	}
 	out := make([]JobDTO, 0, len(jobs))
 	for _, j := range jobs {
-		out = append(out, toDTO(j))
+		out = append(out, ToJobDTO(j))
 	}
 	return out, nil
 }
@@ -91,8 +102,8 @@ func (s *JobService) Cancel(ctx context.Context, id string) (JobDTO, error) {
 	for _, expected := range []domain.JobState{domain.JobQueued, domain.JobRunning, domain.JobMuxing} {
 		updated, err := s.repo.UpdateState(ctx, id, expected, domain.JobCanceled)
 		if err == nil {
-			s.publish("job.canceled", updated)
-			return toDTO(updated), nil
+			PublishJobEvent(s.bus, "job.canceled", updated)
+			return ToJobDTO(updated), nil
 		}
 	}
 	// fallback: renvoyer l'état actuel
@@ -100,16 +111,5 @@ func (s *JobService) Cancel(ctx context.Context, id string) (JobDTO, error) {
 	if err != nil {
 		return JobDTO{}, err
 	}
-	return toDTO(job), nil
-}
-
-func (s *JobService) publish(topic string, job domain.Job) {
-	if s.bus == nil {
-		return
-	}
-	b, err := json.Marshal(toDTO(job))
-	if err != nil {
-		return
-	}
-	s.bus.Publish(topic, b)
+	return ToJobDTO(job), nil
 }

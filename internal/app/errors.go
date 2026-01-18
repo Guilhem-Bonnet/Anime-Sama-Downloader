@@ -1,5 +1,5 @@
 package app
 
-import "errors"
+import "github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 
-var ErrNotFound = errors.New("not found")
+var ErrNotFound = ports.ErrNotFound

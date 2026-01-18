@@ -54,6 +54,16 @@ func main() {
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// Worker V1: exécute les jobs "queued" en tâche de fond.
+	workers := 1
+	if s, err := settingsSvc.Get(ctx); err == nil {
+		if s.MaxWorkers > 0 {
+			workers = s.MaxWorkers
+		}
+	}
+	app.RunWorkers(shutdownCtx, logger, jobsRepo, bus, workers, app.DefaultWorkerOptions())
+	logger.Info().Int("workers", workers).Msg("workers started")
+
 	go func() {
 		logger.Info().Str("addr", *addr).Msg("listening")
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {

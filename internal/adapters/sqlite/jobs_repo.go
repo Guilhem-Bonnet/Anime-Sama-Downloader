@@ -7,9 +7,8 @@ import (
 	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
-
-var ErrNotFound = errors.New("not found")
 
 type JobsRepository struct {
 	db *sql.DB
@@ -40,7 +39,7 @@ func (r *JobsRepository) Get(ctx context.Context, id string) (domain.Job, error)
 	`, id).Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.Job{}, ErrNotFound
+			return domain.Job{}, ports.ErrNotFound
 		}
 		return domain.Job{}, err
 	}
@@ -76,6 +75,62 @@ func (r *JobsRepository) List(ctx context.Context, limit int) ([]domain.Job, err
 	return out, rows.Err()
 }
 
+func (r *JobsRepository) ClaimNextQueued(ctx context.Context) (domain.Job, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return domain.Job{}, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var id string
+	err = tx.QueryRowContext(ctx, `
+		SELECT id
+		FROM jobs
+		WHERE state = ?
+		ORDER BY created_at ASC
+		LIMIT 1
+	`, string(domain.JobQueued)).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Job{}, ports.ErrNotFound
+		}
+		return domain.Job{}, err
+	}
+
+	res, err := tx.ExecContext(ctx, `
+		UPDATE jobs
+		SET state = ?, updated_at = ?
+		WHERE id = ? AND state = ?
+	`, string(domain.JobRunning), time.Now().UTC().Format(time.RFC3339), id, string(domain.JobQueued))
+	if err != nil {
+		return domain.Job{}, err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return domain.Job{}, ports.ErrNotFound
+	}
+	if err := tx.Commit(); err != nil {
+		return domain.Job{}, err
+	}
+	return r.Get(ctx, id)
+}
+
+func (r *JobsRepository) UpdateProgress(ctx context.Context, id string, progress float64) (domain.Job, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET progress = ?, updated_at = ?
+		WHERE id = ?
+	`, progress, time.Now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return domain.Job{}, err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return domain.Job{}, ports.ErrNotFound
+	}
+	return r.Get(ctx, id)
+}
+
 func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected domain.JobState, next domain.JobState) (domain.Job, error) {
 	if !domain.CanTransition(expected, next) {
 		return domain.Job{}, domain.ErrInvalidTransition
@@ -90,7 +145,7 @@ func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected do
 	}
 	n, _ := res.RowsAffected()
 	if n == 0 {
-		return domain.Job{}, ErrNotFound
+		return domain.Job{}, ports.ErrNotFound
 	}
 	return r.Get(ctx, id)
 }
