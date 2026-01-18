@@ -36,3 +36,10 @@ jellyfin-cache/
 # Webapp build artefacts
 webapp/tsconfig.tsbuildinfo
 webapp/dist/
+
+# Go (binaires locaux / artefacts)
+/asd
+/asd-server
+*.exe
+*.test
+*.out

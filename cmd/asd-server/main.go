@@ -11,21 +11,38 @@ import (
 	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/httpapi"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/buildinfo"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	addr := flag.String("addr", envOr("ASD_ADDR", "127.0.0.1:8080"), "Adresse d'écoute (ex: 127.0.0.1:8080)")
+	def := config.Default()
+	addr := flag.String("addr", def.Addr, "Adresse d'écoute (ex: 127.0.0.1:8080)")
+	dbPath := flag.String("db", def.DBPath, "Chemin SQLite (ex: asd.db)")
 	flag.Parse()
 
 	logger := zerolog.New(os.Stdout).With().Timestamp().Str("app", "asd-server").Logger()
 	log.Logger = logger
 
-	logger.Info().Interface("build", buildinfo.Current()).Msg("starting")
+	logger.Info().Interface("build", buildinfo.Current()).Str("db", *dbPath).Msg("starting")
 
-	srv := httpapi.NewServer(logger)
+	ctx := context.Background()
+	db, err := sqlite.Open(ctx, *dbPath)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("failed to open db")
+	}
+	defer func() { _ = db.Close() }()
+
+	bus := memorybus.New()
+	jobsRepo := sqlite.NewJobsRepository(db.SQL)
+	jobsSvc := app.NewJobService(jobsRepo, bus)
+
+	srv := httpapi.NewServer(logger, jobsSvc, bus)
 	httpServer := &http.Server{
 		Addr:              *addr,
 		Handler:           srv.Router(),

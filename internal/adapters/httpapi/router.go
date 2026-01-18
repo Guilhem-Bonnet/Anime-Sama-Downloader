@@ -7,14 +7,19 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/hlog"
+
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 type Server struct {
 	logger zerolog.Logger
+	jobs   *app.JobService
+	bus    ports.EventBus
 }
 
-func NewServer(logger zerolog.Logger) *Server {
-	return &Server{logger: logger}
+func NewServer(logger zerolog.Logger, jobs *app.JobService, bus ports.EventBus) *Server {
+	return &Server{logger: logger, jobs: jobs, bus: bus}
 }
 
 func (s *Server) Router() http.Handler {
@@ -34,6 +39,10 @@ func (s *Server) Router() http.Handler {
 		r.Get("/health", s.handleHealth)
 		r.Get("/version", s.handleVersion)
 		r.Get("/events", s.handleEvents)
+
+		if s.jobs != nil {
+			NewJobsHandler(s.jobs).Routes(r)
+		}
 	})
 
 	return r
