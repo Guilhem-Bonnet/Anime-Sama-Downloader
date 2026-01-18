@@ -16,6 +16,7 @@ import (
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/buildinfo"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/config"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -57,12 +58,21 @@ func main() {
 	// Worker V1: exécute les jobs "queued" en tâche de fond.
 	workers := 1
 	opts := app.DefaultWorkerOptions()
+	// Limiteur global (partagé) pour tous les workers.
+	opts.DownloadLimiter = app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
 	opts.DestinationFunc = func(ctx context.Context) (string, error) {
 		s, err := settingsSvc.Get(ctx)
 		if err != nil {
 			return "", err
 		}
 		return s.Destination, nil
+	}
+	opts.MaxConcurrentDownloadsFunc = func(ctx context.Context) (int, error) {
+		s, err := settingsSvc.Get(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return s.MaxConcurrentDownloads, nil
 	}
 	if s, err := settingsSvc.Get(ctx); err == nil {
 		if s.MaxWorkers > 0 {

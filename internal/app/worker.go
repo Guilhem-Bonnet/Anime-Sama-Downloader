@@ -17,6 +17,12 @@ type WorkerOptions struct {
 	Destination  string
 	// DestinationFunc, si défini, permet de résoudre la destination à l'exécution (ex: depuis les settings).
 	DestinationFunc func(ctx context.Context) (string, error)
+
+	// DownloadLimiter limite la concurrence des jobs de type "download".
+	// Important: passe un pointeur partagé à RunWorkers pour limiter globalement entre workers.
+	DownloadLimiter *DynamicLimiter
+	// MaxConcurrentDownloadsFunc, si défini, permet de mettre à jour le plafond à l'exécution (ex: depuis les settings).
+	MaxConcurrentDownloadsFunc func(ctx context.Context) (int, error)
 }
 
 func DefaultWorkerOptions() WorkerOptions {
@@ -48,6 +54,9 @@ func NewWorker(logger zerolog.Logger, repo ports.JobRepository, bus ports.EventB
 	}
 	if opts.Destination == "" {
 		opts.Destination = DefaultWorkerOptions().Destination
+	}
+	if opts.DownloadLimiter == nil {
+		opts.DownloadLimiter = NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
 	}
 	return &Worker{logger: logger, repo: repo, bus: bus, opts: opts, execs: DefaultExecutorRegistry()}
 }
@@ -117,6 +126,23 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 	}
 
 	exec := w.execs.Get(job.Type)
+	if job.Type == "download" && w.opts.DownloadLimiter != nil {
+		if w.opts.MaxConcurrentDownloadsFunc != nil {
+			if n, err := w.opts.MaxConcurrentDownloadsFunc(ctx); err == nil && n > 0 {
+				w.opts.DownloadLimiter.SetLimit(n)
+			}
+		}
+		if err := w.opts.DownloadLimiter.Acquire(ctx); err != nil {
+			w.logger.Error().Err(err).Str("job_id", job.ID).Msg("download limiter acquire failed")
+			_, _ = w.repo.UpdateError(ctx, job.ID, "worker_canceled", "worker stopped while waiting for download slot")
+			failed, err2 := w.repo.UpdateState(ctx, job.ID, domain.JobRunning, domain.JobFailed)
+			if err2 == nil {
+				PublishJobEvent(w.bus, "job.failed", failed)
+			}
+			return
+		}
+		defer w.opts.DownloadLimiter.Release()
+	}
 	destination := w.opts.Destination
 	if w.opts.DestinationFunc != nil {
 		if d, err := w.opts.DestinationFunc(ctx); err == nil && d != "" {
