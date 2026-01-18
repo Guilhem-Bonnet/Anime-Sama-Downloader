@@ -14,6 +14,7 @@ type WorkerOptions struct {
 	PollInterval time.Duration
 	StepInterval time.Duration
 	Steps        int
+	Destination  string
 }
 
 func DefaultWorkerOptions() WorkerOptions {
@@ -21,6 +22,7 @@ func DefaultWorkerOptions() WorkerOptions {
 		PollInterval: 750 * time.Millisecond,
 		StepInterval: 400 * time.Millisecond,
 		Steps:        10,
+		Destination:  "videos",
 	}
 }
 
@@ -41,6 +43,9 @@ func NewWorker(logger zerolog.Logger, repo ports.JobRepository, bus ports.EventB
 	}
 	if opts.Steps <= 0 {
 		opts.Steps = DefaultWorkerOptions().Steps
+	}
+	if opts.Destination == "" {
+		opts.Destination = DefaultWorkerOptions().Destination
 	}
 	return &Worker{logger: logger, repo: repo, bus: bus, opts: opts, execs: DefaultExecutorRegistry()}
 }
@@ -100,15 +105,27 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 		return nil
 	}
 
+	updateResult := func(resultJSON []byte) error {
+		updated, err := w.repo.UpdateResult(ctx, job.ID, resultJSON)
+		if err != nil {
+			return err
+		}
+		PublishJobEvent(w.bus, "job.result", updated)
+		return nil
+	}
+
 	exec := w.execs.Get(job.Type)
 	err := exec.Execute(ctx, job, ExecEnv{
 		UpdateProgress: updateProgress,
+		UpdateResult:   updateResult,
 		IsCanceled:     isCanceled,
 		StepInterval:   w.opts.StepInterval,
 		Steps:          w.opts.Steps,
+		Destination:    w.opts.Destination,
 	})
 	if err != nil {
 		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("executor failed")
+		_, _ = w.repo.UpdateError(ctx, job.ID, "executor_error", err.Error())
 		failed, err2 := w.repo.UpdateState(ctx, job.ID, domain.JobRunning, domain.JobFailed)
 		if err2 == nil {
 			PublishJobEvent(w.bus, "job.failed", failed)

@@ -83,6 +83,13 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 							"description":          "Paramètres du job (dépend du type).",
 							"additionalProperties": true,
 						},
+						"result": map[string]any{
+							"type":                 "object",
+							"description":          "Résultat du job (si applicable).",
+							"additionalProperties": true,
+						},
+						"errorCode": map[string]any{"type": "string"},
+						"error":     map[string]any{"type": "string"},
 					},
 					"required":             []any{"id", "type", "state", "progress", "createdAt", "updatedAt"},
 					"additionalProperties": false,
@@ -136,7 +143,9 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						"params": map[string]any{
 							"type": "object",
 							"properties": map[string]any{
-								"url": map[string]any{"type": "string", "description": "URL source (http/https)", "example": "https://example.com/video.m3u8"},
+								"url":      map[string]any{"type": "string", "description": "URL source (http/https)", "example": "https://example.com/video.bin"},
+								"filename": map[string]any{"type": "string", "description": "Nom de fichier de sortie (dans settings.destination)", "example": "episode-01.mp4"},
+								"path":     map[string]any{"type": "string", "description": "Chemin relatif de sortie (dans settings.destination)", "example": "series/season-1/episode-01.mp4"},
 							},
 							"required":             []any{"url"},
 							"additionalProperties": false,

@@ -131,6 +131,38 @@ func (r *JobsRepository) UpdateProgress(ctx context.Context, id string, progress
 	return r.Get(ctx, id)
 }
 
+func (r *JobsRepository) UpdateResult(ctx context.Context, id string, resultJSON []byte) (domain.Job, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET result_json = ?, updated_at = ?
+		WHERE id = ?
+	`, resultJSON, time.Now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return domain.Job{}, err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return domain.Job{}, ports.ErrNotFound
+	}
+	return r.Get(ctx, id)
+}
+
+func (r *JobsRepository) UpdateError(ctx context.Context, id string, code string, message string) (domain.Job, error) {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET error_code = ?, error_message = ?, updated_at = ?
+		WHERE id = ?
+	`, code, message, time.Now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return domain.Job{}, err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return domain.Job{}, ports.ErrNotFound
+	}
+	return r.Get(ctx, id)
+}
+
 func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected domain.JobState, next domain.JobState) (domain.Job, error) {
 	if !domain.CanTransition(expected, next) {
 		return domain.Job{}, domain.ErrInvalidTransition

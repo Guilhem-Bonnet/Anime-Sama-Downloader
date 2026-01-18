@@ -32,6 +32,9 @@ type JobDTO struct {
 	CreatedAt time.Time       `json:"createdAt"`
 	UpdatedAt time.Time       `json:"updatedAt"`
 	Params    json.RawMessage `json:"params,omitempty"`
+	Result    json.RawMessage `json:"result,omitempty"`
+	ErrorCode string          `json:"errorCode,omitempty"`
+	Error     string          `json:"error,omitempty"`
 }
 
 func ToJobDTO(j domain.Job) JobDTO {
@@ -43,6 +46,9 @@ func ToJobDTO(j domain.Job) JobDTO {
 		CreatedAt: j.CreatedAt,
 		UpdatedAt: j.UpdatedAt,
 		Params:    json.RawMessage(j.ParamsJSON),
+		Result:    json.RawMessage(j.ResultJSON),
+		ErrorCode: j.ErrorCode,
+		Error:     j.ErrorMessage,
 	}
 }
 
