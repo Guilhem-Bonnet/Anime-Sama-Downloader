@@ -12,10 +12,11 @@ import (
 
 type SettingsHandler struct {
 	settings *app.SettingsService
+	onPut    func(domain.Settings)
 }
 
-func NewSettingsHandler(settings *app.SettingsService) *SettingsHandler {
-	return &SettingsHandler{settings: settings}
+func NewSettingsHandler(settings *app.SettingsService, onPut func(domain.Settings)) *SettingsHandler {
+	return &SettingsHandler{settings: settings, onPut: onPut}
 }
 
 func (h *SettingsHandler) Routes(r chi.Router) {
@@ -45,6 +46,9 @@ func (h *SettingsHandler) put(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpjson.WriteError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if h.onPut != nil {
+		h.onPut(updated)
 	}
 	httpjson.Write(w, http.StatusOK, updated)
 }

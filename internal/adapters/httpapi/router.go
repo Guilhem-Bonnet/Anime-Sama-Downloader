@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/hlog"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
@@ -17,10 +18,12 @@ type Server struct {
 	jobs     *app.JobService
 	settings *app.SettingsService
 	bus      ports.EventBus
+	// downloadLimiter est optionnel et permet d'appliquer maxConcurrentDownloads à chaud.
+	downloadLimiter *app.DynamicLimiter
 }
 
-func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, bus ports.EventBus) *Server {
-	return &Server{logger: logger, jobs: jobs, settings: settings, bus: bus}
+func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, bus ports.EventBus, downloadLimiter *app.DynamicLimiter) *Server {
+	return &Server{logger: logger, jobs: jobs, settings: settings, bus: bus, downloadLimiter: downloadLimiter}
 }
 
 func (s *Server) Router() http.Handler {
@@ -46,7 +49,14 @@ func (s *Server) Router() http.Handler {
 			NewJobsHandler(s.jobs).Routes(r)
 		}
 		if s.settings != nil {
-			NewSettingsHandler(s.settings).Routes(r)
+			NewSettingsHandler(s.settings, func(updated domain.Settings) {
+				if s.downloadLimiter == nil {
+					return
+				}
+				if updated.MaxConcurrentDownloads > 0 {
+					s.downloadLimiter.SetLimit(updated.MaxConcurrentDownloads)
+				}
+			}).Routes(r)
 		}
 	})
 

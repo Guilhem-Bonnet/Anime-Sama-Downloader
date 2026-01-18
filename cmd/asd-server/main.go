@@ -45,7 +45,10 @@ func main() {
 	settingsRepo := sqlite.NewSettingsRepository(db.SQL)
 	settingsSvc := app.NewSettingsService(settingsRepo)
 
-	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, bus)
+	// Limiteur global (partagé) pour tous les workers + hook côté API settings.
+	downloadLimiter := app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
+
+	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, bus, downloadLimiter)
 	httpServer := &http.Server{
 		Addr:              *addr,
 		Handler:           srv.Router(),
@@ -59,7 +62,7 @@ func main() {
 	workers := 1
 	opts := app.DefaultWorkerOptions()
 	// Limiteur global (partagé) pour tous les workers.
-	opts.DownloadLimiter = app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
+	opts.DownloadLimiter = downloadLimiter
 	opts.DestinationFunc = func(ctx context.Context) (string, error) {
 		s, err := settingsSvc.Get(ctx)
 		if err != nil {
