@@ -41,6 +41,11 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"type":                 "object",
 					"additionalProperties": true,
 				},
+				"JobType": map[string]any{
+					"type":        "string",
+					"description": "Type de job (extensible).",
+					"enum":        []any{"noop", "sleep", "download"},
+				},
 				"Error": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
@@ -68,12 +73,16 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"type": "object",
 					"properties": map[string]any{
 						"id":        map[string]any{"type": "string"},
-						"type":      map[string]any{"type": "string"},
+						"type":      map[string]any{"$ref": "#/components/schemas/JobType"},
 						"state":     map[string]any{"type": "string", "enum": []any{"queued", "running", "muxing", "completed", "failed", "canceled"}},
 						"progress":  map[string]any{"type": "number", "format": "double"},
 						"createdAt": map[string]any{"type": "string", "format": "date-time"},
 						"updatedAt": map[string]any{"type": "string", "format": "date-time"},
-						"params":    map[string]any{"type": "object", "additionalProperties": true},
+						"params": map[string]any{
+							"type":                 "object",
+							"description":          "Paramètres du job (dépend du type).",
+							"additionalProperties": true,
+						},
 					},
 					"required":             []any{"id", "type", "state", "progress", "createdAt", "updatedAt"},
 					"additionalProperties": false,
@@ -83,12 +92,57 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"items": map[string]any{"$ref": "#/components/schemas/Job"},
 				},
 				"CreateJobRequest": map[string]any{
+					"oneOf": []any{
+						map[string]any{"$ref": "#/components/schemas/CreateNoopJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateSleepJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateDownloadJobRequest"},
+					},
+					"description": "Requête de création d'un job. Les params dépendent du type.",
+				},
+				"CreateNoopJobRequest": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
-						"type":   map[string]any{"type": "string"},
-						"params": map[string]any{"type": "object", "additionalProperties": true},
+						"type": map[string]any{"type": "string", "enum": []any{"noop"}},
+						"params": map[string]any{
+							"type":                 "object",
+							"additionalProperties": true,
+							"example":              map[string]any{},
+						},
 					},
 					"required":             []any{"type"},
+					"additionalProperties": false,
+				},
+				"CreateSleepJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"sleep"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"duration":   map[string]any{"type": "string", "description": "Durée Go (ex: 250ms, 2s, 1m)", "example": "2s"},
+								"durationMs": map[string]any{"type": "integer", "description": "Durée en ms", "example": 2000},
+								"seconds":    map[string]any{"type": "integer", "description": "Durée en secondes", "example": 2},
+							},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type"},
+					"additionalProperties": false,
+				},
+				"CreateDownloadJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"download"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"url": map[string]any{"type": "string", "description": "URL source (http/https)", "example": "https://example.com/video.m3u8"},
+							},
+							"required":             []any{"url"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type", "params"},
 					"additionalProperties": false,
 				},
 			},

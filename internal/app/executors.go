@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
+	"net/url"
 	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
@@ -38,8 +40,9 @@ func (r ExecutorRegistry) Get(jobType string) JobExecutor {
 func DefaultExecutorRegistry() ExecutorRegistry {
 	return ExecutorRegistry{
 		byType: map[string]JobExecutor{
-			"noop":  NoopExecutor{},
-			"sleep": SleepExecutor{},
+			"noop":     NoopExecutor{},
+			"sleep":    SleepExecutor{},
+			"download": DownloadStubExecutor{},
 		},
 		fallback: DefaultExecutor{},
 	}
@@ -130,6 +133,71 @@ func (DefaultExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv)
 	step := env.StepInterval
 	if step <= 0 {
 		step = DefaultWorkerOptions().StepInterval
+	}
+
+	for i := 1; i <= steps; i++ {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(step):
+		}
+
+		canceled, err := env.IsCanceled()
+		if err != nil {
+			return err
+		}
+		if canceled {
+			return nil
+		}
+
+		progress := float64(i) / float64(steps)
+		progress = math.Max(0, math.Min(1, progress))
+		if err := env.UpdateProgress(progress); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type DownloadStubExecutor struct{}
+
+type downloadParams struct {
+	URL string `json:"url"`
+}
+
+func (DownloadStubExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv) error {
+	p := downloadParams{}
+	if len(job.ParamsJSON) > 0 {
+		_ = json.Unmarshal(job.ParamsJSON, &p)
+	}
+	if p.URL == "" {
+		return fmt.Errorf("missing params.url")
+	}
+	u, err := url.Parse(p.URL)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return fmt.Errorf("invalid params.url")
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("unsupported url scheme")
+	}
+
+	canceled, err := env.IsCanceled()
+	if err != nil {
+		return err
+	}
+	if canceled {
+		return nil
+	}
+
+	// Mode "stub" : si StepInterval est à 0, on termine immédiatement (utile pour tests).
+	if env.StepInterval <= 0 {
+		return env.UpdateProgress(1)
+	}
+
+	steps := 3
+	step := env.StepInterval
+	if step > 200*time.Millisecond {
+		step = 200 * time.Millisecond
 	}
 
 	for i := 1; i <= steps; i++ {
