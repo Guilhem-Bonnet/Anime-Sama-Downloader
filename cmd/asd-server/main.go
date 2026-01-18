@@ -57,12 +57,16 @@ func main() {
 	// Worker V1: exécute les jobs "queued" en tâche de fond.
 	workers := 1
 	opts := app.DefaultWorkerOptions()
+	opts.DestinationFunc = func(ctx context.Context) (string, error) {
+		s, err := settingsSvc.Get(ctx)
+		if err != nil {
+			return "", err
+		}
+		return s.Destination, nil
+	}
 	if s, err := settingsSvc.Get(ctx); err == nil {
 		if s.MaxWorkers > 0 {
 			workers = s.MaxWorkers
-		}
-		if s.Destination != "" {
-			opts.Destination = s.Destination
 		}
 	}
 	app.RunWorkers(shutdownCtx, logger, jobsRepo, bus, workers, opts)

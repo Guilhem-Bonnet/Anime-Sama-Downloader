@@ -15,6 +15,8 @@ type WorkerOptions struct {
 	StepInterval time.Duration
 	Steps        int
 	Destination  string
+	// DestinationFunc, si défini, permet de résoudre la destination à l'exécution (ex: depuis les settings).
+	DestinationFunc func(ctx context.Context) (string, error)
 }
 
 func DefaultWorkerOptions() WorkerOptions {
@@ -115,13 +117,19 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 	}
 
 	exec := w.execs.Get(job.Type)
+	destination := w.opts.Destination
+	if w.opts.DestinationFunc != nil {
+		if d, err := w.opts.DestinationFunc(ctx); err == nil && d != "" {
+			destination = d
+		}
+	}
 	err := exec.Execute(ctx, job, ExecEnv{
 		UpdateProgress: updateProgress,
 		UpdateResult:   updateResult,
 		IsCanceled:     isCanceled,
 		StepInterval:   w.opts.StepInterval,
 		Steps:          w.opts.Steps,
-		Destination:    w.opts.Destination,
+		Destination:    destination,
 	})
 	if err != nil {
 		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("executor failed")
