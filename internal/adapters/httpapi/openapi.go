@@ -44,7 +44,7 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 				"JobType": map[string]any{
 					"type":        "string",
 					"description": "Type de job (extensible).",
-					"enum":        []any{"noop", "sleep", "download"},
+					"enum":        []any{"noop", "sleep", "download", "spawn"},
 				},
 				"Error": map[string]any{
 					"type": "object",
@@ -103,6 +103,7 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						map[string]any{"$ref": "#/components/schemas/CreateNoopJobRequest"},
 						map[string]any{"$ref": "#/components/schemas/CreateSleepJobRequest"},
 						map[string]any{"$ref": "#/components/schemas/CreateDownloadJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateSpawnJobRequest"},
 					},
 					"description": "Requête de création d'un job. Les params dépendent du type.",
 				},
@@ -148,6 +149,34 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 								"path":     map[string]any{"type": "string", "description": "Chemin relatif de sortie (dans settings.destination)", "example": "series/season-1/episode-01.mp4"},
 							},
 							"required":             []any{"url"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type", "params"},
+					"additionalProperties": false,
+				},
+				"CreateSpawnJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"spawn"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"jobs": map[string]any{
+									"type":        "array",
+									"description": "Liste de jobs enfants à créer.",
+									"items": map[string]any{
+										"type": "object",
+										"properties": map[string]any{
+											"type":   map[string]any{"$ref": "#/components/schemas/JobType"},
+											"params": map[string]any{"type": "object", "additionalProperties": true},
+										},
+										"required":             []any{"type"},
+										"additionalProperties": false,
+									},
+								},
+							},
+							"required":             []any{"jobs"},
 							"additionalProperties": false,
 						},
 					},

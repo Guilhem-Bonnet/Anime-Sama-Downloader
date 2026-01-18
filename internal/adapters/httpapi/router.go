@@ -20,10 +20,12 @@ type Server struct {
 	bus      ports.EventBus
 	// downloadLimiter est optionnel et permet d'appliquer maxConcurrentDownloads à chaud.
 	downloadLimiter *app.DynamicLimiter
+	// onSettingsUpdated est optionnel (ex: ajuster maxWorkers).
+	onSettingsUpdated func(domain.Settings)
 }
 
-func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, bus ports.EventBus, downloadLimiter *app.DynamicLimiter) *Server {
-	return &Server{logger: logger, jobs: jobs, settings: settings, bus: bus, downloadLimiter: downloadLimiter}
+func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, bus ports.EventBus, downloadLimiter *app.DynamicLimiter, onSettingsUpdated func(domain.Settings)) *Server {
+	return &Server{logger: logger, jobs: jobs, settings: settings, bus: bus, downloadLimiter: downloadLimiter, onSettingsUpdated: onSettingsUpdated}
 }
 
 func (s *Server) Router() http.Handler {
@@ -51,10 +53,12 @@ func (s *Server) Router() http.Handler {
 		if s.settings != nil {
 			NewSettingsHandler(s.settings, func(updated domain.Settings) {
 				if s.downloadLimiter == nil {
-					return
-				}
-				if updated.MaxConcurrentDownloads > 0 {
+					// noop
+				} else if updated.MaxConcurrentDownloads > 0 {
 					s.downloadLimiter.SetLimit(updated.MaxConcurrentDownloads)
+				}
+				if s.onSettingsUpdated != nil {
+					s.onSettingsUpdated(updated)
 				}
 			}).Routes(r)
 		}

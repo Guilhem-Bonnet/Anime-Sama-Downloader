@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 )
@@ -153,5 +154,66 @@ func TestDownloadExecutor_PathTraversalRejected(t *testing.T) {
 	var coded *CodedError
 	if !errors.As(err, &coded) || coded.Code != "invalid_params" {
 		t.Fatalf("expected invalid_params coded error, got %T (%v)", err, err)
+	}
+}
+
+func TestSpawnExecutor_MissingJobs(t *testing.T) {
+	ex := SpawnExecutor{}
+
+	job := domain.Job{ID: "spawn1", Type: "spawn", ParamsJSON: []byte(`{"jobs":[]}`)}
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(float64) error { return nil },
+		UpdateResult:   func([]byte) error { return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		CreateJob:      func(string, []byte) (domain.Job, error) { return domain.Job{}, nil },
+	})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "invalid_params" {
+		t.Fatalf("expected invalid_params coded error, got %T (%v)", err, err)
+	}
+}
+
+func TestSpawnExecutor_CreatesJobsAndSetsResult(t *testing.T) {
+	ex := SpawnExecutor{}
+
+	job := domain.Job{ID: "spawn2", Type: "spawn", ParamsJSON: []byte(`{"jobs":[{"type":"noop"},{"type":"sleep","params":{"seconds":1}}]}`)}
+
+	created := make([]domain.Job, 0, 2)
+	var resultJSON []byte
+	var last float64
+
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(p float64) error { last = p; return nil },
+		UpdateResult:   func(b []byte) error { resultJSON = append([]byte(nil), b...); return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		CreateJob: func(jobType string, paramsJSON []byte) (domain.Job, error) {
+			j := domain.Job{ID: jobType + "-id", Type: jobType, ParamsJSON: paramsJSON, CreatedAt: time.Now(), UpdatedAt: time.Now()}
+			created = append(created, j)
+			return j, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if last != 1 {
+		t.Fatalf("expected progress 1, got %v", last)
+	}
+	if len(created) != 2 {
+		t.Fatalf("expected 2 created jobs, got %d", len(created))
+	}
+	if len(resultJSON) == 0 {
+		t.Fatalf("expected result JSON")
+	}
+	var res struct {
+		JobIDs []string `json:"jobIds"`
+	}
+	if err := json.Unmarshal(resultJSON, &res); err != nil {
+		t.Fatalf("invalid result JSON: %v", err)
+	}
+	if len(res.JobIDs) != 2 {
+		t.Fatalf("expected 2 result jobIds, got %d", len(res.JobIDs))
 	}
 }

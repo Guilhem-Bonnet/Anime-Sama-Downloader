@@ -29,6 +29,7 @@ type ExecEnv struct {
 	StepInterval   time.Duration
 	Steps          int
 	Destination    string
+	CreateJob      func(jobType string, paramsJSON []byte) (domain.Job, error)
 }
 
 type ExecutorRegistry struct {
@@ -51,6 +52,7 @@ func DefaultExecutorRegistry() ExecutorRegistry {
 			"noop":     NoopExecutor{},
 			"sleep":    SleepExecutor{},
 			"download": DownloadExecutor{},
+			"spawn":    SpawnExecutor{},
 		},
 		fallback: DefaultExecutor{},
 	}
@@ -374,3 +376,62 @@ func safeJoin(baseDir, rel string) (string, error) {
 }
 
 var ErrExecutorFailed = errors.New("executor failed")
+
+type SpawnExecutor struct{}
+
+type spawnJobSpec struct {
+	Type   string          `json:"type"`
+	Params json.RawMessage `json:"params,omitempty"`
+}
+
+type spawnParams struct {
+	Jobs []spawnJobSpec `json:"jobs"`
+}
+
+type spawnResult struct {
+	JobIDs []string `json:"jobIds"`
+}
+
+func (SpawnExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv) error {
+	if env.CreateJob == nil {
+		return &CodedError{Code: "executor_error", Message: "missing env.CreateJob"}
+	}
+
+	p := spawnParams{}
+	if len(job.ParamsJSON) > 0 {
+		_ = json.Unmarshal(job.ParamsJSON, &p)
+	}
+	if len(p.Jobs) == 0 {
+		return &CodedError{Code: "invalid_params", Message: "missing params.jobs"}
+	}
+
+	ids := make([]string, 0, len(p.Jobs))
+	for _, spec := range p.Jobs {
+		if strings.TrimSpace(spec.Type) == "" {
+			return &CodedError{Code: "invalid_params", Message: "spawn job missing type"}
+		}
+
+		canceled, err := env.IsCanceled()
+		if err != nil {
+			return err
+		}
+		if canceled {
+			return nil
+		}
+
+		created, err := env.CreateJob(spec.Type, []byte(spec.Params))
+		if err != nil {
+			return &CodedError{Code: "executor_error", Message: "failed to create child job", Err: err}
+		}
+		ids = append(ids, created.ID)
+	}
+
+	if env.UpdateResult != nil {
+		res := spawnResult{JobIDs: ids}
+		if b, err := json.Marshal(res); err == nil {
+			_ = env.UpdateResult(b)
+		}
+	}
+	_ = env.UpdateProgress(1)
+	return nil
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
+	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 )
 
@@ -125,6 +126,25 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 		return nil
 	}
 
+	createJob := func(jobType string, paramsJSON []byte) (domain.Job, error) {
+		now := time.Now().UTC()
+		child := domain.Job{
+			ID:         xid.New().String(),
+			Type:       jobType,
+			State:      domain.JobQueued,
+			Progress:   0,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+			ParamsJSON: paramsJSON,
+		}
+		created, err := w.repo.Create(ctx, child)
+		if err != nil {
+			return domain.Job{}, err
+		}
+		PublishJobEvent(w.bus, "job.created", created)
+		return created, nil
+	}
+
 	exec := w.execs.Get(job.Type)
 	if job.Type == "download" && w.opts.DownloadLimiter != nil {
 		if w.opts.MaxConcurrentDownloadsFunc != nil {
@@ -156,6 +176,7 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 		StepInterval:   w.opts.StepInterval,
 		Steps:          w.opts.Steps,
 		Destination:    destination,
+		CreateJob:      createJob,
 	})
 	if err != nil {
 		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("executor failed")

@@ -48,13 +48,6 @@ func main() {
 	// Limiteur global (partagé) pour tous les workers + hook côté API settings.
 	downloadLimiter := app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
 
-	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, bus, downloadLimiter)
-	httpServer := &http.Server{
-		Addr:              *addr,
-		Handler:           srv.Router(),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
-
 	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -82,8 +75,22 @@ func main() {
 			workers = s.MaxWorkers
 		}
 	}
-	app.RunWorkers(shutdownCtx, logger, jobsRepo, bus, workers, opts)
+
+	pool := app.NewWorkerPool(shutdownCtx, logger, jobsRepo, bus, opts)
+	pool.SetCount(workers)
+	defer pool.Close()
 	logger.Info().Int("workers", workers).Msg("workers started")
+
+	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, bus, downloadLimiter, func(updated domain.Settings) {
+		if updated.MaxWorkers > 0 {
+			pool.SetCount(updated.MaxWorkers)
+		}
+	})
+	httpServer := &http.Server{
+		Addr:              *addr,
+		Handler:           srv.Router(),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
 
 	go func() {
 		logger.Info().Str("addr", *addr).Msg("listening")
