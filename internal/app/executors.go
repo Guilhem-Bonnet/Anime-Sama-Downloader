@@ -30,6 +30,7 @@ type ExecEnv struct {
 	Steps          int
 	Destination    string
 	CreateJob      func(jobType string, paramsJSON []byte) (domain.Job, error)
+	GetJob         func(jobID string) (domain.Job, error)
 }
 
 type ExecutorRegistry struct {
@@ -53,6 +54,7 @@ func DefaultExecutorRegistry() ExecutorRegistry {
 			"sleep":    SleepExecutor{},
 			"download": DownloadExecutor{},
 			"spawn":    SpawnExecutor{},
+			"wait":     WaitExecutor{},
 		},
 		fallback: DefaultExecutor{},
 	}
@@ -434,4 +436,151 @@ func (SpawnExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv) e
 	}
 	_ = env.UpdateProgress(1)
 	return nil
+}
+
+type WaitExecutor struct{}
+
+type waitParams struct {
+	JobIDs       []string `json:"jobIds"`
+	FailOnFailed *bool    `json:"failOnFailed,omitempty"`
+	TimeoutMs    int64    `json:"timeoutMs,omitempty"`
+	PollMs       int64    `json:"pollMs,omitempty"`
+}
+
+type waitChildSummary struct {
+	ID        string          `json:"id"`
+	State     domain.JobState `json:"state"`
+	Progress  float64         `json:"progress"`
+	ErrorCode string          `json:"errorCode,omitempty"`
+	Error     string          `json:"error,omitempty"`
+}
+
+type waitResult struct {
+	JobIDs      []string           `json:"jobIds"`
+	Total       int                `json:"total"`
+	Done        int                `json:"done"`
+	Children    []waitChildSummary `json:"children"`
+	CompletedAt time.Time          `json:"completedAt"`
+}
+
+func (WaitExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv) error {
+	if env.GetJob == nil {
+		return &CodedError{Code: "executor_error", Message: "missing env.GetJob"}
+	}
+
+	p := waitParams{}
+	if len(job.ParamsJSON) > 0 {
+		_ = json.Unmarshal(job.ParamsJSON, &p)
+	}
+	if len(p.JobIDs) == 0 {
+		return &CodedError{Code: "invalid_params", Message: "missing params.jobIds"}
+	}
+
+	ids := make([]string, 0, len(p.JobIDs))
+	seen := map[string]struct{}{}
+	for _, id := range p.JobIDs {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			return &CodedError{Code: "invalid_params", Message: "jobIds must be non-empty"}
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return &CodedError{Code: "invalid_params", Message: "missing params.jobIds"}
+	}
+
+	failOnFailed := true
+	if p.FailOnFailed != nil {
+		failOnFailed = *p.FailOnFailed
+	}
+
+	poll := 300 * time.Millisecond
+	if p.PollMs > 0 {
+		poll = time.Duration(p.PollMs) * time.Millisecond
+	}
+	if poll <= 0 {
+		poll = 300 * time.Millisecond
+	}
+
+	var deadline time.Time
+	if p.TimeoutMs > 0 {
+		deadline = time.Now().Add(time.Duration(p.TimeoutMs) * time.Millisecond)
+	}
+
+	ticker := time.NewTicker(poll)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
+
+		canceled, err := env.IsCanceled()
+		if err != nil {
+			return err
+		}
+		if canceled {
+			return nil
+		}
+
+		if !deadline.IsZero() && time.Now().After(deadline) {
+			return &CodedError{Code: "timeout", Message: "wait timeout"}
+		}
+
+		summaries := make([]waitChildSummary, 0, len(ids))
+		done := 0
+		for _, id := range ids {
+			child, err := env.GetJob(id)
+			if err != nil {
+				if errors.Is(err, ErrNotFound) {
+					return &CodedError{Code: "not_found", Message: fmt.Sprintf("child job not found: %s", id)}
+				}
+				return err
+			}
+			s := waitChildSummary{
+				ID:        child.ID,
+				State:     child.State,
+				Progress:  child.Progress,
+				ErrorCode: child.ErrorCode,
+				Error:     child.ErrorMessage,
+			}
+			summaries = append(summaries, s)
+
+			if child.State.IsTerminal() {
+				done++
+				if failOnFailed && (child.State == domain.JobFailed || child.State == domain.JobCanceled) {
+					return &CodedError{Code: "child_failed", Message: fmt.Sprintf("child job failed: %s", child.ID)}
+				}
+			}
+		}
+
+		if env.UpdateProgress != nil {
+			progress := float64(done) / float64(len(ids))
+			progress = math.Max(0, math.Min(0.999, progress))
+			_ = env.UpdateProgress(progress)
+		}
+
+		if done == len(ids) {
+			if env.UpdateResult != nil {
+				res := waitResult{
+					JobIDs:      ids,
+					Total:       len(ids),
+					Done:        done,
+					Children:    summaries,
+					CompletedAt: time.Now().UTC(),
+				}
+				if b, err := json.Marshal(res); err == nil {
+					_ = env.UpdateResult(b)
+				}
+			}
+			_ = env.UpdateProgress(1)
+			return nil
+		}
+	}
 }

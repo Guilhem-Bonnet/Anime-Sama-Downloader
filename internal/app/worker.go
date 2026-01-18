@@ -145,6 +145,10 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 		return created, nil
 	}
 
+	getJob := func(jobID string) (domain.Job, error) {
+		return w.repo.Get(ctx, jobID)
+	}
+
 	exec := w.execs.Get(job.Type)
 	if job.Type == "download" && w.opts.DownloadLimiter != nil {
 		if w.opts.MaxConcurrentDownloadsFunc != nil {
@@ -177,6 +181,7 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 		Steps:          w.opts.Steps,
 		Destination:    destination,
 		CreateJob:      createJob,
+		GetJob:         getJob,
 	})
 	if err != nil {
 		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("executor failed")

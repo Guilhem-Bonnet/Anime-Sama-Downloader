@@ -44,7 +44,7 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 				"JobType": map[string]any{
 					"type":        "string",
 					"description": "Type de job (extensible).",
-					"enum":        []any{"noop", "sleep", "download", "spawn"},
+					"enum":        []any{"noop", "sleep", "download", "spawn", "wait"},
 				},
 				"Error": map[string]any{
 					"type": "object",
@@ -104,6 +104,7 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						map[string]any{"$ref": "#/components/schemas/CreateSleepJobRequest"},
 						map[string]any{"$ref": "#/components/schemas/CreateDownloadJobRequest"},
 						map[string]any{"$ref": "#/components/schemas/CreateSpawnJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateWaitJobRequest"},
 					},
 					"description": "Requête de création d'un job. Les params dépendent du type.",
 				},
@@ -177,6 +178,29 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 								},
 							},
 							"required":             []any{"jobs"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type", "params"},
+					"additionalProperties": false,
+				},
+				"CreateWaitJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"wait"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"jobIds": map[string]any{
+									"type":        "array",
+									"description": "Liste de jobs à attendre.",
+									"items":       map[string]any{"type": "string"},
+								},
+								"failOnFailed": map[string]any{"type": "boolean", "description": "Si true, échoue dès qu'un enfant est failed/canceled.", "example": true},
+								"timeoutMs":    map[string]any{"type": "integer", "description": "Timeout côté executor en ms.", "example": 600000},
+								"pollMs":       map[string]any{"type": "integer", "description": "Intervalle de polling en ms.", "example": 250},
+							},
+							"required":             []any{"jobIds"},
 							"additionalProperties": false,
 						},
 					},

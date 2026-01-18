@@ -217,3 +217,96 @@ func TestSpawnExecutor_CreatesJobsAndSetsResult(t *testing.T) {
 		t.Fatalf("expected 2 result jobIds, got %d", len(res.JobIDs))
 	}
 }
+
+func TestWaitExecutor_MissingJobIDs(t *testing.T) {
+	ex := WaitExecutor{}
+	job := domain.Job{ID: "wait1", Type: "wait", ParamsJSON: []byte(`{"jobIds":[]}`)}
+
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(float64) error { return nil },
+		UpdateResult:   func([]byte) error { return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		GetJob:         func(string) (domain.Job, error) { return domain.Job{}, nil },
+	})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "invalid_params" {
+		t.Fatalf("expected invalid_params coded error, got %T (%v)", err, err)
+	}
+}
+
+func TestWaitExecutor_WaitsAndSetsResult(t *testing.T) {
+	ex := WaitExecutor{}
+	job := domain.Job{ID: "wait2", Type: "wait", ParamsJSON: []byte(`{"jobIds":["a","b"],"pollMs":1,"timeoutMs":200}`)}
+
+	var calls int
+	var last float64
+	var resultJSON []byte
+
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(p float64) error { last = p; return nil },
+		UpdateResult:   func(b []byte) error { resultJSON = append([]byte(nil), b...); return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		GetJob: func(id string) (domain.Job, error) {
+			calls++
+			state := domain.JobRunning
+			if calls >= 5 {
+				state = domain.JobCompleted
+			}
+			return domain.Job{ID: id, Type: "noop", State: state, Progress: 1, UpdatedAt: time.Now()}, nil
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if last != 1 {
+		t.Fatalf("expected progress 1, got %v", last)
+	}
+	if len(resultJSON) == 0 {
+		t.Fatalf("expected result JSON")
+	}
+	var res struct {
+		Total    int `json:"total"`
+		Done     int `json:"done"`
+		Children []struct {
+			ID    string `json:"id"`
+			State string `json:"state"`
+		} `json:"children"`
+	}
+	if err := json.Unmarshal(resultJSON, &res); err != nil {
+		t.Fatalf("invalid result JSON: %v", err)
+	}
+	if res.Total != 2 || res.Done != 2 {
+		t.Fatalf("expected total=2 done=2, got total=%d done=%d", res.Total, res.Done)
+	}
+	if len(res.Children) != 2 {
+		t.Fatalf("expected 2 children, got %d", len(res.Children))
+	}
+}
+
+func TestWaitExecutor_FailsOnChildFailedByDefault(t *testing.T) {
+	ex := WaitExecutor{}
+	job := domain.Job{ID: "wait3", Type: "wait", ParamsJSON: []byte(`{"jobIds":["ok","bad"],"pollMs":1,"timeoutMs":200}`)}
+
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(float64) error { return nil },
+		UpdateResult:   func([]byte) error { return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		GetJob: func(id string) (domain.Job, error) {
+			state := domain.JobCompleted
+			if id == "bad" {
+				state = domain.JobFailed
+			}
+			return domain.Job{ID: id, Type: "noop", State: state, Progress: 1, UpdatedAt: time.Now()}, nil
+		},
+	})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "child_failed" {
+		t.Fatalf("expected child_failed coded error, got %T (%v)", err, err)
+	}
+}
