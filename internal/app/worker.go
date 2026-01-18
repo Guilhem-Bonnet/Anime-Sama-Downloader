@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"math"
 	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
@@ -30,6 +29,7 @@ type Worker struct {
 	repo   ports.JobRepository
 	bus    ports.EventBus
 	opts   WorkerOptions
+	execs  ExecutorRegistry
 }
 
 func NewWorker(logger zerolog.Logger, repo ports.JobRepository, bus ports.EventBus, opts WorkerOptions) *Worker {
@@ -42,7 +42,7 @@ func NewWorker(logger zerolog.Logger, repo ports.JobRepository, bus ports.EventB
 	if opts.Steps <= 0 {
 		opts.Steps = DefaultWorkerOptions().Steps
 	}
-	return &Worker{logger: logger, repo: repo, bus: bus, opts: opts}
+	return &Worker{logger: logger, repo: repo, bus: bus, opts: opts, execs: DefaultExecutorRegistry()}
 }
 
 func RunWorkers(ctx context.Context, logger zerolog.Logger, repo ports.JobRepository, bus ports.EventBus, count int, opts WorkerOptions) {
@@ -83,33 +83,47 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 	w.logger.Info().Str("job_id", job.ID).Str("type", job.Type).Msg("job claimed")
 	PublishJobEvent(w.bus, "job.started", job)
 
-	steps := w.opts.Steps
-	for i := 1; i <= steps; i++ {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(w.opts.StepInterval):
-		}
-
-		// Arrêt si cancel.
+	isCanceled := func() (bool, error) {
 		current, err := w.repo.Get(ctx, job.ID)
 		if err != nil {
-			w.logger.Error().Err(err).Str("job_id", job.ID).Msg("failed to reload job")
-			return
+			return false, err
 		}
-		if current.State == domain.JobCanceled {
-			w.logger.Info().Str("job_id", job.ID).Msg("job canceled")
-			return
-		}
+		return current.State == domain.JobCanceled, nil
+	}
 
-		progress := float64(i) / float64(steps)
-		progress = math.Max(0, math.Min(1, progress))
+	updateProgress := func(progress float64) error {
 		updated, err := w.repo.UpdateProgress(ctx, job.ID, progress)
 		if err != nil {
-			w.logger.Error().Err(err).Str("job_id", job.ID).Msg("failed to update progress")
-			return
+			return err
 		}
 		PublishJobEvent(w.bus, "job.progress", updated)
+		return nil
+	}
+
+	exec := w.execs.Get(job.Type)
+	err := exec.Execute(ctx, job, ExecEnv{
+		UpdateProgress: updateProgress,
+		IsCanceled:     isCanceled,
+		StepInterval:   w.opts.StepInterval,
+		Steps:          w.opts.Steps,
+	})
+	if err != nil {
+		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("executor failed")
+		failed, err2 := w.repo.UpdateState(ctx, job.ID, domain.JobRunning, domain.JobFailed)
+		if err2 == nil {
+			PublishJobEvent(w.bus, "job.failed", failed)
+		}
+		return
+	}
+
+	canceled, err := isCanceled()
+	if err != nil {
+		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("failed to reload job")
+		return
+	}
+	if canceled {
+		w.logger.Info().Str("job_id", job.ID).Msg("job canceled")
+		return
 	}
 
 	// Terminer: respecter running -> muxing -> completed.
