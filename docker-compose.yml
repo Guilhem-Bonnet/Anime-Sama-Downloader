@@ -18,6 +18,13 @@ services:
       ASD_DOWNLOAD_ROOT: /data/videos
       # En Docker, on refuse par défaut toute destination en dehors de /data/videos
       ASD_ALLOWED_DEST_PREFIXES: /data/videos
+      # Nommage / intégration media-server (optionnel)
+      ASD_OUTPUT_NAMING_MODE: ${ASD_OUTPUT_NAMING_MODE:-legacy}
+      ASD_MEDIA_SEPARATE_LANG: ${ASD_MEDIA_SEPARATE_LANG:-0}
+      ASD_MEDIA_REFRESH_ENABLED: ${ASD_MEDIA_REFRESH_ENABLED:-1}
+      ASD_MEDIA_REFRESH_DEBOUNCE_SECONDS: ${ASD_MEDIA_REFRESH_DEBOUNCE_SECONDS:-20}
+      ASD_JELLYFIN_URL: ${ASD_JELLYFIN_URL:-http://jellyfin:8096}
+      ASD_JELLYFIN_API_KEY: ${ASD_JELLYFIN_API_KEY:-}
       # Optionnel: pointe vers un config.ini monté
       # ASD_CONFIG: /app/config.ini
     volumes:
@@ -39,6 +46,18 @@ services:
       - asd_webapp_node_modules:/webapp/node_modules
     depends_on:
       - backend
+
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    profiles: ["media"]
+    ports:
+      - "8096:8096"
+    volumes:
+      - ./jellyfin-config:/config
+      - ./jellyfin-cache:/cache
+      # Même dossier que le downloader (sur l'hôte) mais monté en lecture côté Jellyfin
+      - ${ASD_HOST_DOWNLOAD_ROOT:-./videos}:/media:ro
 
 volumes:
   asd_webapp_node_modules:

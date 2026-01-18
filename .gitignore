@@ -21,6 +21,10 @@ videos/
 *.mkv
 *.part
 
+# Jellyfin local (docker profile)
+jellyfin-config/
+jellyfin-cache/
+
 # Local user folder accidentally committed
 ~/
 

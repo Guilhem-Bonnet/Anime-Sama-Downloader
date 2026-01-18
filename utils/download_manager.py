@@ -228,6 +228,7 @@ class DownloadManager:
         return job.run(job.cancel_event)
 
     def _on_done(self, job_id: str, fut: Future) -> None:
+        should_refresh = False
         with self._lock:
             self._running.pop(job_id, None)
             job = self._jobs.get(job_id)
@@ -252,6 +253,7 @@ class DownloadManager:
                     job.result_path = res
                     job.error = None
                     self._emit(job, "success")
+                    should_refresh = True
                 else:
                     job.status = "FAILED"
                     job.result_path = None
@@ -265,6 +267,15 @@ class DownloadManager:
                 self._emit(job, "failed")
 
             self._drain_locked()
+
+        # Outside the lock: schedule Jellyfin/Plex refresh (best-effort).
+        if should_refresh:
+            try:
+                from utils.media_refresh import schedule_media_refresh
+
+                schedule_media_refresh()
+            except Exception:
+                pass
 
     def wait(self) -> None:
         """Block until no pending/running jobs remain."""

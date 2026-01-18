@@ -321,6 +321,12 @@ def download_episode(
             return True, output_path
     else:
         print_status(f"Episode {episode_num} successfully saved to: {save_path}", "success")
+        try:
+            from utils.media_refresh import schedule_media_refresh
+
+            schedule_media_refresh()
+        except Exception:
+            pass
         return True, save_path
 
 def complete_anime_url(base_url):
@@ -495,6 +501,19 @@ def run_batch_download(args, urls: list[str], searches: list[str]) -> int:
                 print_status(error_msg, "error")
                 continue
 
+            # Derive season/lang from the base_url (for output naming/layout).
+            season = 1
+            lang = "vostfr"
+            m = re.search(r"/saison(?P<s>\d+)/(?:vostfr|vf|vo)/", base_url or "")
+            if m:
+                try:
+                    season = int(m.group("s"))
+                except Exception:
+                    season = 1
+            m2 = re.search(r"/saison\d+/(?P<lang>vostfr|vf|vo)/", base_url or "", re.IGNORECASE)
+            if m2:
+                lang = str(m2.group("lang")).lower()
+
             slug = _slug_from_catalogue_url(base_url)
             print_status(f"Fetching episodes for: {slug}", "loading")
             episodes = fetch_episodes(base_url)
@@ -517,15 +536,13 @@ def run_batch_download(args, urls: list[str], searches: list[str]) -> int:
             page_urls = [episodes[player_choice][i] for i in episode_indices]
             episode_numbers = [i + 1 for i in episode_indices]
 
-            dest_dir = os.path.join(save_root, slug)
-            os.makedirs(dest_dir, exist_ok=True)
-
             for ep_num, page_url in zip(episode_numbers, page_urls):
                 if not page_url:
                     continue
 
-                save_path = os.path.join(dest_dir, f"{slug}_episode_{ep_num}.mp4")
-                label = f"{slug} E{ep_num}"
+                out_dir, save_path = build_episode_output_path(save_root, slug, season, lang, ep_num, ext="mp4")
+                os.makedirs(out_dir, exist_ok=True)
+                label = f"{slug} S{season}E{ep_num}"
 
                 def _make_runner(page_url=page_url, save_path=save_path, label=label):
                     def _runner(cancel_event: threading.Event):
@@ -572,6 +589,13 @@ def run_batch_download(args, urls: list[str], searches: list[str]) -> int:
 
         print_status(f"Queue démarrée: {enqueued} job(s), {jobs} en parallèle.", "success")
         mgr.wait()
+        try:
+            from utils.media_refresh import flush_media_refresh, shutdown_media_refresh
+
+            flush_media_refresh(timeout_s=15)
+            shutdown_media_refresh(timeout_s=2)
+        except Exception:
+            pass
         return 0
 
     except KeyboardInterrupt:
@@ -902,11 +926,25 @@ def main():
             print_separator()
             if failed_downloads == 0:
                 print_status("All downloads completed successfully! Enjoy watching! 🎉", "success")
+                try:
+                    from utils.media_refresh import flush_media_refresh, shutdown_media_refresh
+
+                    flush_media_refresh(timeout_s=15)
+                    shutdown_media_refresh(timeout_s=2)
+                except Exception:
+                    pass
                 if not cli_mode:
                     input(f"{Colors.BOLD}Press Enter to exit...{Colors.ENDC}")
                 return 0
             else:
                 print_status(f"Completed with {failed_downloads} failed downloads", "warning")
+                try:
+                    from utils.media_refresh import flush_media_refresh, shutdown_media_refresh
+
+                    flush_media_refresh(timeout_s=15)
+                    shutdown_media_refresh(timeout_s=2)
+                except Exception:
+                    pass
                 if not cli_mode:
                     input(f"{Colors.BOLD}Press Enter to exit...{Colors.ENDC}")
                 return 1

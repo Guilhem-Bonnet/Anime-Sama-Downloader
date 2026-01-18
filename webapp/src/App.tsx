@@ -7,6 +7,7 @@ import {
   apiDefaults,
   apiEnqueue,
   apiJobs,
+  apiMediaTest,
   apiRetryJob,
   apiSearch,
   apiSeasonInfo,
@@ -82,6 +83,9 @@ export function App() {
 
   const [isDocker, setIsDocker] = useState(false);
   const [allowedDestPrefixes, setAllowedDestPrefixes] = useState<string[]>([]);
+
+  const [mediaTestBusy, setMediaTestBusy] = useState(false);
+  const [mediaTestResult, setMediaTestResult] = useState<any | null>(null);
 
   const [jobs, setJobs] = useState<JobsSnapshot>({ pending: 0, running: 0, total: 0, jobs: [] });
   const [busy, setBusy] = useState(false);
@@ -261,6 +265,26 @@ export function App() {
       setError(e?.message || String(e));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function onTestMediaApi() {
+    setError(null);
+    setMediaTestBusy(true);
+    try {
+      const r = await apiMediaTest(5);
+      setMediaTestResult(r);
+
+      const jf = r?.jellyfin;
+      const px = r?.plex;
+      const jfTxt = jf?.configured ? (jf?.ok ? `OK (${jf?.status_code ?? '—'})` : `KO (${jf?.status_code ?? '—'})`) : 'non configuré';
+      const pxTxt = px?.configured ? (px?.ok ? `OK (${px?.status_code ?? '—'})` : `KO (${px?.status_code ?? '—'})`) : 'non configuré';
+
+      setLogLines((p) => [...p, `[INFO] Test API Jellyfin: ${jfTxt}`, `[INFO] Test API Plex: ${pxTxt}`].slice(-400));
+    } catch (e: any) {
+      setError(`Test API impossible: ${String(e?.message || e)}`);
+    } finally {
+      setMediaTestBusy(false);
     }
   }
 
@@ -496,6 +520,22 @@ export function App() {
               ) : null}
             </div>
           ) : null}
+
+          <div className="row" style={{ marginTop: 10, alignItems: 'center' }}>
+            <button className="btn" type="button" onClick={onTestMediaApi} disabled={busy || mediaTestBusy}>
+              Tester l’API (Jellyfin / Plex)
+            </button>
+            <div className="muted small">
+              {mediaTestResult ? (
+                <>
+                  Jellyfin: <span className="badge">{mediaTestResult?.jellyfin?.configured ? (mediaTestResult?.jellyfin?.ok ? 'OK' : 'KO') : 'N/A'}</span>{' '}
+                  Plex: <span className="badge">{mediaTestResult?.plex?.configured ? (mediaTestResult?.plex?.ok ? 'OK' : 'KO') : 'N/A'}</span>
+                </>
+              ) : (
+                <>Vérifie la connexion + credentials configurés (env/config.ini).</>
+              )}
+            </div>
+          </div>
 
           <div className="row" style={{ marginTop: 10 }}>
             <button

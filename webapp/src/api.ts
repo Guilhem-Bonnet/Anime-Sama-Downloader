@@ -51,8 +51,19 @@ export async function apiDefaults(): Promise<{
   max_concurrent_downloads: number;
   is_docker?: boolean;
   allowed_dest_prefixes?: string[];
+  media_refresh?: any;
 }> {
   const r = await fetch('/api/defaults');
+  if (!r.ok) throw new Error(await r.text());
+  return await r.json();
+}
+
+export async function apiMediaTest(timeout_s: number = 5): Promise<any> {
+  const r = await fetch('/api/media/test', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ timeout_s }),
+  });
   if (!r.ok) throw new Error(await r.text());
   return await r.json();
 }

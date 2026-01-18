@@ -253,12 +253,36 @@ refreshJobs();
     def api_defaults() -> dict[str, Any]:
         is_docker = _is_docker()
         allowed = _allowed_dest_prefixes() if is_docker else []
+        media: dict[str, Any] = {}
+        try:
+            from utils.media_refresh import get_media_refresh_status
+
+            media = get_media_refresh_status() or {}
+        except Exception:
+            media = {}
         return {
             "download_root": get_default_download_path(),
             "max_concurrent_downloads": get_max_concurrent_downloads(default=10),
             "is_docker": is_docker,
             "allowed_dest_prefixes": allowed,
+            "media_refresh": media,
         }
+
+    @app.post("/api/media/test")
+    def api_media_test(payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        try:
+            from utils.media_refresh import test_media_apis
+        except Exception as e:
+            raise HTTPException(500, f"media refresh module unavailable: {e}")
+
+        timeout_s = 5.0
+        if payload and payload.get("timeout_s") is not None:
+            try:
+                timeout_s = float(payload.get("timeout_s"))
+            except Exception:
+                timeout_s = 5.0
+
+        return test_media_apis(timeout_s=timeout_s)
 
     @app.post("/api/season_info")
     def api_season_info(payload: dict[str, Any]) -> dict[str, Any]:

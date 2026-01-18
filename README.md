@@ -7,6 +7,11 @@ Téléchargeur d’épisodes depuis **anime-sama.si** avec plusieurs interfaces 
 
 **Fork de :** https://github.com/sertrafurr/Anime-Sama-Downloader
 
+## Crédits
+
+- Projet original : https://github.com/sertrafurr/Anime-Sama-Downloader (ce repo est un fork, non affilié)
+- Recherche : https://anilist.co (résolution par titres/synonymes)
+
 **Version :** v2.6.1
 
 ## Points clés
@@ -73,6 +78,12 @@ docker compose -f docker-compose.prod.yml up --build
 
 Accès : http://localhost:8000
 
+Avec Jellyfin (optionnel) :
+
+```bash
+docker compose -f docker-compose.prod.yml --profile media up --build
+```
+
 ### Sortie vidéos en Docker (important)
 
 - **Dans le conteneur**, la sortie est **toujours** `/data/videos`.
@@ -118,6 +129,12 @@ ASD_WEBAPP_PORT=5173
 # Docker: dossier hôte monté sur /data/videos
 ASD_HOST_DOWNLOAD_ROOT=/chemin/absolu/sur/hote
 ```
+
+## Jellyfin / Plex
+
+- Guide complet : [JELLYFIN_PLEX.md](JELLYFIN_PLEX.md)
+- Nommage compatible : `ASD_OUTPUT_NAMING_MODE=media`
+- Refresh auto : configure `ASD_JELLYFIN_URL` + `ASD_JELLYFIN_API_KEY` (ou Plex : `ASD_PLEX_URL` + `ASD_PLEX_TOKEN` + `ASD_PLEX_SECTION_ID`)
 
 ## Documentation
 

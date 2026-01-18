@@ -163,6 +163,61 @@ def get_web_bind(config_path: str | None = None) -> tuple[str, int]:
     return (str(host).strip() or "127.0.0.1", port)
 
 
+def _parse_bool(v: str | None, default: bool = False) -> bool:
+    if v is None:
+        return bool(default)
+    s = str(v).strip().lower()
+    if s in {"1", "true", "yes", "y", "on"}:
+        return True
+    if s in {"0", "false", "no", "n", "off"}:
+        return False
+    return bool(default)
+
+
+def get_output_naming_mode(config_path: str | None = None, default: str = "legacy") -> str:
+    """Naming mode for output paths.
+
+    Values (case-insensitive):
+    - legacy (default): <root>/<slug>/Saison <n>/<lang>/<slug>-S<n>E<ep>.ext
+    - media / jellyfin / plex: <root>/<Series>/Season 01/<Series> - S01E01.ext
+
+    Sources:
+    - env ASD_OUTPUT_NAMING_MODE or ASD_NAMING_MODE
+    - INI [OUTPUT] naming_mode
+    """
+    env_v = _env_get("ASD_OUTPUT_NAMING_MODE") or _env_get("ASD_NAMING_MODE")
+    if env_v:
+        return str(env_v).strip().lower()
+
+    ini = load_ini_config(config_path)
+    ini_v = _ini_get(ini, "OUTPUT", "naming_mode")
+    if ini_v:
+        return str(ini_v).strip().lower()
+
+    return str(default).strip().lower()
+
+
+def get_media_separate_lang(config_path: str | None = None, default: bool = False) -> bool:
+    """If True in media-server naming, create one series folder per language.
+
+    Example: "My Show [VOSTFR]" and "My Show [VF]".
+
+    Sources:
+    - env ASD_MEDIA_SEPARATE_LANG
+    - INI [OUTPUT] media_separate_lang
+    """
+    env_v = _env_get("ASD_MEDIA_SEPARATE_LANG")
+    if env_v is not None:
+        return _parse_bool(env_v, default=default)
+
+    ini = load_ini_config(config_path)
+    ini_v = _ini_get(ini, "OUTPUT", "media_separate_lang")
+    if ini_v is not None:
+        return _parse_bool(str(ini_v), default=default)
+
+    return bool(default)
+
+
 def _config_get(config: dict, *path: str, default=None):
     cur = config
     for key in path:
