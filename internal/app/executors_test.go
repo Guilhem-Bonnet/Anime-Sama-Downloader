@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -32,8 +33,41 @@ func TestDownloadExecutor_InvalidURL(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error, got nil")
 	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "invalid_params" {
+		t.Fatalf("expected invalid_params coded error, got %T (%v)", err, err)
+	}
 	if last != 0 {
 		t.Fatalf("expected no progress updates, got %v", last)
+	}
+}
+
+func TestDownloadExecutor_HTTPStatusErrorIsCoded(t *testing.T) {
+	ex := DownloadExecutor{}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "nope", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	job := domain.Job{
+		ID:         "job404",
+		Type:       "download",
+		ParamsJSON: []byte(`{"url":"` + srv.URL + `"}`),
+	}
+
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(float64) error { return nil },
+		UpdateResult:   func([]byte) error { return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		Destination:    t.TempDir(),
+	})
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "http_status" {
+		t.Fatalf("expected http_status coded error, got %T (%v)", err, err)
 	}
 }
 
@@ -115,5 +149,9 @@ func TestDownloadExecutor_PathTraversalRejected(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatalf("expected error, got nil")
+	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "invalid_params" {
+		t.Fatalf("expected invalid_params coded error, got %T (%v)", err, err)
 	}
 }

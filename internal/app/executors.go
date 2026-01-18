@@ -188,14 +188,14 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 		_ = json.Unmarshal(job.ParamsJSON, &p)
 	}
 	if p.URL == "" {
-		return fmt.Errorf("missing params.url")
+		return &CodedError{Code: "invalid_params", Message: "missing params.url"}
 	}
 	u, err := url.Parse(p.URL)
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return fmt.Errorf("invalid params.url")
+		return &CodedError{Code: "invalid_params", Message: "invalid params.url"}
 	}
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("unsupported url scheme")
+		return &CodedError{Code: "invalid_params", Message: "unsupported url scheme"}
 	}
 
 	baseDir := strings.TrimSpace(env.Destination)
@@ -222,7 +222,7 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	if strings.TrimSpace(p.Path) != "" {
 		dstPath, err = safeJoin(baseDir, p.Path)
 		if err != nil {
-			return err
+			return &CodedError{Code: "invalid_params", Message: err.Error()}
 		}
 		// Si path ressemble à un dossier, ajouter le filename.
 		if strings.HasSuffix(p.Path, "/") || strings.HasSuffix(p.Path, string(os.PathSeparator)) {
@@ -246,13 +246,13 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	}
 
 	if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
-		return err
+		return &CodedError{Code: "io_error", Message: "failed to create destination directory", Err: err}
 	}
 
 	tmpPath := dstPath + ".part"
 	out, err := os.OpenFile(tmpPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
 	if err != nil {
-		return err
+		return &CodedError{Code: "io_error", Message: "failed to create temp file", Err: err}
 	}
 	defer func() {
 		_ = out.Close()
@@ -260,7 +260,7 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, p.URL, nil)
 	if err != nil {
-		return err
+		return &CodedError{Code: "invalid_params", Message: "failed to build http request", Err: err}
 	}
 	req.Header.Set("User-Agent", "asd-server")
 
@@ -268,12 +268,12 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	resp, err := client.Do(req)
 	if err != nil {
 		_ = os.Remove(tmpPath)
-		return err
+		return &CodedError{Code: "network_error", Message: "http request failed", Err: err}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
 		_ = os.Remove(tmpPath)
-		return fmt.Errorf("http error: %s", resp.Status)
+		return &CodedError{Code: "http_status", Message: fmt.Sprintf("http error: %s", resp.Status)}
 	}
 
 	total := resp.ContentLength
@@ -296,7 +296,7 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 		if n > 0 {
 			if _, werr := out.Write(buf[:n]); werr != nil {
 				_ = os.Remove(tmpPath)
-				return werr
+				return &CodedError{Code: "io_error", Message: "failed to write temp file", Err: werr}
 			}
 			downloaded += int64(n)
 		}
@@ -314,17 +314,17 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 				break
 			}
 			_ = os.Remove(tmpPath)
-			return rerr
+			return &CodedError{Code: "io_error", Message: "failed while reading http response", Err: rerr}
 		}
 	}
 
 	if err := out.Close(); err != nil {
 		_ = os.Remove(tmpPath)
-		return err
+		return &CodedError{Code: "io_error", Message: "failed to close temp file", Err: err}
 	}
 	if err := os.Rename(tmpPath, dstPath); err != nil {
 		_ = os.Remove(tmpPath)
-		return err
+		return &CodedError{Code: "io_error", Message: "failed to move temp file into place", Err: err}
 	}
 
 	// Résultat.

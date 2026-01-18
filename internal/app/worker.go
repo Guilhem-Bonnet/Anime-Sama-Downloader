@@ -133,7 +133,18 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 	})
 	if err != nil {
 		w.logger.Error().Err(err).Str("job_id", job.ID).Msg("executor failed")
-		_, _ = w.repo.UpdateError(ctx, job.ID, "executor_error", err.Error())
+		code := "executor_error"
+		message := err.Error()
+		var coded *CodedError
+		if errors.As(err, &coded) {
+			if coded.Code != "" {
+				code = coded.Code
+			}
+			if coded.Message != "" {
+				message = coded.Message
+			}
+		}
+		_, _ = w.repo.UpdateError(ctx, job.ID, code, message)
 		failed, err2 := w.repo.UpdateState(ctx, job.ID, domain.JobRunning, domain.JobFailed)
 		if err2 == nil {
 			PublishJobEvent(w.bus, "job.failed", failed)
