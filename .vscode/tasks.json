@@ -1,69 +1,205 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "dev: backend (web)",
-      "type": "shell",
-      "command": "${workspaceFolder}/venv/bin/python",
-      "args": [
-        "-m",
-        "uvicorn",
-        "utils.ui.web.app:create_app",
-        "--factory",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        "8000",
-        "--reload"
-      ],
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "dev: frontend (vite)",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev"],
-      "options": {
-        "cwd": "${workspaceFolder}/webapp"
-      },
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "dev: fullstack",
-      "dependsOn": ["dev: backend (web)", "dev: frontend (vite)"],
-      "dependsOrder": "parallel"
-    },
-    {
-      "label": "docker: up",
-      "type": "shell",
-      "command": "docker",
-      "args": ["compose", "up", "--build"],
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "docker: down",
-      "type": "shell",
-      "command": "docker",
-      "args": ["compose", "down", "-v"],
-      "problemMatcher": []
-    },
-    {
-      "label": "docker: prod up",
-      "type": "shell",
-      "command": "docker",
-      "args": ["compose", "-f", "docker-compose.prod.yml", "up", "--build"],
-      "isBackground": true,
-      "problemMatcher": []
-    },
-    {
-      "label": "smoke: py",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/smoke.sh",
-      "args": ["py"],
-      "problemMatcher": []
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "dev: backend (web)",
+			"type": "shell",
+			"command": "${workspaceFolder}/venv/bin/python",
+			"args": [
+				"-m",
+				"uvicorn",
+				"utils.ui.web.app:create_app",
+				"--factory",
+				"--host",
+				"127.0.0.1",
+				"--port",
+				"8000",
+				"--reload"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: frontend (vite)",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"run",
+				"dev"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}/webapp"
+			},
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "dev: fullstack",
+			"dependsOn": [
+				"dev: backend (web)",
+				"dev: frontend (vite)"
+			],
+			"dependsOrder": "parallel"
+		},
+		{
+			"label": "docker: up",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"up",
+				"--build"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "docker: down",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"down",
+				"-v"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "docker: prod up",
+			"type": "shell",
+			"command": "docker",
+			"args": [
+				"compose",
+				"-f",
+				"docker-compose.prod.yml",
+				"up",
+				"--build"
+			],
+			"isBackground": true,
+			"problemMatcher": []
+		},
+		{
+			"label": "smoke: py",
+			"type": "shell",
+			"command": "${workspaceFolder}/scripts/smoke.sh",
+			"args": [
+				"py"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "gofmt",
+			"type": "shell",
+			"command": "gofmt -w internal/ports/subscriptions.go internal/adapters/httpapi/openapi.go",
+			"isBackground": false
+		},
+		{
+			"label": "gofmt",
+			"type": "shell",
+			"command": "gofmt -w internal/app/download_completion_updater.go internal/app/download_completion_updater_test.go internal/ports/subscriptions.go internal/adapters/sqlite/subscriptions_repo.go cmd/asd-server/main.go",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		},
+		{
+			"label": "go get x/text",
+			"type": "shell",
+			"command": "go get golang.org/x/text/unicode/norm golang.org/x/text/transform golang.org/x/text/runes",
+			"isBackground": false
+		},
+		{
+			"label": "list x/text versions",
+			"type": "shell",
+			"command": "go list -m -versions golang.org/x/text | tail -n 1",
+			"isBackground": false
+		},
+		{
+			"label": "check x/text go version",
+			"type": "shell",
+			"command": "go mod download -json golang.org/x/text@v0.23.0 | grep 'GoMod' -n && echo OK",
+			"isBackground": false
+		},
+		{
+			"label": "show x/text mod",
+			"type": "shell",
+			"command": "cat \"$GOPATH/pkg/mod/cache/download/golang.org/x/text/@v/v0.23.0.mod\" | head -n 20",
+			"isBackground": false
+		},
+		{
+			"label": "go env GOPATH",
+			"type": "shell",
+			"command": "go env GOPATH",
+			"isBackground": false
+		},
+		{
+			"label": "show x/text mod",
+			"type": "shell",
+			"command": "cat /home/guilhem/go/pkg/mod/cache/download/golang.org/x/text/@v/v0.23.0.mod | head -n 20",
+			"isBackground": false
+		},
+		{
+			"label": "ls xtext mod cache",
+			"type": "shell",
+			"command": "ls -l /home/guilhem/go/pkg/mod/cache/download/golang.org/x/text/@v | tail -n 10",
+			"isBackground": false
+		},
+		{
+			"label": "pin x/text",
+			"type": "shell",
+			"command": "go get golang.org/x/text@v0.23.0",
+			"isBackground": false
+		},
+		{
+			"label": "pin x/text older",
+			"type": "shell",
+			"command": "go get golang.org/x/text@v0.20.0",
+			"isBackground": false
+		},
+		{
+			"label": "go test",
+			"type": "shell",
+			"command": "go test ./...",
+			"isBackground": false
+		}
+	]
 }

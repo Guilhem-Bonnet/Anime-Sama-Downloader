@@ -1,79 +1,42 @@
-# 🔍 Guide de recherche (AniList + résolution d’URL)
+# 🔍 Guide de recherche (AniList + résolution d’URL, serveur Go)
 
-Le projet propose une recherche par nom qui **résout automatiquement** l’URL anime-sama (domaine par défaut : **anime-sama.si**).
+Le serveur expose des endpoints pour :
 
-## Comment ça marche (résumé)
+- récupérer un planning AniList (`GET /api/v1/anilist/airing`)
+- résoudre un anime vers des candidates Anime‑Sama (`POST /api/v1/animesama/resolve`)
+- créer un abonnement à partir d’une base URL (saison/langue) (`POST /api/v1/subscriptions`)
 
-1. Requête AniList (titres, synonymes, variantes)
-2. Normalisation / scoring (fuzzy)
-3. Résolution du bon “slug” Anime‑Sama pour construire une URL du type :
+L’UI intègre ce flux dans l’onglet **Calendrier → AniList** (bouton “Résoudre”, puis “Créer”).
 
-```
-https://anime-sama.si/catalogue/<slug>/saisonN/<lang>/
-```
-
-Si le domaine Anime‑Sama change : tu peux le surcharger via config ou variable d’environnement (voir plus bas).
-
-## Utilisation
-
-### Recherche simple
+## Résolution via API (exemple curl)
 
 ```bash
-python main.py -s "one piece" -e 1-12
+curl -sS -X POST http://127.0.0.1:8080/api/v1/animesama/resolve \
+    -H 'content-type: application/json' \
+    -d '{
+        "titles": ["Sousou no Frieren", "Frieren: Beyond Journey\u0027s End"],
+        "season": 1,
+        "lang": "vostfr",
+        "maxCandidates": 5
+    }'
 ```
 
-### Saison + langue
+La réponse contient une liste de `candidates` avec : `catalogueUrl`, `baseUrl`, `matchedTitle`, `score`.
+
+## Créer un abonnement depuis une candidate
 
 ```bash
-python main.py -s "sword art online" --season 2 --lang vf -e 1-10
+curl -sS -X POST http://127.0.0.1:8080/api/v1/subscriptions \
+    -H 'content-type: application/json' \
+    -d '{
+        "baseUrl": "https://anime-sama.si/catalogue/.../saison1/vostfr/",
+        "label": "Frieren (S1 vostfr)",
+        "player": "auto"
+    }'
 ```
 
-Langues supportées :
+## Notes
 
-- `vostfr`
-- `vf`
-- `vo`
-
-### Plusieurs animes (batch)
-
-```bash
-python main.py --jobs 5 \
-    -s "kaiju" \
-    -s "naruto" \
-    -e 1-6 --yes
-```
-
-## Fournisseurs de recherche
-
-- `anilist` (défaut) : meilleurs résultats, pas de clé API.
-- `local` : fallback simplifié.
-
-Exemple :
-
-```bash
-python main.py -s "attack on titan" --search-provider anilist -e 1-5
-```
-
-## Configuration du domaine (si ça bouge)
-
-### Via variable d’environnement
-
-```bash
-ASD_SITE_BASE_URL=https://anime-sama.si python main.py -s "kaiju" -e 1-3
-```
-
-### Via config.ini
-
-Dans `config.ini` :
-
-```ini
-[SITE]
-base_url = https://anime-sama.si
-```
-
-## Dépannage rapide
-
-- **Aucun résultat / mauvais anime** : essaie un titre anglais/japonais, ou précise `--season`.
-- **Le site a changé de domaine** : règle `ASD_SITE_BASE_URL` ou `[SITE] base_url`.
-- **Erreur réseau/timeout** : ajuste `[NETWORK] timeout` dans `config.ini`.
+- Le domaine utilisé est `anime-sama.si` (certaines URLs historiques sont normalisées vers ce domaine).
+- Pour le détail des paramètres, consulte la spec : http://127.0.0.1:8080/api/v1/openapi.json
 

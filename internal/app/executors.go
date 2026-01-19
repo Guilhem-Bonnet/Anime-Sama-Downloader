@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -181,6 +182,11 @@ type downloadParams struct {
 
 type downloadResult struct {
 	URL         string `json:"url"`
+	SourceURL   string `json:"sourceUrl,omitempty"`
+	ResolvedURL string `json:"resolvedUrl,omitempty"`
+	Mode        string `json:"mode,omitempty"` // http | ffmpeg
+	UsedReferer bool   `json:"usedReferer,omitempty"`
+	UsedOrigin  bool   `json:"usedOrigin,omitempty"`
 	Path        string `json:"path"`
 	Bytes       int64  `json:"bytes"`
 	ContentType string `json:"contentType,omitempty"`
@@ -194,6 +200,15 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	if p.URL == "" {
 		return &CodedError{Code: "invalid_params", Message: "missing params.url"}
 	}
+
+	sourceURL := strings.TrimSpace(p.URL)
+	ua := "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0"
+
+	resolvedURL, _ := ResolveDirectMediaURL(ctx, p.URL)
+	if strings.TrimSpace(resolvedURL) != "" {
+		p.URL = resolvedURL
+	}
+	finalURL := strings.TrimSpace(p.URL)
 	u, err := url.Parse(p.URL)
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return &CodedError{Code: "invalid_params", Message: "invalid params.url"}
@@ -253,6 +268,66 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 		return &CodedError{Code: "io_error", Message: "failed to create destination directory", Err: err}
 	}
 
+	// Some hosts require a Referer/Origin to allow fetching the underlying media.
+	origin := ""
+	if src, err := url.Parse(sourceURL); err == nil && src.Scheme != "" && src.Host != "" {
+		origin = src.Scheme + "://" + src.Host
+	}
+	usedReferer := sourceURL != "" && sourceURL != finalURL
+	usedOrigin := origin != ""
+
+	// HLS via ffmpeg (best-effort).
+	if strings.Contains(strings.ToLower(p.URL), ".m3u8") {
+		if _, err := exec.LookPath("ffmpeg"); err != nil {
+			return &CodedError{Code: "missing_ffmpeg", Message: "ffmpeg is required to download m3u8 streams"}
+		}
+		tmpPath := dstPath + ".part"
+		headers := ""
+		if usedReferer {
+			headers += "Referer: " + sourceURL + "\r\n"
+		}
+		if usedOrigin {
+			headers += "Origin: " + origin + "\r\n"
+		}
+		cmdArgs := []string{"-y", "-loglevel", "error"}
+		if headers != "" {
+			cmdArgs = append(cmdArgs, "-headers", headers)
+		}
+		cmdArgs = append(cmdArgs,
+			"-user_agent", ua,
+			"-i", p.URL,
+			"-c", "copy",
+			"-f", "mp4",
+			tmpPath,
+		)
+		cmd := exec.CommandContext(ctx, "ffmpeg", cmdArgs...)
+		if err := cmd.Run(); err != nil {
+			_ = os.Remove(tmpPath)
+			return &CodedError{Code: "executor_failed", Message: "ffmpeg failed", Err: err}
+		}
+		if err := os.Rename(tmpPath, dstPath); err != nil {
+			_ = os.Remove(tmpPath)
+			return &CodedError{Code: "io_error", Message: "failed to move temp file into place", Err: err}
+		}
+		if env.UpdateResult != nil {
+			res := downloadResult{
+				URL:         finalURL,
+				SourceURL:   sourceURL,
+				ResolvedURL: finalURL,
+				Mode:        "ffmpeg",
+				UsedReferer: usedReferer,
+				UsedOrigin:  usedOrigin,
+				Path:        dstPath,
+				Bytes:       0,
+			}
+			if b, err := json.Marshal(res); err == nil {
+				_ = env.UpdateResult(b)
+			}
+		}
+		_ = env.UpdateProgress(1)
+		return nil
+	}
+
 	tmpPath := dstPath + ".part"
 	out, err := os.OpenFile(tmpPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
 	if err != nil {
@@ -266,7 +341,13 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	if err != nil {
 		return &CodedError{Code: "invalid_params", Message: "failed to build http request", Err: err}
 	}
-	req.Header.Set("User-Agent", "asd-server")
+	req.Header.Set("User-Agent", ua)
+	if usedReferer {
+		req.Header.Set("Referer", sourceURL)
+	}
+	if usedOrigin {
+		req.Header.Set("Origin", origin)
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -334,7 +415,12 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	// Résultat.
 	if env.UpdateResult != nil {
 		res := downloadResult{
-			URL:         p.URL,
+			URL:         finalURL,
+			SourceURL:   sourceURL,
+			ResolvedURL: finalURL,
+			Mode:        "http",
+			UsedReferer: usedReferer,
+			UsedOrigin:  usedOrigin,
 			Path:        dstPath,
 			Bytes:       downloaded,
 			ContentType: resp.Header.Get("Content-Type"),

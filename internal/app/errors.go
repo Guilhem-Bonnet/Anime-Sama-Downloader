@@ -6,6 +6,8 @@ import (
 
 var ErrNotFound = ports.ErrNotFound
 
+var ErrConflict = ports.ErrConflict
+
 // CodedError permet aux executors de renvoyer un code d'erreur stable,
 // persisté dans Job.errorCode.
 //

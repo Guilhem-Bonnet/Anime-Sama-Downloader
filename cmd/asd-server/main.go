@@ -44,6 +44,11 @@ func main() {
 	jobsSvc := app.NewJobService(jobsRepo, bus)
 	settingsRepo := sqlite.NewSettingsRepository(db.SQL)
 	settingsSvc := app.NewSettingsService(settingsRepo)
+	subsRepo := sqlite.NewSubscriptionsRepository(db.SQL)
+	subsSvc := app.NewSubscriptionService(subsRepo, jobsSvc, bus)
+	anilistSvc := app.NewAniListService(settingsSvc.Get)
+	resolver := app.NewAnimeSamaCatalogueResolver()
+	importSvc := app.NewAniListImportService(anilistSvc, resolver, subsSvc)
 
 	// Limiteur global (partagé) pour tous les workers + hook côté API settings.
 	downloadLimiter := app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
@@ -81,7 +86,15 @@ func main() {
 	defer pool.Close()
 	logger.Info().Int("workers", workers).Msg("workers started")
 
-	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, bus, downloadLimiter, func(updated domain.Settings) {
+	// Scheduler: planifie des checks subscriptions + enqueue (best-effort) des downloads.
+	scheduler := app.NewSubscriptionScheduler(logger.With().Str("component", "scheduler").Logger(), subsSvc, subsRepo)
+	go scheduler.Run(shutdownCtx)
+
+	// Updater: met à jour lastDownloadedEpisode à la fin des jobs download.
+	updater := app.NewDownloadCompletionUpdater(logger.With().Str("component", "download-updater").Logger(), bus, subsRepo)
+	go updater.Run(shutdownCtx)
+
+	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, subsSvc, anilistSvc, importSvc, resolver, bus, downloadLimiter, func(updated domain.Settings) {
 		if updated.MaxWorkers > 0 {
 			pool.SetCount(updated.MaxWorkers)
 		}

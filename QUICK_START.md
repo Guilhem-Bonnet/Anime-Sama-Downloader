@@ -1,75 +1,53 @@
-# 🚀 Quick Start (CLI / TUI / Web / Docker)
+# 🚀 Quick Start (Go server + UI + Docker)
 
 Ce guide donne les commandes “prêtes à copier-coller”. Pour le détail : [README.md](README.md).
 
-## 1) Installer
+## 1) Prérequis
+
+- Go 1.22+
+- Node 20+ (uniquement si tu rebuild l’UI)
+- `ffmpeg` (recommandé si tu télécharges du HLS/M3U8)
+
+## 2) Lancer le serveur (local)
 
 ```bash
-python3 -m pip install -r requirements.txt
+go run ./cmd/asd-server
 ```
 
-Optionnel (recommandé) : installer `ffmpeg` pour convertir les flux `.ts` en `.mp4` plus rapidement.
+Ouvre : http://127.0.0.1:8080
 
-## 2) Télécharger (CLI)
-
-### Mode interactif (simple)
+Changer l’adresse / la DB :
 
 ```bash
-python main.py
+ASD_ADDR=127.0.0.1:8099 ASD_DB_PATH=./asd.db go run ./cmd/asd-server
 ```
 
-### Mode rapide (recommandé au quotidien)
+## 3) Builder l’UI (pour qu’elle soit servie par le serveur)
 
 ```bash
-python main.py --quick
+npm -C webapp ci
+npm -C webapp run build
 ```
 
-### Recherche par nom (AniList)
+Ensuite, le serveur sert automatiquement `webapp/dist`.
 
-```bash
-python main.py -s "one piece" --season 1 --lang vostfr -e 1-12
-```
-
-### URL directe
-
-```bash
-python main.py -u "https://anime-sama.si/catalogue/roshidere/saison1/vostfr/" -e 1-12 -t
-```
-
-### Batch / parallèle (jusqu’à 10)
-
-```bash
-python main.py --jobs 5 \
-  -s "kaiju" \
-  -s "naruto" \
-  -e 1-6 --yes
-```
-
-## 3) Interface terminal (TUI)
-
-```bash
-python main.py --tui
-```
-
-## 4) Interface Web (dev local)
+## 4) Dev UI (Vite)
 
 Backend :
+
 ```bash
 ./scripts/dev-backend.sh
 ```
 
-Variables optionnelles (par défaut : `127.0.0.1:8000`) : `ASD_WEB_HOST`, `ASD_WEB_PORT`.
-
 Frontend :
+
 ```bash
 ./scripts/dev-frontend.sh
 ```
 
-Variables optionnelles (par défaut : `127.0.0.1:5173`) : `ASD_WEBAPP_HOST`, `ASD_WEBAPP_PORT`.
-
-Ouvre ensuite :
-- http://127.0.0.1:5173 (SPA)
-- http://127.0.0.1:8000 (API + fallback minimal)
+Ouvre :
+- http://127.0.0.1:5173 (SPA, proxy vers le backend)
+- http://127.0.0.1:8080 (backend)
 
 ## 5) Docker
 
@@ -87,32 +65,22 @@ Accès : http://localhost:5173
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-Accès : http://localhost:8000
+Accès : http://localhost:8080
 
-### Dossier de sortie (Docker)
+### Volumes (Docker)
 
-- Dans le conteneur : `/data/videos`
-- Sur l’hôte : configuré par `ASD_HOST_DOWNLOAD_ROOT`
+- Vidéos : `/data/videos` (hôte → variable `ASD_HOST_DOWNLOAD_ROOT`)
+- DB : `/data/asd.db` (hôte → variable `ASD_HOST_DATA_ROOT`)
 
 ```bash
 cp .env.example .env
 # éditer .env puis relancer docker compose
 ```
 
-Dans l’interface Web en Docker : la destination est un **sous-dossier** sous `/data/videos` (pas un chemin absolu hôte).
-
 ---
 
 ## ⚡ Astuces
 
-1. **Appuie sur Entrée** : les défauts sont optimaux
-2. **Besoin d'aide ?** : Tapez `h` quand demandé
-3. **Pressé ?** : utilise `--quick`
-4. **Automatiser ?** : Mode CLI complet
-5. **Erreur ?** : retries automatiques (si temporaire)
-
----
-
-**Version** : 2.6.1  
-**Date** : Janvier 2026  
-**🎯 Recommandation** : Mode `--quick` pour 90% des cas d'usage
+1. Configure la destination via l’UI (**settings**) ou via l’API `PUT /api/v1/settings`
+2. Mets ton token AniList dans `settings.anilistToken` pour activer viewer/watchlist/import
+3. La spec OpenAPI est disponible sur `/api/v1/openapi.json`

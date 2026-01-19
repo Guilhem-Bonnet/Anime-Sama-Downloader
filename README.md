@@ -1,64 +1,61 @@
 # Anime-Sama Downloader
 
-[![Python 3.9+](https://img.shields.io/badge/Python-3.9+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Go 1.22+](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Téléchargeur d’épisodes depuis **anime-sama.si** avec plusieurs interfaces (CLI / TUI / Web) et une file de téléchargements avec parallélisme.
+Téléchargeur d’épisodes depuis **anime-sama.si** piloté par un **serveur Go** (API + jobs + scheduler) et une **UI React** servie en SPA.
 
 **Fork de :** https://github.com/sertrafurr/Anime-Sama-Downloader
 
 ## Crédits
 
-- Projet original : https://github.com/sertrafurr/Anime-Sama-Downloader (ce repo est un fork, non affilié)
-- Recherche : https://anilist.co (résolution par titres/synonymes)
-
-**Version :** v2.6.1
+- Projet original : https://github.com/sertrafurr/Anime-Sama-Downloader (fork, non affilié)
+- Recherche / planning : https://anilist.co
 
 ## Points clés
 
-- Recherche par nom (AniList) + résolution automatique d’URL
-- Téléchargements en parallèle (jusqu’à 10)
-- Support MP4 + HLS/M3U8 (segments `.ts`) + conversion MP4 (FFmpeg/MoviePy)
-- Interface Web (FastAPI + React) et TUI (Textual)
-- Configuration simple : `config.ini` + variables d’environnement
+- Abonnements (clé = base URL saison/langue) + scheduler de checks
+- Jobs persistés + SSE (`/api/v1/events`) + worker pool
+- AniList (token optionnel) : viewer, airing schedule, watchlist + import auto → abonnements
+- HLS/M3U8 via `ffmpeg` si disponible
 
-## Démarrage rapide
+## Démarrage rapide (local)
 
-### Installation (Python)
-
-```bash
-python3 -m pip install -r requirements.txt
-```
-
-Optionnel mais recommandé : `ffmpeg` (conversion plus rapide).
-
-### Utilisation (CLI)
+### 1) Lancer le serveur
 
 ```bash
-# Mode interactif
-python main.py
-
-# Recherche + téléchargement
-python main.py -s "demon slayer" -e 1-5 --quick
-
-# URL directe
-python main.py -u "https://anime-sama.si/catalogue/sword-art-online/saison1/vostfr/" -e 1-10 -t
-
-# TUI (Textual)
-python main.py --tui
+go run ./cmd/asd-server
 ```
 
-### Interface Web (dev local)
+Par défaut :
+- UI/API : http://127.0.0.1:8080
+- DB SQLite : `asd.db`
+
+### 2) (Optionnel) Builder l’UI pour qu’elle soit servie par le serveur
+
+```bash
+npm -C webapp ci
+npm -C webapp run build
+```
+
+Le serveur sert automatiquement `webapp/dist` si présent.
+
+### 3) Ouvrir
+
+- UI : http://127.0.0.1:8080
+- OpenAPI : http://127.0.0.1:8080/api/v1/openapi.json
+
+Voir aussi : [QUICK_START.md](QUICK_START.md)
+
+## Dev UI (Vite)
 
 ```bash
 ./scripts/dev-backend.sh
 ./scripts/dev-frontend.sh
 ```
 
-- SPA : http://127.0.0.1:5173
-- Backend : http://127.0.0.1:8000
-
-Voir aussi : [QUICK_START.md](QUICK_START.md)
+- SPA : http://127.0.0.1:5173 (proxy vers `/api/*`)
+- Backend : http://127.0.0.1:8080
 
 ## Docker
 
@@ -70,78 +67,46 @@ docker compose up --build
 
 Accès : http://localhost:5173
 
-### Prod (backend sert la SPA build)
+### Prod (image unique, serveur Go sert la SPA build)
 
 ```bash
 docker compose -f docker-compose.prod.yml up --build
 ```
 
-Accès : http://localhost:8000
+Accès : http://localhost:8080
 
-Avec Jellyfin (optionnel) :
+### Volumes (Docker)
 
-```bash
-docker compose -f docker-compose.prod.yml --profile media up --build
-```
-
-### Sortie vidéos en Docker (important)
-
-- **Dans le conteneur**, la sortie est **toujours** `/data/videos`.
-- **Sur l’hôte**, ce dossier est monté via : `ASD_HOST_DOWNLOAD_ROOT`.
-
-Pour personnaliser le dossier sur l’hôte :
+- Vidéos : monter l’hôte sur `/data/videos` via `ASD_HOST_DOWNLOAD_ROOT`
+- DB : monter l’hôte sur `/data` via `ASD_HOST_DATA_ROOT` (fichier `/data/asd.db`)
 
 ```bash
 cp .env.example .env
-# édite .env
+# édite .env puis relance docker compose
 ```
-
-Dans l’interface Web en Docker : la “destination” est un **sous-dossier relatif** sous `/data/videos` (pour éviter d’écrire dans le FS interne du conteneur).
 
 ## Configuration
 
-Priorité (du plus fort au plus faible) : **CLI > variables d’env > `config.ini`**.
+La config se fait via l’UI (onglet **settings**) ou l’API : `PUT /api/v1/settings`.
 
-### `config.ini`
-
-```bash
-cp config.ini.example config.ini
-```
-
-### Variables d’environnement utiles
+Petit CLI fourni (optionnel) :
 
 ```bash
-ASD_CONFIG=./config.ini
-ASD_DOWNLOAD_ROOT=./videos
-ASD_MAX_CONCURRENT_DOWNLOADS=10
-
-# Domaine (si ça bouge)
-ASD_SITE_BASE_URL=https://anime-sama.si
-
-# Web
-ASD_WEB_HOST=0.0.0.0
-ASD_WEB_PORT=8000
-
-# Frontend (Vite) en dev local
-ASD_WEBAPP_HOST=127.0.0.1
-ASD_WEBAPP_PORT=5173
-
-# Docker: dossier hôte monté sur /data/videos
-ASD_HOST_DOWNLOAD_ROOT=/chemin/absolu/sur/hote
+go run ./cmd/asd settings get
+go run ./cmd/asd settings set --destination /chemin/vers/videos --max-concurrent-downloads 6
 ```
 
-## Jellyfin / Plex
+Variables d’environnement serveur :
 
-- Guide complet : [JELLYFIN_PLEX.md](JELLYFIN_PLEX.md)
-- Nommage compatible : `ASD_OUTPUT_NAMING_MODE=media`
-- Refresh auto : configure `ASD_JELLYFIN_URL` + `ASD_JELLYFIN_API_KEY` (ou Plex : `ASD_PLEX_URL` + `ASD_PLEX_TOKEN` + `ASD_PLEX_SECTION_ID`)
+```bash
+ASD_ADDR=127.0.0.1:8080
+ASD_DB_PATH=asd.db
+ASD_WEB_DIST=webapp/dist
+```
 
-## Documentation
+## Notes sur l’ancien code Python
 
-- [QUICK_START.md](QUICK_START.md) : commandes prêtes à l’emploi
-- [SEARCH_GUIDE.md](SEARCH_GUIDE.md) : recherche, résolution d’URL, conseils
-- [MIGRATION.md](MIGRATION.md) : notes de migration (domaines, Docker, nouveautés)
-- [CHANGELOG.md](CHANGELOG.md) : historique des changements
+L’implémentation Python historique a été retirée de cette branche. Pour la retrouver, utilise l’historique git (tags/commits antérieurs).
 
 ## Notes légales
 

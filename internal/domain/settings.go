@@ -25,6 +25,9 @@ type Settings struct {
 	PlexURL        string `json:"plexUrl"`
 	PlexToken      string `json:"plexToken"`
 	PlexSectionID  string `json:"plexSectionId"`
+
+	// AniList (optionnel): token perso pour requêtes auth (Viewer, watchlist, etc).
+	AniListToken string `json:"anilistToken"`
 }
 
 func DefaultSettings() Settings {
