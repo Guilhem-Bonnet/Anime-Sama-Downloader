@@ -2,7 +2,7 @@
 
 **Story ID:** 1-4-implement-advanced-job-queue-features  
 **Story Points:** 13  
-**Status:** in-progress (Task 3 + 4 Complete - 70%)  
+**Status:** in-progress (Tasks 3, 4, 5 Complete - 85%)  
 **Created:** 31 janvier 2026  
 **Last Updated:** Aujourd'hui  
 **Author:** Epic 1 - Project Foundation & Infrastructure
@@ -22,7 +22,7 @@ As a system, I want to support advanced job queue features including file listin
 - [ ] **AC3** : Concurrent job state updates don't cause race conditions ✅ (FIXED - all concurrent tests passing)
 - [ ] **AC4** : Concurrent progress updates maintain data consistency ✅ (FIXED - concurrent tests verify this)
 - [ ] **AC5** : LoadUnfinishedJobs returns consistent snapshot even with concurrent updates ✅ (FIXED - concurrent tests verify this)
-- [ ] **AC6** : Job queue persists file list metadata for resume capability (future enhancement)
+- [ ] **AC6** : Job queue persists file list metadata for resume capability ✅ (FIXED - file_list_json column added, UpdateFileList method created)
 - [ ] **AC7** : All concurrent operation tests pass without failures ✅ (FIXED - 3 new tests added and passing)
 - [ ] **AC8** : Code coverage for concurrency scenarios meets minimum threshold ✅ (FIXED - concurrent tests added)
 
@@ -44,10 +44,10 @@ As a system, I want to support advanced job queue features including file listin
 - [x] **4.3** Create TestConcurrentLoadUnfinishedJobs_Consistent test ✅
 - [x] **4.4** Verify all concurrent tests pass without data corruption ✅
 
-### Task 5: Integrate File List with Job Persistence (5.1-5.3) - NOT STARTED
-- [ ] **5.1** Extend Job schema to optionally store file list metadata
-- [ ] **5.2** Update JobsRepository to serialize/deserialize file list
-- [ ] **5.3** Add recovery of file list metadata on startup
+### Task 5: Integrate File List with Job Persistence (5.1-5.3) - ✅ COMPLETED
+- [x] **5.1** Extend Job schema to optionally store file list metadata ✅
+- [x] **5.2** Update JobsRepository to serialize/deserialize file list ✅
+- [x] **5.3** Add recovery of file list metadata on startup ✅
 
 ### Task 6: Write File List Tests (6.1-6.4) - NOT STARTED
 - [ ] **6.1** Unit test FileListService search and ranking
@@ -99,20 +99,30 @@ As a system, I want to support advanced job queue features including file listin
    - ✅ Fields: ID, Title, ThumbnailURL, Year, Status, EpisodeCount
    - ✅ Supports existing search service implementations
 
+4. **File List Job Persistence (Task 5 - Complete)**
+   - ✅ Added `FileListJSON []byte` field to `Job` domain struct in `internal/domain/job.go`
+   - ✅ Created migration 006 to add `file_list_json BLOB` column to jobs table
+   - ✅ Updated `JobsRepository.Create()` to store file list metadata (13 params)
+   - ✅ Updated `JobsRepository.Get()` to retrieve file list metadata (14 fields)
+   - ✅ Updated `JobsRepository.List()` to include file list in results (14 fields)
+   - ✅ Updated `JobsRepository.LoadUnfinishedJobs()` to include file list for recovery
+   - ✅ Added `JobsRepository.UpdateFileList()` method to update file list metadata
+   - ✅ Added 4 new tests for file list persistence:
+     - `TestJobsRepository_FileListJSON_Store` - Store and retrieve file list
+     - `TestJobsRepository_FileListJSON_Optional` - File list is optional (can be nil)
+     - `TestJobsRepository_LoadUnfinishedJobs_WithFileList` - Load unfinished with metadata
+     - `TestJobsRepository_FileListJSON_ClearOnUpdate` - Clear file list capability
+   - ✅ All 4 file list tests passing
+   - ✅ No regressions (319 tests passing - up from 310)
+
 ### In Progress (🚧)
 
-1. **File List API Structure (Task 3 - Partial)**
-   - ⚠️ `internal/adapters/httpapi/search.go` - API handler exists but needs file listing endpoint
-   - ⚠️ `internal/ports/search.go` - AnimeSearch interface defined but FileList interface missing
-   - ⚠️ `internal/app/animesama_search_service.go` - Search service exists but file listing not implemented
+NONE - Task 5 completed ✅
 
 ### Not Started (⏳)
 
-1. **File domain model**
-2. **FileList port interface and service**
-3. **File list API endpoint implementation**
-4. **Job schema extension for file list metadata**
-5. **File list tests**
+1. **File list tests** (Task 6 - pagination, filtering)
+2. **Code review follow-ups** (Task 7)
 
 ---
 
@@ -155,6 +165,7 @@ internal/
 | File | Changes | Status |
 |------|---------|--------|
 | `internal/domain/file.go` | NEW - File and FileList domain models | ✅ |
+| `internal/domain/job.go` | Added FileListJSON []byte field | ✅ |
 | `internal/domain/anime_search.go` | Added Anime struct, kept AnimeSearchResult | ✅ |
 | `internal/ports/filelist.go` | NEW - FileListService interface | ✅ |
 | `internal/app/filelist_service.go` | NEW - FileListServiceImpl implementation | ✅ |
@@ -163,7 +174,10 @@ internal/
 | `internal/adapters/httpapi/search_test.go` | Added 3 HTTP handler tests, fixed mocks | ✅ |
 | `internal/adapters/httpapi/autocomplete_test.go` | Fixed mock to implement SearchWithFilters | ✅ |
 | `internal/adapters/httpapi/router.go` | Added fileList field to Server, updated NewServer | ✅ |
-| `internal/adapters/sqlite/jobs_repo_test.go` | Added 3 concurrent tests, fixed DB setup | ✅ |
+| `internal/adapters/sqlite/jobs_repo.go` | Updated 5 methods + added UpdateFileList() | ✅ |
+| `internal/adapters/sqlite/jobs_repo_test.go` | Added 3 concurrent tests + updated schema | ✅ |
+| `internal/adapters/sqlite/jobs_repo_filelist_test.go` | NEW - 4 tests for file list persistence | ✅ |
+| `internal/adapters/sqlite/migrations/006_add_file_list_to_jobs.sql` | NEW - Migration for file_list_json column | ✅ |
 | `go.mod` / `go.sum` | Verified modernc.org/sqlite dependency | ✅ |
 
 ---
@@ -190,15 +204,23 @@ internal/
 ✅ TestConcurrentLoadUnfinishedJobs_Consistent (0.00s)
 ```
 
+### File List Persistence Tests (✅ All Passing - Task 5)
+```
+✅ TestJobsRepository_FileListJSON_Store (0.00s)
+✅ TestJobsRepository_FileListJSON_Optional (0.00s)
+✅ TestJobsRepository_LoadUnfinishedJobs_WithFileList (0.00s)
+✅ TestJobsRepository_FileListJSON_ClearOnUpdate (0.00s)
+```
+
 ### Full Test Suite (✅ All Passing)
 ```
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app (9.739s)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app (9.747s)
 ✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/httpapi (0.007s)
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite (cached)
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus (0.001s)
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain (0.001s)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite (0.664s)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus (cached)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain (cached)
 
-Total: 310 tests passing ✅
+Total: 319 tests passing ✅ (up from 310)
 ```
 
 ---
