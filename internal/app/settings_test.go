@@ -49,11 +49,11 @@ func TestNewSettingsService_Success(t *testing.T) {
 // TestSettingsService_Get_Success tests Get returns settings
 func TestSettingsService_Get_Success(t *testing.T) {
 	settings := domain.Settings{
-		Destination:             "/tmp/videos",
-		OutputNamingMode:        "auto",
-		MaxWorkers:              4,
-		MaxConcurrentDownloads:  2,
-		AniListToken:            "token123",
+		Destination:            "/tmp/videos",
+		OutputNamingMode:       "auto",
+		MaxWorkers:             4,
+		MaxConcurrentDownloads: 2,
+		AniListToken:           "token123",
 	}
 
 	repo := &stubSettingsRepo{getSrc: settings}
@@ -163,10 +163,10 @@ func TestSettingsService_Put_DefaultsNegativeMaxConcurrentDownloads(t *testing.T
 	svc := NewSettingsService(repo)
 
 	input := domain.Settings{
-		Destination:             "/tmp",
-		OutputNamingMode:        "auto",
-		MaxWorkers:              1,
-		MaxConcurrentDownloads:  -1, // Negative - should be replaced
+		Destination:            "/tmp",
+		OutputNamingMode:       "auto",
+		MaxWorkers:             1,
+		MaxConcurrentDownloads: -1, // Negative - should be replaced
 	}
 
 	result, err := svc.Put(context.Background(), input)
@@ -283,7 +283,7 @@ func TestSettingsService_Put_PartialDefaults(t *testing.T) {
 
 	input := domain.Settings{
 		Destination: "/custom", // Provide this
-		MaxWorkers:  0,          // Leave empty - should default
+		MaxWorkers:  0,         // Leave empty - should default
 		// Others left empty
 	}
 
@@ -311,11 +311,11 @@ func TestSettingsService_Put_AllFieldsPreserved(t *testing.T) {
 	svc := NewSettingsService(repo)
 
 	input := domain.Settings{
-		Destination:             "/full/custom",
-		OutputNamingMode:        "full-mode",
-		MaxWorkers:              7,
-		MaxConcurrentDownloads:  3,
-		AniListToken:            "my-token",
+		Destination:            "/full/custom",
+		OutputNamingMode:       "full-mode",
+		MaxWorkers:             7,
+		MaxConcurrentDownloads: 3,
+		AniListToken:           "my-token",
 	}
 
 	result, err := svc.Put(context.Background(), input)

@@ -21,8 +21,8 @@ func TestJob_CanTransition_Valid(t *testing.T) {
 		{JobMuxing, JobCanceled, true},
 		{JobMuxing, JobFailed, true},
 		{JobCompleted, JobCompleted, true}, // same state allowed
-		{JobCanceled, JobCanceled, true},    // same state allowed
-		{JobFailed, JobFailed, true},        // same state allowed
+		{JobCanceled, JobCanceled, true},   // same state allowed
+		{JobFailed, JobFailed, true},       // same state allowed
 		// Invalid transitions
 		{JobQueued, JobCompleted, false},
 		{JobQueued, JobMuxing, false},

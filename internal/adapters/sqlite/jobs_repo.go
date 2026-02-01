@@ -181,12 +181,12 @@ func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected do
 
 	// Determine if we need to set started_at or completed_at
 	var startedAt, completedAt interface{}
-	
+
 	// Set started_at when transitioning to running state
 	if next == domain.JobRunning && expected == domain.JobQueued {
 		startedAt = nowStr
 	}
-	
+
 	// Set completed_at when reaching terminal state
 	if next.IsTerminal() {
 		completedAt = nowStr

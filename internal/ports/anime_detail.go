@@ -1,9 +1,9 @@
 package ports
 
 import (
-"context"
+	"context"
 
-"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 )
 
 // AnimeDetailService provides anime detail information.

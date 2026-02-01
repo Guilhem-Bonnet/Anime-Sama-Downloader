@@ -98,14 +98,14 @@ func TestDynamicLimiter_AcquireHonorsContext(t *testing.T) {
 // TestDynamicLimiter_LimitMethod tests the Limit() getter
 func TestDynamicLimiter_LimitMethod(t *testing.T) {
 	tests := []struct {
-		initial int
+		initial  int
 		expected int
 	}{
 		{5, 5},
 		{1, 1},
 		{100, 100},
-		{0, 1},      // defaults to 1
-		{-5, 1},     // defaults to 1
+		{0, 1},  // defaults to 1
+		{-5, 1}, // defaults to 1
 	}
 
 	for _, tt := range tests {

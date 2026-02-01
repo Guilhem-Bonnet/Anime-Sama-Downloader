@@ -1,155 +1,70 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"flag"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+"context"
+"fmt"
+"log/slog"
+"net/http"
+"os"
+"os/signal"
+"syscall"
+"time"
 
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/httpapi"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/buildinfo"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/config"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
+"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus"
+"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 )
 
 func main() {
-	def := config.Default()
-	addr := flag.String("addr", def.Addr, "Adresse d'écoute (ex: 127.0.0.1:8080)")
-	dbPath := flag.String("db", def.DBPath, "Chemin SQLite (ex: asd.db)")
-	flag.Parse()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	logger.Info("starting anime-sama downloader MVP")
 
-	logger := zerolog.New(os.Stdout).With().Timestamp().Str("app", "asd-server").Logger()
-	log.Logger = logger
-
-	logger.Info().Interface("build", buildinfo.Current()).Str("db", *dbPath).Msg("starting")
-
-	ctx := context.Background()
-	db, err := sqlite.Open(ctx, *dbPath)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("failed to open db")
-	}
-	defer func() { _ = db.Close() }()
-
-	// Initialize default settings
-	if err := sqlite.InitializeDefaults(db.SQL); err != nil {
-		logger.Fatal().Err(err).Msg("failed to initialize database defaults")
-	}
-
-	bus := memorybus.New()
-	jobsRepo := sqlite.NewJobsRepository(db.SQL)
-	jobsSvc := app.NewJobService(jobsRepo, bus)
-	settingsRepo := sqlite.NewSettingsRepository(db.SQL)
-	settingsSvc := app.NewSettingsService(settingsRepo)
-	subsRepo := sqlite.NewSubscriptionsRepository(db.SQL)
-	subsSvc := app.NewSubscriptionService(subsRepo, jobsSvc, bus)
-	anilistSvc := app.NewAniListService(settingsSvc.Get)
-	catalogueResolver := app.NewAnimeSamaCatalogueResolver()
-	resolver := app.NewAnimeSamaHybridResolver(catalogueResolver, anilistSvc)
-	importSvc := app.NewAniListImportService(anilistSvc, catalogueResolver, subsSvc)
-	
-	// Create anime search service with default catalogue
-	searchCatalogue := []domain.AnimeSearchResult{
-		// TODO: Load from database or external API
-		// For now, empty catalogue (will be populated by future stories)
-	}
-	searchSvc := app.NewAnimeSamaSearchService(searchCatalogue)
-	
-	// Create anime detail service (mock for now)
-	detailSvc := app.NewMockAnimeDetailService()
-
-	// Recover unfinished jobs from previous sessions
-	unfinishedJobs, err := jobsRepo.LoadUnfinishedJobs(ctx)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to load unfinished jobs")
-	} else if len(unfinishedJobs) > 0 {
-		logger.Info().Int("count", len(unfinishedJobs)).Msg("recovered unfinished jobs from previous session")
-		// Jobs will be picked up by workers via ClaimNextQueued
-	}
-
-	// Limiteur global (partagé) pour tous les workers + hook côté API settings.
-	downloadLimiter := app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
-
-	shutdownCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	// Worker V1: exécute les jobs "queued" en tâche de fond.
-	workers := 1
-	opts := app.DefaultWorkerOptions()
-	// Limiteur global (partagé) pour tous les workers.
-	opts.DownloadLimiter = downloadLimiter
-	opts.DestinationFunc = func(ctx context.Context) (string, error) {
-		s, err := settingsSvc.Get(ctx)
-		if err != nil {
-			return "", err
-		}
-		return s.Destination, nil
-	}
-	opts.MaxConcurrentDownloadsFunc = func(ctx context.Context) (int, error) {
-		s, err := settingsSvc.Get(ctx)
-		if err != nil {
-			return 0, err
-		}
-		return s.MaxConcurrentDownloads, nil
-	}
-	if s, err := settingsSvc.Get(ctx); err == nil {
-		if s.MaxWorkers > 0 {
-			workers = s.MaxWorkers
-		}
-	}
-
-	pool := app.NewWorkerPool(shutdownCtx, logger, jobsRepo, bus, opts)
-	pool.SetCount(workers)
-	defer pool.Close()
-	logger.Info().Int("workers", workers).Msg("workers started")
-
-	// Scheduler: planifie des checks subscriptions + enqueue (best-effort) des downloads.
-	scheduler := app.NewSubscriptionScheduler(logger.With().Str("component", "scheduler").Logger(), subsSvc, subsRepo)
-	go scheduler.Run(shutdownCtx)
-
-	// Updater: met à jour lastDownloadedEpisode à la fin des jobs download.
-	updater := app.NewDownloadCompletionUpdater(logger.With().Str("component", "download-updater").Logger(), bus, subsRepo)
-	go updater.Run(shutdownCtx)
-
-	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, subsSvc, anilistSvc, importSvc, resolver, bus, downloadLimiter, searchSvc, detailSvc, func(updated domain.Settings) {
-		if updated.MaxWorkers > 0 {
-			pool.SetCount(updated.MaxWorkers)
-		}
-	})
-	httpServer := &http.Server{
-		Addr:              *addr,
-		Handler:           srv.Router(),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	eventBus := memorybus.NewEventBus()
+	_ = app.NewSearchService(nil, logger)
+	_ = app.NewDownloadService(nil, eventBus, logger)
+	jobWorker := app.NewJobWorker(nil, eventBus, logger)
 
 	go func() {
-		logger.Info().Str("addr", *addr).Msg("listening")
-		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Error().Err(err).Msg("http server crashed")
-			stop()
-		}
+		ctx := context.Background()
+		jobWorker.Start(ctx)
 	}()
 
-	<-shutdownCtx.Done()
-	logger.Info().Msg("shutting down")
+	mux := http.NewServeMux()
+	
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
+w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+	
+	mux.HandleFunc("GET /api/search", func(w http.ResponseWriter, r *http.Request) {
+w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"results":[]}`))
+	})
+	
+	mux.HandleFunc("GET /api/downloads", func(w http.ResponseWriter, r *http.Request) {
+w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"downloads":[]}`))
+	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	_ = httpServer.Shutdown(ctx)
-	logger.Info().Msg("bye")
-}
-
-func envOr(key, def string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+	addr := ":8000"
+	httpServer := &http.Server{
+		Addr:    addr,
+		Handler: mux,
 	}
-	return def
+
+	logger.Info(fmt.Sprintf("listening on %s", addr))
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigChan
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		httpServer.Shutdown(ctx)
+	}()
+
+	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		logger.Error("server error", "error", err.Error())
+		os.Exit(1)
+	}
 }

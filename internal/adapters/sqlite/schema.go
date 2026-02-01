@@ -68,4 +68,3 @@ func verifyDatabaseIntegrity(db *sql.DB) error {
 
 	return nil
 }
-

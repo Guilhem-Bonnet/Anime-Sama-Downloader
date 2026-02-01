@@ -7,16 +7,16 @@ type AnimeDetail struct {
 	ThumbnailURL string   `json:"thumbnail_url"`
 	Synopsis     string   `json:"synopsis"`
 	Year         int      `json:"year"`
-	Status       string   `json:"status"`       // "ongoing", "completed", "planning"
-	Genres       []string `json:"genres"`       // ["Action", "Adventure", "Shonen"]
+	Status       string   `json:"status"` // "ongoing", "completed", "planning"
+	Genres       []string `json:"genres"` // ["Action", "Adventure", "Shonen"]
 	EpisodeCount int      `json:"episode_count"`
 	Seasons      []Season `json:"seasons"`
 }
 
 // Season represents a season of an anime.
 type Season struct {
-	Number   int       `json:"number"`   // 1, 2, 3...
-	Name     string    `json:"name"`     // "Season 1", "Part 2", etc.
+	Number   int       `json:"number"` // 1, 2, 3...
+	Name     string    `json:"name"`   // "Season 1", "Part 2", etc.
 	Episodes []Episode `json:"episodes"`
 }
 

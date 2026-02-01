@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 // testCatalogue returns a sample anime catalogue for testing
@@ -17,6 +18,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2002,
 			Status:       "completed",
 			EpisodeCount: 220,
+			Genres:       []string{"Action", "Adventure", "Shonen"},
 		},
 		{
 			ID:           "2",
@@ -25,6 +27,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2007,
 			Status:       "completed",
 			EpisodeCount: 500,
+			Genres:       []string{"Action", "Adventure", "Shonen"},
 		},
 		{
 			ID:           "3",
@@ -33,6 +36,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         1999,
 			Status:       "ongoing",
 			EpisodeCount: 1050,
+			Genres:       []string{"Action", "Adventure", "Comedy"},
 		},
 		{
 			ID:           "4",
@@ -41,6 +45,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2019,
 			Status:       "ongoing",
 			EpisodeCount: 50,
+			Genres:       []string{"Action", "Supernatural", "Shonen"},
 		},
 		{
 			ID:           "5",
@@ -49,6 +54,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2006,
 			Status:       "completed",
 			EpisodeCount: 37,
+			Genres:       []string{"Mystery", "Thriller", "Psychological"},
 		},
 		{
 			ID:           "6",
@@ -57,6 +63,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2013,
 			Status:       "completed",
 			EpisodeCount: 94,
+			Genres:       []string{"Action", "Drama", "Dark Fantasy"},
 		},
 		{
 			ID:           "7",
@@ -65,6 +72,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2016,
 			Status:       "ongoing",
 			EpisodeCount: 120,
+			Genres:       []string{"Action", "Superhero", "Shonen"},
 		},
 		{
 			ID:           "8",
@@ -73,6 +81,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2009,
 			Status:       "completed",
 			EpisodeCount: 64,
+			Genres:       []string{"Action", "Adventure", "Fantasy"},
 		},
 		{
 			ID:           "9",
@@ -81,6 +90,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2011,
 			Status:       "completed",
 			EpisodeCount: 24,
+			Genres:       []string{"Sci-Fi", "Thriller", "Drama"},
 		},
 		{
 			ID:           "10",
@@ -89,6 +99,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2006,
 			Status:       "completed",
 			EpisodeCount: 50,
+			Genres:       []string{"Mecha", "Sci-Fi", "Drama"},
 		},
 		{
 			ID:           "11",
@@ -97,6 +108,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2004,
 			Status:       "completed",
 			EpisodeCount: 366,
+			Genres:       []string{"Action", "Supernatural", "Shonen"},
 		},
 		{
 			ID:           "12",
@@ -105,6 +117,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         1989,
 			Status:       "completed",
 			EpisodeCount: 291,
+			Genres:       []string{"Action", "Adventure", "Shonen"},
 		},
 		{
 			ID:           "13",
@@ -113,6 +126,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2009,
 			Status:       "completed",
 			EpisodeCount: 328,
+			Genres:       []string{"Action", "Adventure", "Fantasy"},
 		},
 		{
 			ID:           "14",
@@ -121,6 +135,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2014,
 			Status:       "completed",
 			EpisodeCount: 48,
+			Genres:       []string{"Action", "Horror", "Psychological"},
 		},
 		{
 			ID:           "15",
@@ -129,6 +144,7 @@ func testCatalogue() []domain.AnimeSearchResult {
 			Year:         2020,
 			Status:       "ongoing",
 			EpisodeCount: 60,
+			Genres:       []string{"Action", "Supernatural", "Shonen"},
 		},
 	}
 }
@@ -342,17 +358,274 @@ func BenchmarkAnimeSamaSearchService_LargeDataset(b *testing.B) {
 		catalogue = append(catalogue, domain.AnimeSearchResult{
 			ID:           string(rune(i)),
 			Title:        "anime title number " + string(rune(i)),
-			ThumbnailURL: "https://example.com/anime.jpg",
-			Year:         2020,
-			Status:       "ongoing",
+			ThumbnailURL: "https://example.com/img.jpg",
+			Year:         2000 + (i % 24), // Year range 2000-2023
+			Status:       "completed",
 			EpisodeCount: 12,
+			Genres:       []string{"Action"},
 		})
 	}
 
 	service := NewAnimeSamaSearchService(catalogue)
-
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		service.Search(context.Background(), "anime")
+		_, _ = service.Search(context.Background(), "anime")
+	}
+}
+
+// TestSearchWithFilters_GenreFilter verifies genre filtering
+func TestSearchWithFilters_GenreFilter(t *testing.T) {
+	service := NewAnimeSamaSearchService(testCatalogue())
+	ctx := context.Background()
+
+	tests := []struct {
+		name           string
+		genres         []string
+		expectedTitles []string
+	}{
+		{
+			name:           "filter by Action",
+			genres:         []string{"Action"},
+			expectedTitles: []string{"Naruto", "Naruto Shippuden", "One Piece", "Demon Slayer", "Attack on Titan", "My Hero Academia", "Fullmetal Alchemist Brotherhood", "Bleach", "Dragon Ball Z", "Fairy Tail", "Tokyo Ghoul", "Jujutsu Kaisen"},
+		},
+		{
+			name:           "filter by Mystery",
+			genres:         []string{"Mystery"},
+			expectedTitles: []string{"Death Note"},
+		},
+		{
+			name:           "filter by Shonen",
+			genres:         []string{"Shonen"},
+			expectedTitles: []string{"Naruto", "Naruto Shippuden", "Demon Slayer", "My Hero Academia", "Bleach", "Dragon Ball Z", "Jujutsu Kaisen"},
+		},
+		{
+			name:           "filter by multiple genres (OR logic)",
+			genres:         []string{"Mecha", "Superhero"},
+			expectedTitles: []string{"Code Geass", "My Hero Academia"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filters := ports.SearchFilters{
+				Query:  "", // No text filter, just genre
+				Genres: tt.genres,
+			}
+
+			results, err := service.SearchWithFilters(ctx, filters)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(results) != len(tt.expectedTitles) {
+				t.Errorf("expected %d results, got %d", len(tt.expectedTitles), len(results))
+			}
+
+			// Verify all expected titles are in results (order doesn't matter for genre filter only)
+			resultTitles := make(map[string]bool)
+			for _, r := range results {
+				resultTitles[r.Title] = true
+			}
+
+			for _, expected := range tt.expectedTitles {
+				if !resultTitles[expected] {
+					t.Errorf("expected result %q not found", expected)
+				}
+			}
+		})
+	}
+}
+
+// TestSearchWithFilters_StatusFilter verifies status filtering
+func TestSearchWithFilters_StatusFilter(t *testing.T) {
+	service := NewAnimeSamaSearchService(testCatalogue())
+	ctx := context.Background()
+
+	tests := []struct {
+		name          string
+		status        string
+		expectedCount int
+	}{
+		{
+			name:          "filter completed anime",
+			status:        "completed",
+			expectedCount: 11,
+		},
+		{
+			name:          "filter ongoing anime",
+			status:        "ongoing",
+			expectedCount: 4,
+		},
+		{
+			name:          "case insensitive",
+			status:        "COMPLETED",
+			expectedCount: 11,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filters := ports.SearchFilters{
+				Query:  "", // No text filter
+				Status: tt.status,
+			}
+
+			results, err := service.SearchWithFilters(ctx, filters)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(results) != tt.expectedCount {
+				t.Errorf("expected %d results, got %d", tt.expectedCount, len(results))
+			}
+		})
+	}
+}
+
+// TestSearchWithFilters_YearRangeFilter verifies year range filtering
+func TestSearchWithFilters_YearRangeFilter(t *testing.T) {
+	service := NewAnimeSamaSearchService(testCatalogue())
+	ctx := context.Background()
+
+	tests := []struct {
+		name           string
+		yearMin        int
+		yearMax        int
+		expectedTitles []string
+	}{
+		{
+			name:           "filter 2010 and later",
+			yearMin:        2010,
+			yearMax:        0,
+			expectedTitles: []string{"Steins;Gate", "Attack on Titan", "Tokyo Ghoul", "My Hero Academia", "Demon Slayer", "Jujutsu Kaisen"},
+		},
+		{
+			name:           "filter 2000s only",
+			yearMin:        2000,
+			yearMax:        2009,
+			expectedTitles: []string{"Naruto", "Bleach", "Code Geass", "Death Note", "Naruto Shippuden", "Fullmetal Alchemist Brotherhood", "Fairy Tail"},
+		},
+		{
+			name:           "filter before 2000",
+			yearMin:        0,
+			yearMax:        1999,
+			expectedTitles: []string{"Dragon Ball Z", "One Piece"},
+		},
+		{
+			name:           "filter exact year 2020",
+			yearMin:        2020,
+			yearMax:        2020,
+			expectedTitles: []string{"Jujutsu Kaisen"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filters := ports.SearchFilters{
+				Query:   "",
+				YearMin: tt.yearMin,
+				YearMax: tt.yearMax,
+			}
+
+			results, err := service.SearchWithFilters(ctx, filters)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(results) != len(tt.expectedTitles) {
+				t.Errorf("expected %d results, got %d", len(tt.expectedTitles), len(results))
+			}
+
+			resultTitles := make(map[string]bool)
+			for _, r := range results {
+				resultTitles[r.Title] = true
+			}
+
+			for _, expected := range tt.expectedTitles {
+				if !resultTitles[expected] {
+					t.Errorf("expected result %q not found", expected)
+				}
+			}
+		})
+	}
+}
+
+// TestSearchWithFilters_CombinedFilters verifies multiple filters work together
+func TestSearchWithFilters_CombinedFilters(t *testing.T) {
+	service := NewAnimeSamaSearchService(testCatalogue())
+	ctx := context.Background()
+
+	// Query + Genre + Status + Year
+	filters := ports.SearchFilters{
+		Query:   "naruto",
+		Genres:  []string{"Action"},
+		Status:  "completed",
+		YearMin: 2000,
+		YearMax: 2010,
+	}
+
+	results, err := service.SearchWithFilters(ctx, filters)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Should find:
+	// - "Naruto" (2002, Action, completed) - YES
+	// - "Naruto Shippuden" (2007, Action, completed) - YES
+	if len(results) != 2 {
+		t.Errorf("expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Title != "Naruto" {
+		t.Errorf("expected first result 'Naruto', got %q", results[0].Title)
+	}
+}
+
+// TestSearchWithFilters_NoMatches verifies no results when filters don't match
+func TestSearchWithFilters_NoMatches(t *testing.T) {
+	service := NewAnimeSamaSearchService(testCatalogue())
+	ctx := context.Background()
+
+	filters := ports.SearchFilters{
+		Query:   "naruto",
+		Genres:  []string{"Mecha"}, // Naruto is not Mecha
+		Status:  "completed",
+		YearMin: 2000,
+		YearMax: 2010,
+	}
+
+	results, err := service.SearchWithFilters(ctx, filters)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
+
+// TestSearchWithFilters_EmptyFilters behaves like regular Search
+func TestSearchWithFilters_EmptyFilters(t *testing.T) {
+	service := NewAnimeSamaSearchService(testCatalogue())
+	ctx := context.Background()
+
+	filters := ports.SearchFilters{
+		Query: "naruto",
+		// All other filters empty
+	}
+
+	resultsFiltered, err := service.SearchWithFilters(ctx, filters)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	resultsRegular, err := service.Search(ctx, "naruto")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(resultsFiltered) != len(resultsRegular) {
+		t.Errorf("empty filters should match regular search: %d vs %d", len(resultsFiltered), len(resultsRegular))
 	}
 }

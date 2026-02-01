@@ -12,12 +12,12 @@ import (
 
 // MockSubscriptionRepository for testing
 type mockSubscriptionRepository struct {
-	createFn                  func(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
-	getFn                     func(ctx context.Context, id string) (domain.Subscription, error)
-	listFn                    func(ctx context.Context, limit int) ([]domain.Subscription, error)
-	updateFn                  func(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
-	deleteFn                  func(ctx context.Context, id string) error
-	dueFn                     func(ctx context.Context, now time.Time, limit int) ([]domain.Subscription, error)
+	createFn                   func(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
+	getFn                      func(ctx context.Context, id string) (domain.Subscription, error)
+	listFn                     func(ctx context.Context, limit int) ([]domain.Subscription, error)
+	updateFn                   func(ctx context.Context, sub domain.Subscription) (domain.Subscription, error)
+	deleteFn                   func(ctx context.Context, id string) error
+	dueFn                      func(ctx context.Context, now time.Time, limit int) ([]domain.Subscription, error)
 	markDownloadedEpisodeMaxFn func(ctx context.Context, id string, episode int) (domain.Subscription, error)
 }
 

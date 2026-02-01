@@ -11,6 +11,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 // AnimeSamaSearchService implements anime search functionality
@@ -107,4 +108,101 @@ func (s *AnimeSamaSearchService) normalizeQuery(query string) string {
 	normalized, _, _ := transform.String(t, query)
 
 	return normalized
+}
+
+// SearchWithFilters performs an anime search with additional filters.
+// Filters are applied to the base search results.
+func (s *AnimeSamaSearchService) SearchWithFilters(ctx context.Context, filters ports.SearchFilters) ([]domain.AnimeSearchResult, error) {
+	// Get base search results
+	var results []domain.AnimeSearchResult
+	var err error
+
+	if filters.Query != "" {
+		// If there's a query, use the Search method
+		results, err = s.Search(ctx, filters.Query)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// If no query, start with all catalogue items
+		results = make([]domain.AnimeSearchResult, len(s.catalogue))
+		copy(results, s.catalogue)
+	}
+
+	// Apply genre filter (if specified)
+	if len(filters.Genres) > 0 {
+		results = s.filterByGenres(results, filters.Genres)
+	}
+
+	// Apply status filter (if specified)
+	if filters.Status != "" {
+		results = s.filterByStatus(results, filters.Status)
+	}
+
+	// Apply year range filter (if specified)
+	if filters.YearMin > 0 || filters.YearMax > 0 {
+		results = s.filterByYearRange(results, filters.YearMin, filters.YearMax)
+	}
+
+	return results, nil
+}
+
+// filterByGenres keeps only anime that have at least one matching genre
+func (s *AnimeSamaSearchService) filterByGenres(results []domain.AnimeSearchResult, genres []string) []domain.AnimeSearchResult {
+	// Normalize filter genres for case-insensitive matching
+	normalizedFilterGenres := make([]string, len(genres))
+	for i, g := range genres {
+		normalizedFilterGenres[i] = s.normalizeQuery(g)
+	}
+
+	filtered := make([]domain.AnimeSearchResult, 0)
+	for _, anime := range results {
+		// Check if anime has at least one matching genre
+		hasMatch := false
+		for _, animeGenre := range anime.Genres {
+			normalizedAnimeGenre := s.normalizeQuery(animeGenre)
+			for _, filterGenre := range normalizedFilterGenres {
+				if normalizedAnimeGenre == filterGenre {
+					hasMatch = true
+					break
+				}
+			}
+			if hasMatch {
+				break
+			}
+		}
+		if hasMatch {
+			filtered = append(filtered, anime)
+		}
+	}
+	return filtered
+}
+
+// filterByStatus keeps only anime with matching status (case-insensitive)
+func (s *AnimeSamaSearchService) filterByStatus(results []domain.AnimeSearchResult, status string) []domain.AnimeSearchResult {
+	normalizedStatus := s.normalizeQuery(status)
+	filtered := make([]domain.AnimeSearchResult, 0)
+	for _, anime := range results {
+		if s.normalizeQuery(anime.Status) == normalizedStatus {
+			filtered = append(filtered, anime)
+		}
+	}
+	return filtered
+}
+
+// filterByYearRange keeps only anime within the specified year range
+func (s *AnimeSamaSearchService) filterByYearRange(results []domain.AnimeSearchResult, yearMin, yearMax int) []domain.AnimeSearchResult {
+	filtered := make([]domain.AnimeSearchResult, 0)
+	for _, anime := range results {
+		// Check minimum year
+		if yearMin > 0 && anime.Year < yearMin {
+			continue
+		}
+		// Check maximum year
+		if yearMax > 0 && anime.Year > yearMax {
+			continue
+		}
+		filtered = append(filtered, anime)
+	}
+	return filtered
 }

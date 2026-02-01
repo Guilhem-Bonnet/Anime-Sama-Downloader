@@ -12,14 +12,14 @@ import (
 
 // MockJobRepository for testing
 type mockJobRepository struct {
-	createFn        func(ctx context.Context, job domain.Job) (domain.Job, error)
-	getFn           func(ctx context.Context, id string) (domain.Job, error)
-	listFn          func(ctx context.Context, limit int) ([]domain.Job, error)
+	createFn          func(ctx context.Context, job domain.Job) (domain.Job, error)
+	getFn             func(ctx context.Context, id string) (domain.Job, error)
+	listFn            func(ctx context.Context, limit int) ([]domain.Job, error)
 	claimNextQueuedFn func(ctx context.Context) (domain.Job, error)
-	updateProgressFn func(ctx context.Context, id string, progress float64) (domain.Job, error)
-	updateResultFn  func(ctx context.Context, id string, resultJSON []byte) (domain.Job, error)
-	updateErrorFn   func(ctx context.Context, id string, code string, message string) (domain.Job, error)
-	updateStateFn   func(ctx context.Context, id string, expected domain.JobState, next domain.JobState) (domain.Job, error)
+	updateProgressFn  func(ctx context.Context, id string, progress float64) (domain.Job, error)
+	updateResultFn    func(ctx context.Context, id string, resultJSON []byte) (domain.Job, error)
+	updateErrorFn     func(ctx context.Context, id string, code string, message string) (domain.Job, error)
+	updateStateFn     func(ctx context.Context, id string, expected domain.JobState, next domain.JobState) (domain.Job, error)
 }
 
 func (m *mockJobRepository) Create(ctx context.Context, job domain.Job) (domain.Job, error) {
@@ -326,9 +326,9 @@ func TestJobService_Cancel_Success(t *testing.T) {
 func TestJobService_Cancel_AlreadyRunning(t *testing.T) {
 	stateBeforeCancel := domain.JobRunning
 	canceledJob := domain.Job{
-		ID:       "job-1",
-		Type:     "download",
-		State:    domain.JobCanceled,
+		ID:    "job-1",
+		Type:  "download",
+		State: domain.JobCanceled,
 	}
 
 	repo := &mockJobRepository{
@@ -356,8 +356,6 @@ func TestJobService_Cancel_AlreadyRunning(t *testing.T) {
 		t.Errorf("expected state to be canceled, got %v", result.State)
 	}
 }
-
-
 
 // Test EventBus integration
 func TestJobService_PublishesCreatedEvent(t *testing.T) {
@@ -399,15 +397,15 @@ func TestJobService_PublishesCreatedEvent(t *testing.T) {
 func TestJobDTO_Conversion(t *testing.T) {
 	now := time.Now().UTC()
 	job := domain.Job{
-		ID:         "job-1",
-		Type:       "download",
-		State:      domain.JobQueued,
-		Progress:   0.0,
-		CreatedAt:  now,
-		UpdatedAt:  now,
-		ParamsJSON: []byte(`{"url": "https://example.com"}`),
-		ResultJSON: []byte{},
-		ErrorCode:  "",
+		ID:           "job-1",
+		Type:         "download",
+		State:        domain.JobQueued,
+		Progress:     0.0,
+		CreatedAt:    now,
+		UpdatedAt:    now,
+		ParamsJSON:   []byte(`{"url": "https://example.com"}`),
+		ResultJSON:   []byte{},
+		ErrorCode:    "",
 		ErrorMessage: "",
 	}
 

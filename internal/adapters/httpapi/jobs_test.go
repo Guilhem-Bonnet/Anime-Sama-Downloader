@@ -16,14 +16,14 @@ import (
 
 // Mock JobRepository for tests
 type testJobRepository struct {
-	createFn        func(ctx context.Context, job domain.Job) (domain.Job, error)
-	getFn           func(ctx context.Context, id string) (domain.Job, error)
-	listFn          func(ctx context.Context, limit int) ([]domain.Job, error)
+	createFn          func(ctx context.Context, job domain.Job) (domain.Job, error)
+	getFn             func(ctx context.Context, id string) (domain.Job, error)
+	listFn            func(ctx context.Context, limit int) ([]domain.Job, error)
 	claimNextQueuedFn func(ctx context.Context) (domain.Job, error)
-	updateProgressFn func(ctx context.Context, id string, progress float64) (domain.Job, error)
-	updateResultFn  func(ctx context.Context, id string, resultJSON []byte) (domain.Job, error)
-	updateErrorFn   func(ctx context.Context, id string, code string, message string) (domain.Job, error)
-	updateStateFn   func(ctx context.Context, id string, expected domain.JobState, next domain.JobState) (domain.Job, error)
+	updateProgressFn  func(ctx context.Context, id string, progress float64) (domain.Job, error)
+	updateResultFn    func(ctx context.Context, id string, resultJSON []byte) (domain.Job, error)
+	updateErrorFn     func(ctx context.Context, id string, code string, message string) (domain.Job, error)
+	updateStateFn     func(ctx context.Context, id string, expected domain.JobState, next domain.JobState) (domain.Job, error)
 }
 
 func (m *testJobRepository) Create(ctx context.Context, job domain.Job) (domain.Job, error) {

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/go-chi/chi/v5"
 )

@@ -24,15 +24,15 @@ func TestSubscriptionsRepository_Create_Success(t *testing.T) {
 	ctx := context.Background()
 
 	sub := domain.Subscription{
-		ID:                     "sub-test-1",
-		BaseURL:                "https://anime-sama.si/catalogue/test",
-		Label:                  "Test Anime",
-		Player:                 "default",
-		LastScheduledEpisode:   0,
-		LastDownloadedEpisode:  0,
-		LastAvailableEpisode:   0,
-		CreatedAt:              time.Now(),
-		UpdatedAt:              time.Now(),
+		ID:                    "sub-test-1",
+		BaseURL:               "https://anime-sama.si/catalogue/test",
+		Label:                 "Test Anime",
+		Player:                "default",
+		LastScheduledEpisode:  0,
+		LastDownloadedEpisode: 0,
+		LastAvailableEpisode:  0,
+		CreatedAt:             time.Now(),
+		UpdatedAt:             time.Now(),
 	}
 
 	result, err := repo.Create(ctx, sub)
