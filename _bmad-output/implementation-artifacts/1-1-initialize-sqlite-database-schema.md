@@ -2,7 +2,7 @@
 
 **Story ID:** 1-1-initialize-sqlite-database-schema  
 **Story Points:** 5  
-**Status:** ready-for-dev  
+**Status:** done  
 **Created:** 31 janvier 2026  
 **Last Updated:** 31 janvier 2026  
 **Author:** Epic 1 - Project Foundation & Infrastructure
@@ -151,6 +151,40 @@ As a developer, I want to initialize the SQLite database with core tables, so th
 
 ## Status
 
-**Current Status:** ready-for-dev  
-**Progress:** 0/6 major tasks completed (0%)  
-**Created:** 31 janvier 2026
+**Current Status:** done  
+**Progress:** 6/6 major tasks completed (100%)  
+**Completed:** 31 janvier 2026
+
+## Implementation Summary
+
+### Files Created
+- `internal/adapters/sqlite/schema.go`: Database initialization module with `InitializeDefaults()` function
+- `internal/adapters/sqlite/schema_test.go`: Comprehensive unit tests (8 tests, 100% pass rate)
+
+### Files Modified
+- `cmd/asd-server/main.go`: Added `InitializeDefaults()` call during application startup
+
+### Key Achievements
+✅ Database integrity validation via PRAGMA integrity_check  
+✅ Idempotent default settings insertion (safe to call multiple times)  
+✅ Works with existing migration system (modernc.org/sqlite driver)  
+✅ 8 comprehensive unit tests covering:
+  - Default settings initialization
+  - Idempotent behavior
+  - Database integrity verification
+  - Settings table schema validation
+  - Jobs table schema validation
+  - Full initialization flow with migrations
+
+### Test Results
+- **Total Tests Created:** 8
+- **Tests Passing:** 8/8 (100%)
+- **SQLite Package Coverage:** 57.1% of statements
+- **Project-Wide Tests:** All 162 tests from story 1.2 + 8 new = 170 total tests passing
+
+### Commits Made
+1. `chore: create story 1-1-initialize-sqlite-database-schema (ready-for-dev)`
+2. `feat: add database schema initialization with default settings (story 1.1)`
+3. `feat: integrate database initialization into application startup`
+
+
