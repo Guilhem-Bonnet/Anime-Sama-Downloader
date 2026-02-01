@@ -55,6 +55,11 @@ As a system, I want to support advanced job queue features including file listin
 - [ ] **6.3** Test error scenarios (network failures, missing anime)
 - [ ] **6.4** Test file list filtering and pagination
 
+### Task 7: Code Review Follow-ups (AI-Generated)
+- [ ] **7.1** [LOW][AI-Review] Commit architecture.md changes or revert modifications
+- [ ] **7.2** [LOW][AI-Review] Document untracked domain files (download.go, errors.go, eventbus.go, repository.go, resolver.go)
+- [ ] **7.3** [MEDIUM][AI-Review] Add untracked files to appropriate story File Lists
+
 ---
 
 ## 🛠️ Implementation Progress
