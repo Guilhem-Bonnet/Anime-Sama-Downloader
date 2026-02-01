@@ -294,20 +294,37 @@ Total: 332 tests passing ✅ (up from 319)
 ## � File List
 
 ### Created
-- `internal/domain/anime_search.go`
-- `internal/app/animesama_search_service.go`
-- `internal/app/animesama_search_service_test.go`
-- `internal/adapters/httpapi/search.go`
-- `internal/adapters/httpapi/search_test.go`
-- `internal/app/filelist_service.go`
-- `internal/app/filelist_service_test.go`
-- `internal/domain/file.go`
-- `internal/ports/filelist.go`
+- `internal/domain/anime_search.go` - AnimeSearchResult model
+- `internal/app/animesama_search_service.go` - Search implementation
+- `internal/app/animesama_search_service_test.go` - Search tests
+- `internal/adapters/httpapi/search.go` - Search handler
+- `internal/adapters/httpapi/search_test.go` - Handler tests
+- `internal/app/filelist_service.go` - File list service implementation
+- `internal/app/filelist_service_test.go` - File list service tests
+- `internal/domain/file.go` - File and FileList models
+- `internal/ports/filelist.go` - FileList service interface
+- `internal/adapters/sqlite/migrations/006_add_file_list_to_jobs.sql` - Job persistence migration
+- `internal/adapters/sqlite/jobs_repo_filelist_test.go` - File list persistence tests
 
 ### Modified
-- `internal/adapters/sqlite/jobs_repo.go` (concurrent tests)
-- `internal/adapters/sqlite/jobs_repo_test.go` (concurrent tests)
+- `internal/adapters/sqlite/jobs_repo.go` - Concurrent tests + UpdateFileList method
+- `internal/adapters/sqlite/jobs_repo_test.go` - Concurrent tests + schema updates
+- `internal/domain/job.go` - Added FileListJSON field
 - `go.mod`
+
+### Untracked Domain Files (Part of Story 1-4)
+
+These 5 domain layer files are essential to the architecture but not directly modified in this story:
+
+- **`internal/domain/download.go`** - Download model struct with DownloadID, JobID, AnimeID, EpisodeNum, Metadata, timestamps. Defines IsCompleted() and GetFilePath() methods for download tracking.
+
+- **`internal/domain/errors.go`** - AppError struct implementing error interface with ErrorCode enum (SEARCH_FAILED, DOWNLOAD_FAILED, JOB_QUEUE_FULL, etc.). Helper methods: NewAppError(), WithError(), WithDetails() for structured error handling.
+
+- **`internal/domain/eventbus.go`** - IEventBus interface for pub/sub pattern with Subscribe() and Emit() methods. Event constants for: EventSearchCompleted, EventDownloadQueued, EventJobStarted, EventJobProgress, EventJobCompleted, EventJobFailed. EventHandler callback type for subscribers.
+
+- **`internal/domain/repository.go`** - Repository interfaces for data access: IDownloadRepository (CRUD for downloads), IJobRepository (CRUD for jobs), ISettingsRepository (get/set/delete for settings). Abstraction layer for storage adapters.
+
+- **`internal/domain/resolver.go`** - IResolver interface for search source adapters (AnimeSama, MangaDex, etc.). SearchResult struct with AnimeID, Title, Episodes, Source. Methods: Resolve(ctx, query) and Name() for source identification.
 
 ---
 

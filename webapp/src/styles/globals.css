@@ -165,6 +165,27 @@ button {
   border-width: 0;
 }
 
+/* -------- ILLUSTRATIONS SAKURA NIGHT -------- */
+
+.sakura-illustration {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sakura-float {
+  animation: sakura-float 8s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.sakura-pulse {
+  animation: sakura-pulse 3.5s ease-in-out infinite;
+}
+
+.sakura-drift {
+  animation: sakura-drift 6s ease-in-out infinite;
+}
+
 /* -------- ANIMATIONS SAKURA NIGHT -------- */
 
 @keyframes fadeInUp {
@@ -202,6 +223,37 @@ button {
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+@keyframes sakura-float {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.01);
+  }
+}
+
+@keyframes sakura-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes sakura-drift {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-6px) translateX(4px) rotate(6deg);
+    opacity: 1;
   }
 }
 

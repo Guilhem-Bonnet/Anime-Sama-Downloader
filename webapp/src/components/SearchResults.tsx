@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { useSearchStore } from '../stores/search.store';
 import { useJobsStore } from '../stores/jobs.store';
 import { apiClient } from '../utils/api';
-import { Download, Play } from 'lucide-react';
+import { Download } from 'lucide-react';
+import { EmptySearchIllustration } from './illustrations/SakuraIllustrations';
 
 export const SearchResultsGrid: React.FC = () => {
   const { results, isSearching } = useSearchStore();
@@ -52,12 +53,8 @@ export const SearchResultsGrid: React.FC = () => {
   if (displayResults.length === 0 && !isSearching) {
     return (
       <div className="text-center py-20">
-        <div className="flex justify-center mb-4">
-          <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-full">
-            <Play className="w-12 h-12 text-gray-400" />
-          </div>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400 text-lg">
+        <EmptySearchIllustration />
+        <p className="text-gray-600 dark:text-gray-400 text-lg mt-4">
           Aucun résultat trouvé. Essayez une autre recherche !
         </p>
       </div>

@@ -3,6 +3,7 @@ import { useJobsStore } from '../stores/jobs.store';
 import { useSSE } from '../hooks/useSSE';
 import { StatusBadge } from './custom/StatusBadge';
 import { DownloadProgress } from './custom/DownloadProgress';
+import { EmptyDownloadsIllustration } from './illustrations/SakuraIllustrations';
 
 export const DownloadMonitor: React.FC = () => {
   const { jobs, updateJobProgress, updateJobStatus } = useJobsStore();
@@ -30,8 +31,11 @@ export const DownloadMonitor: React.FC = () => {
 
   if (jobs.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500 dark:text-gray-400">No downloads</p>
+      <div className="text-center py-16">
+        <EmptyDownloadsIllustration />
+        <p className="text-gray-500 dark:text-gray-400 mt-4">
+          Aucun téléchargement en cours.
+        </p>
       </div>
     );
   }

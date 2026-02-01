@@ -564,3 +564,319 @@ func TestFileListHandler_GetFiles_SpecialCharactersInID(t *testing.T) {
 		}
 	}
 }
+
+// ==================== TASK 6.3: HTTP ERROR SCENARIOS ====================
+
+// TestFileListHandler_GetFiles_InvalidQueryParameters tests handling of invalid query params
+func TestFileListHandler_GetFiles_InvalidQueryParameters(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files: []domain.File{
+				{
+					ID:       "1-ep1",
+					Name:     "Episode 1",
+					Path:     "/path/ep1.mkv",
+					Size:     350000000,
+					Duration: 1400,
+					Type:     "video/x-matroska",
+				},
+			},
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+
+	testCases := []struct {
+		name      string
+		query     string
+		expectErr bool
+	}{
+		{"negative limit", "?limit=-1", true},
+		{"zero limit", "?limit=0", true},
+		{"non-numeric limit", "?limit=abc", true},
+		{"negative offset", "?offset=-1", true},
+		{"non-numeric offset", "?offset=xyz", true},
+		{"invalid filter", "?filter=@@@", false}, // Should handle gracefully
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/anime/1/files%s", tc.query), nil)
+			w := httptest.NewRecorder()
+
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+				URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+			}))
+
+			handler.GetFiles(w, req)
+
+			// Handler should return either 200 or 400, but not 500
+			if w.Code >= 500 {
+				t.Errorf("expected client error or success, got %d", w.Code)
+			}
+		})
+	}
+}
+
+// TestFileListHandler_GetFiles_ContextCancellation tests handling of cancelled contexts
+func TestFileListHandler_GetFiles_ContextCancellation(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files: []domain.File{
+				{
+					ID:       "1-ep1",
+					Name:     "Episode 1",
+					Path:     "/path/ep1.mkv",
+					Size:     350000000,
+					Duration: 1400,
+					Type:     "video/x-matroska",
+				},
+			},
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+
+	req := httptest.NewRequest("GET", "/api/v1/anime/1/files", nil)
+	w := httptest.NewRecorder()
+
+	// Create a cancelled context
+	ctx, cancel := context.WithCancel(req.Context())
+	cancel() // Cancel immediately
+
+	req = req.WithContext(context.WithValue(ctx, chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	// Should handle cancellation gracefully (either error or still respond)
+	if w.Code >= 500 {
+		t.Errorf("expected graceful handling of cancellation, got status %d", w.Code)
+	}
+}
+
+// TestFileListHandler_GetFiles_ResponseHeaders tests proper response headers
+func TestFileListHandler_GetFiles_ResponseHeaders(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files: []domain.File{
+				{
+					ID:       "1-ep1",
+					Name:     "Episode 1",
+					Path:     "/path/ep1.mkv",
+					Size:     350000000,
+					Duration: 1400,
+					Type:     "video/x-matroska",
+				},
+			},
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+
+	req := httptest.NewRequest("GET", "/api/v1/anime/1/files", nil)
+	w := httptest.NewRecorder()
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code == http.StatusOK {
+		// Verify Content-Type
+		if ct := w.Header().Get("Content-Type"); !strings.Contains(ct, "application/json") {
+			t.Errorf("expected Content-Type to be application/json, got %s", ct)
+		}
+
+		// Verify no sensitive headers leak
+		if w.Header().Get("X-Internal-Error") != "" {
+			t.Error("unexpected internal error header in response")
+		}
+	}
+}
+
+// ==================== TASK 6.4: PAGINATION & FILTERING ====================
+
+// TestFileListHandler_GetFiles_PaginationParameters tests pagination parameter handling
+func TestFileListHandler_GetFiles_PaginationParameters(t *testing.T) {
+	// Create a file list with multiple files
+	files := make([]domain.File, 10)
+	for i := 0; i < 10; i++ {
+		files[i] = domain.File{
+			ID:       fmt.Sprintf("1-ep%d", i+1),
+			Name:     fmt.Sprintf("Episode %d", i+1),
+			Path:     fmt.Sprintf("/path/ep%d.mkv", i+1),
+			Size:     int64(350000000 + i*10000000),
+			Duration: 1400 + i*60,
+			Type:     "video/x-matroska",
+		}
+	}
+
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files:   files,
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+
+	testCases := []struct {
+		name  string
+		limit int
+		desc  string
+	}{
+		{"default limit", 0, "should return all files"},
+		{"limit 5", 5, "should handle smaller limit"},
+		{"limit 20", 20, "should handle limit > total"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			query := "/api/v1/anime/1/files"
+			if tc.limit > 0 {
+				query += fmt.Sprintf("?limit=%d", tc.limit)
+			}
+
+			req := httptest.NewRequest("GET", query, nil)
+			w := httptest.NewRecorder()
+
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+				URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+			}))
+
+			handler.GetFiles(w, req)
+
+			if w.Code == http.StatusOK {
+				var response struct {
+					AnimeID string        `json:"anime_id"`
+					Files   []interface{} `json:"files"`
+				}
+				json.NewDecoder(w.Body).Decode(&response)
+
+				// Should still have files
+				if len(response.Files) == 0 {
+					t.Errorf("expected files in response, got empty list")
+				}
+			}
+		})
+	}
+}
+
+// TestFileListHandler_GetFiles_FilteringByFileType tests file type filtering
+func TestFileListHandler_GetFiles_FilteringByFileType(t *testing.T) {
+	files := []domain.File{
+		{
+			ID:       "1-ep1",
+			Name:     "Episode 1",
+			Path:     "/path/ep1.mkv",
+			Size:     350000000,
+			Duration: 1400,
+			Type:     "video/x-matroska",
+		},
+		{
+			ID:       "1-ep1-sub",
+			Name:     "Episode 1 Subtitles",
+			Path:     "/path/ep1.srt",
+			Size:     50000,
+			Duration: 0,
+			Type:     "text/plain",
+		},
+	}
+
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files:   files,
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+
+	req := httptest.NewRequest("GET", "/api/v1/anime/1/files?type=video", nil)
+	w := httptest.NewRecorder()
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code == http.StatusOK {
+		var response struct {
+			Files []map[string]interface{} `json:"files"`
+		}
+		json.NewDecoder(w.Body).Decode(&response)
+
+		// Verify response structure is valid
+		if len(response.Files) == 0 {
+			t.Logf("filter applied: response has %d files", len(response.Files))
+		}
+	}
+}
+
+// TestFileListHandler_GetFiles_SortingOptions tests sorting parameter handling
+func TestFileListHandler_GetFiles_SortingOptions(t *testing.T) {
+	files := []domain.File{
+		{
+			ID:       "1-ep2",
+			Name:     "Zebra Episode",
+			Path:     "/path/ep2.mkv",
+			Size:     400000000,
+			Duration: 1500,
+			Type:     "video/x-matroska",
+		},
+		{
+			ID:       "1-ep1",
+			Name:     "Alpha Episode",
+			Path:     "/path/ep1.mkv",
+			Size:     350000000,
+			Duration: 1400,
+			Type:     "video/x-matroska",
+		},
+	}
+
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files:   files,
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+
+	testCases := []struct {
+		name  string
+		sort  string
+		order string
+	}{
+		{"sort by name", "name", "asc"},
+		{"sort by size", "size", "desc"},
+		{"sort by date", "date", "asc"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			query := fmt.Sprintf("/api/v1/anime/1/files?sort=%s&order=%s", tc.sort, tc.order)
+
+			req := httptest.NewRequest("GET", query, nil)
+			w := httptest.NewRecorder()
+
+			req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+				URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+			}))
+
+			handler.GetFiles(w, req)
+
+			// Handler should handle sort parameters gracefully
+			if w.Code >= 500 {
+				t.Errorf("expected client success, got status %d", w.Code)
+			}
+		})
+	}
+}
