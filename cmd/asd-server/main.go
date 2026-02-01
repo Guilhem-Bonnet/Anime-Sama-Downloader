@@ -116,7 +116,7 @@ func main() {
 	updater := app.NewDownloadCompletionUpdater(logger.With().Str("component", "download-updater").Logger(), bus, subsRepo)
 	go updater.Run(shutdownCtx)
 
-	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, subsSvc, anilistSvc, importSvc, resolver, bus, downloadLimiter, func(updated domain.Settings) {
+	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, subsSvc, anilistSvc, importSvc, resolver, bus, downloadLimiter, searchSvc, func(updated domain.Settings) {
 		if updated.MaxWorkers > 0 {
 			pool.SetCount(updated.MaxWorkers)
 		}
