@@ -37,7 +37,8 @@ func setupJobsTestDB(t *testing.T) *sql.DB {
 			params_json BLOB,
 			result_json BLOB,
 			error_code TEXT,
-			error_message TEXT
+			error_message TEXT,
+			file_list_json BLOB
 		)
 	`)
 	if err != nil {

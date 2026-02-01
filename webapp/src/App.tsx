@@ -5,7 +5,6 @@ import { ModeToggle } from './components/custom/ModeToggle';
 import { SearchBar } from './components/SearchBar';
 import { SearchResultsGrid } from './components/SearchResults';
 import { DownloadMonitor } from './components/DownloadMonitor';
-import './styles/globals.css';
 
 const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasError, setHasError] = React.useState(false);
@@ -53,37 +52,42 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-        {/* Header */}
-        <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-pink-50/20 to-cyan-50/20 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors">
+        {/* Header avec gradient Sakura Night */}
+        <header className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white via-pink-50/30 to-cyan-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 backdrop-blur-xl sticky top-0 z-40 shadow-lg">
+          <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-magenta-600 via-pink-600 to-cyan-600 bg-clip-text text-transparent">
                 🎌 Anime-Sama Downloader
               </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">MVP v1.0</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Sakura Night Design • MVP v1.0</p>
             </div>
             <ModeToggle />
           </div>
         </header>
 
-        {/* Navigation Tabs */}
-        <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-16 z-30">
-          <div className="max-w-7xl mx-auto px-4 flex gap-1">
+        {/* Navigation Tabs avec effet glassmorphism */}
+        <nav className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 sticky top-[88px] z-30 shadow-sm">
+          <div className="max-w-7xl mx-auto px-6 flex gap-2">
             {(['search', 'downloads', 'rules', 'settings'] as const).map((view) => (
               <button
                 key={view}
                 onClick={() => setActiveView(view)}
-                className={`px-4 py-3 font-medium border-b-2 transition-colors ${
+                className={`relative px-6 py-4 font-semibold border-b-3 transition-all duration-300 ${
                   activeView === view
-                    ? 'border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'border-cyan-500 text-transparent bg-clip-text bg-gradient-to-r from-magenta-600 to-cyan-600'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-700/50'
                 }`}
               >
-                {view === 'search' && '🔍'}
-                {view === 'downloads' && '📥'}
-                {view === 'rules' && '⚙️'}
-                {view === 'settings' && '⚡'}
+                {activeView === view && (
+                  <span className="absolute inset-x-0 -bottom-[2px] h-[3px] bg-gradient-to-r from-magenta-500 to-cyan-500 rounded-t-full" />
+                )}
+                <span className="text-xl mr-2">
+                  {view === 'search' && '🔍'}
+                  {view === 'downloads' && '📥'}
+                  {view === 'rules' && '⚙️'}
+                  {view === 'settings' && '⚡'}
+                </span>
                 {view.charAt(0).toUpperCase() + view.slice(1)}
               </button>
             ))}
@@ -91,7 +95,7 @@ export default function App() {
         </nav>
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        <main className="max-w-7xl mx-auto px-6 py-12">
           <Suspense fallback={
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin text-2xl mr-3">⌛</div>
@@ -99,13 +103,16 @@ export default function App() {
             </div>
           }>
             {activeView === 'search' && (
-              <div className="space-y-8">
-                <div>
-                  <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
-                    Search & Download
+              <div className="space-y-10 animate-fadeIn">
+                <div className="text-center">
+                  <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-magenta-600 via-pink-600 to-cyan-600 bg-clip-text text-transparent">
+                    Rechercher & Télécharger
                   </h2>
-                  <SearchBar />
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Trouvez vos animes préférés et téléchargez-les facilement
+                  </p>
                 </div>
+                <SearchBar />
                 <SearchResultsGrid />
               </div>
             )}

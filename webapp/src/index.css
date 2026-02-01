@@ -1,0 +1,98 @@
+/* Tailwind directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Sakura Night tokens */
+@import './styles/tokens.css';
+
+/* ========================================
+   🌸 SAKURA NIGHT — Global Styles
+   ======================================== */
+
+@layer base {
+  * {
+    @apply box-border m-0 p-0;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply m-0 p-0 font-sans text-base antialiased overflow-x-hidden;
+    background: linear-gradient(
+      135deg,
+      #0a0e1a 0%,
+      #1a1f2e 50%,
+      #0a0e1a 100%
+    );
+    color: #f5f7ff;
+  }
+
+  h1 {
+    @apply text-4xl font-bold leading-tight;
+  }
+
+  h2 {
+    @apply text-3xl font-semibold leading-snug;
+  }
+
+  h3 {
+    @apply text-2xl font-semibold leading-normal;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-none ring-4 ring-cyan-500/30;
+  }
+}
+
+/* Custom animations */
+@layer utilities {
+  .animate-fadeInUp {
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.4s ease-out;
+  }
+
+  .text-gradient-sakura {
+    @apply bg-gradient-to-r from-magenta-500 via-pink-500 to-cyan-500 bg-clip-text text-transparent;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Dark mode defaults */
+.dark {
+  color-scheme: dark;
+}
+
+/* Utility classes */
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0;
+  clip: rect(0, 0, 0, 0);
+}

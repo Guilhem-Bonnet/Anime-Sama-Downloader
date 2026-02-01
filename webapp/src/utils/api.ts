@@ -17,12 +17,12 @@ export interface SearchResult {
 }
 
 export interface Download {
-  download_id?: string;  // from API
-  downloadId?: string;   // internal
-  anime_id?: string;     // from API
-  animeId?: string;      // internal
-  episode_number?: number; // from API
-  episodeNumber?: number;  // internal
+  download_id: string;  // from API
+  downloadId: string;   // internal
+  anime_id: string;     // from API
+  animeId: string;      // internal
+  episode_number: number; // from API
+  episodeNumber: number;  // internal
   status: 'pending' | 'running' | 'completed' | 'failed';
   progress: number;
 }

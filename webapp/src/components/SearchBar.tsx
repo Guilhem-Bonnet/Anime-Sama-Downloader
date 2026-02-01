@@ -62,20 +62,45 @@ export const SearchBar: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <form onSubmit={handleSubmit} className="mb-4 relative">
-        <div className="relative">
+    <div className="w-full max-w-3xl mx-auto">
+      <form onSubmit={handleSubmit} className="mb-6 relative">
+        <div className="relative group">
+          {/* Search Icon */}
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-cyan-500 transition-colors">
+            🔍
+          </div>
+          
           <input
             type="text"
             value={localQuery}
             onChange={handleChange}
             onFocus={() => setSuggestionsOpen(true)}
-            placeholder="Search for anime..."
-            className="w-full px-4 py-3 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+            placeholder="Rechercher un anime... (ex: Attack on Titan)"
+            className="w-full pl-14 pr-14 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-2 border-gray-200 dark:border-gray-700 focus:outline-none focus:border-transparent focus:ring-4 focus:ring-cyan-500/30 shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
             disabled={isSearching}
             autoComplete="off"
           />
-          {isSearching && <div className="absolute right-4 top-3 animate-spin">⌛</div>}
+          
+          {/* Loading spinner */}
+          {isSearching && (
+            <div className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-2xl">
+              ⌛
+            </div>
+          )}
+          
+          {/* Clear button */}
+          {!isSearching && localQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setLocalQuery('');
+                setQuery('');
+              }}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-xl"
+            >
+              ✕
+            </button>
+          )}
 
           <SuggestionsDropdown
             query={localQuery}

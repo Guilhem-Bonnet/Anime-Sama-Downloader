@@ -20,12 +20,12 @@ func NewJobsRepository(db *sql.DB) *JobsRepository {
 
 func (r *JobsRepository) Create(ctx context.Context, job domain.Job) (domain.Job, error) {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO jobs(id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message)
-		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO jobs(id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message, file_list_json)
+		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, job.ID, job.Type, string(job.State), job.Progress,
 		job.CreatedAt.Format(time.RFC3339), job.UpdatedAt.Format(time.RFC3339),
 		formatOptionalTime(job.StartedAt), formatOptionalTime(job.CompletedAt),
-		job.ParamsJSON, job.ResultJSON, job.ErrorCode, job.ErrorMessage)
+		job.ParamsJSON, job.ResultJSON, job.ErrorCode, job.ErrorMessage, job.FileListJSON)
 	if err != nil {
 		return domain.Job{}, err
 	}
@@ -37,9 +37,9 @@ func (r *JobsRepository) Get(ctx context.Context, id string) (domain.Job, error)
 	var createdAt, updatedAt string
 	var startedAt, completedAt sql.NullString
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message
+		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message, file_list_json
 		FROM jobs WHERE id = ?
-	`, id).Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage)
+	`, id).Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage, &j.FileListJSON)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Job{}, ports.ErrNotFound
@@ -58,7 +58,7 @@ func (r *JobsRepository) List(ctx context.Context, limit int) ([]domain.Job, err
 		limit = 100
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message
+		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message, file_list_json
 		FROM jobs ORDER BY updated_at DESC LIMIT ?
 	`, limit)
 	if err != nil {
@@ -71,7 +71,7 @@ func (r *JobsRepository) List(ctx context.Context, limit int) ([]domain.Job, err
 		var j domain.Job
 		var createdAt, updatedAt string
 		var startedAt, completedAt sql.NullString
-		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage); err != nil {
+		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage, &j.FileListJSON); err != nil {
 			return nil, err
 		}
 		j.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
@@ -223,7 +223,7 @@ func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected do
 // This is used for job recovery on application startup.
 func (r *JobsRepository) LoadUnfinishedJobs(ctx context.Context) ([]domain.Job, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message
+		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message, file_list_json
 		FROM jobs
 		WHERE state IN (?, ?)
 		ORDER BY created_at ASC
@@ -238,7 +238,7 @@ func (r *JobsRepository) LoadUnfinishedJobs(ctx context.Context) ([]domain.Job, 
 		var j domain.Job
 		var createdAt, updatedAt string
 		var startedAt, completedAt sql.NullString
-		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage); err != nil {
+		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage, &j.FileListJSON); err != nil {
 			return nil, err
 		}
 		j.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
@@ -248,6 +248,23 @@ func (r *JobsRepository) LoadUnfinishedJobs(ctx context.Context) ([]domain.Job, 
 		out = append(out, j)
 	}
 	return out, rows.Err()
+}
+
+// UpdateFileList updates the file list metadata for a job
+func (r *JobsRepository) UpdateFileList(ctx context.Context, id string, fileListJSON []byte) error {
+	res, err := r.db.ExecContext(ctx, `
+		UPDATE jobs
+		SET file_list_json = ?, updated_at = ?
+		WHERE id = ?
+	`, fileListJSON, time.Now().UTC().Format(time.RFC3339), id)
+	if err != nil {
+		return err
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return ports.ErrNotFound
+	}
+	return nil
 }
 
 // Helper functions for optional timestamp handling

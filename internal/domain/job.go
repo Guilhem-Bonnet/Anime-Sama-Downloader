@@ -37,6 +37,9 @@ type Job struct {
 	ResultJSON   []byte
 	ErrorCode    string
 	ErrorMessage string
+
+	// FileListJSON is optional file list metadata stored as JSON
+	FileListJSON []byte
 }
 
 var ErrInvalidTransition = errors.New("invalid job state transition")
