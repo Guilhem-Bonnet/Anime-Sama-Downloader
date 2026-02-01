@@ -55,6 +55,13 @@ func main() {
 	catalogueResolver := app.NewAnimeSamaCatalogueResolver()
 	resolver := app.NewAnimeSamaHybridResolver(catalogueResolver, anilistSvc)
 	importSvc := app.NewAniListImportService(anilistSvc, catalogueResolver, subsSvc)
+	
+	// Create anime search service with default catalogue
+	searchCatalogue := []domain.AnimeSearchResult{
+		// TODO: Load from database or external API
+		// For now, empty catalogue (will be populated by future stories)
+	}
+	searchSvc := app.NewAnimeSamaSearchService(searchCatalogue)
 
 	// Recover unfinished jobs from previous sessions
 	unfinishedJobs, err := jobsRepo.LoadUnfinishedJobs(ctx)

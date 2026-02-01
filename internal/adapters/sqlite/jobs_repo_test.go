@@ -3,8 +3,11 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"sync"
 	"testing"
 	"time"
+
+	_ "modernc.org/sqlite"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
@@ -12,10 +15,13 @@ import (
 
 // Helper to create in-memory test database with jobs schema
 func setupJobsTestDB(t *testing.T) *sql.DB {
-	db, err := sql.Open("sqlite", ":memory:")
+	db, err := sql.Open("sqlite", ":memory:?cache=shared")
 	if err != nil {
 		t.Fatalf("failed to open test db: %v", err)
 	}
+
+	// Set connection pool to 1 to ensure single connection for in-memory db
+	db.SetMaxOpenConns(1)
 
 	// Create jobs table
 	_, err = db.Exec(`
@@ -399,5 +405,179 @@ func TestUpdateState_ProgressPreserved(t *testing.T) {
 
 	if updated.Progress != 75.5 {
 		t.Errorf("expected progress preserved at 75.5, got %v", updated.Progress)
+	}
+}
+
+// TestConcurrentUpdateState_NoRaceConditions verifies that concurrent state updates
+// do not cause race conditions or data corruption via optimistic locking
+func TestConcurrentUpdateState_NoRaceConditions(t *testing.T) {
+	db := setupJobsTestDB(t)
+	defer db.Close()
+	repo := NewJobsRepository(db)
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+	job := domain.Job{
+		ID:        "concurrent1",
+		Type:      "download",
+		State:     domain.JobQueued,
+		Progress:  0,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	_, _ = repo.Create(ctx, job)
+	_, _ = repo.UpdateState(ctx, "concurrent1", domain.JobQueued, domain.JobRunning)
+
+	// Simulate two goroutines trying to update the same job to different states
+	var wg sync.WaitGroup
+	var result1, result2 error
+
+	// Goroutine 1: Try to transition to Muxing
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, result1 = repo.UpdateState(ctx, "concurrent1", domain.JobRunning, domain.JobMuxing)
+	}()
+
+	// Goroutine 2: Try to transition to Failed (from Running)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		_, result2 = repo.UpdateState(ctx, "concurrent1", domain.JobRunning, domain.JobFailed)
+	}()
+
+	wg.Wait()
+
+	// One should succeed (optimistic lock), one should fail
+	successCount := 0
+	if result1 == nil {
+		successCount++
+	}
+	if result2 == nil {
+		successCount++
+	}
+
+	if successCount != 1 {
+		t.Fatalf("expected exactly 1 successful update, got %d (results: %v, %v)", successCount, result1, result2)
+	}
+
+	// Verify final state is consistent (either Muxing or Failed, never mixed)
+	retrieved, err := repo.Get(ctx, "concurrent1")
+	if err != nil {
+		t.Fatalf("failed to retrieve job: %v", err)
+	}
+
+	if retrieved.State != domain.JobMuxing && retrieved.State != domain.JobFailed {
+		t.Errorf("final state is invalid: %v (expected Muxing or Failed)", retrieved.State)
+	}
+}
+
+// TestConcurrentUpdateProgress_NoCorruption verifies concurrent progress updates
+// don't corrupt data (each update overwrites atomically)
+func TestConcurrentUpdateProgress_NoCorruption(t *testing.T) {
+	db := setupJobsTestDB(t)
+	defer db.Close()
+	repo := NewJobsRepository(db)
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+	job := domain.Job{
+		ID:        "progress1",
+		Type:      "download",
+		State:     domain.JobQueued,
+		Progress:  0,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	_, _ = repo.Create(ctx, job)
+	_, _ = repo.UpdateState(ctx, "progress1", domain.JobQueued, domain.JobRunning)
+
+	// Launch 10 concurrent progress updates
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		progress := float64(i) * 10
+		wg.Add(1)
+		go func(p float64) {
+			defer wg.Done()
+			_, _ = repo.UpdateProgress(ctx, "progress1", p)
+		}(progress)
+	}
+
+	wg.Wait()
+
+	// Verify final state is one of the valid progress values (no corruption/mixing)
+	retrieved, err := repo.Get(ctx, "progress1")
+	if err != nil {
+		t.Fatalf("failed to retrieve job: %v", err)
+	}
+
+	// Progress should be in range [0, 90] (one of the concurrent values)
+	if retrieved.Progress < 0 || retrieved.Progress > 90 {
+		t.Errorf("progress value corrupted: %v (expected value between 0 and 90)", retrieved.Progress)
+	}
+}
+
+// TestConcurrentLoadUnfinishedJobs_Consistent verifies LoadUnfinishedJobs
+// returns consistent snapshot even with concurrent updates
+func TestConcurrentLoadUnfinishedJobs_Consistent(t *testing.T) {
+	db := setupJobsTestDB(t)
+	defer db.Close()
+	repo := NewJobsRepository(db)
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+
+	// Create initial set of jobs
+	for i := 1; i <= 5; i++ {
+		job := domain.Job{
+			ID:        "queued-" + string(rune('0'+i)),
+			Type:      "download",
+			State:     domain.JobQueued,
+			Progress:  0,
+			CreatedAt: now.Add(-time.Duration(i) * time.Second),
+			UpdatedAt: now,
+		}
+		_, _ = repo.Create(ctx, job)
+	}
+
+	// Load unfinished in one goroutine while updating in another
+	var wg sync.WaitGroup
+
+	// Goroutine 1: Load unfinished jobs multiple times
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < 5; i++ {
+			_, err := repo.LoadUnfinishedJobs(ctx)
+			if err != nil {
+				t.Errorf("failed to load unfinished: %v", err)
+				return
+			}
+		}
+	}()
+
+	// Goroutine 2: Transition some jobs while loading is in progress
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 1; i <= 3; i++ {
+			jobID := "queued-" + string(rune('0'+i))
+			_, _ = repo.UpdateState(ctx, jobID, domain.JobQueued, domain.JobRunning)
+		}
+	}()
+
+	wg.Wait()
+
+	// Verify final state is consistent
+	final, err := repo.LoadUnfinishedJobs(ctx)
+	if err != nil {
+		t.Fatalf("final load failed: %v", err)
+	}
+
+	// Should have 5 unfinished (3 running + 2 still queued)
+	if len(final) != 5 {
+		t.Errorf("expected 5 unfinished jobs, got %d", len(final))
 	}
 }
