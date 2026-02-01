@@ -2,7 +2,7 @@
 
 **Story ID:** 1-2-increase-test-coverage  
 **Story Points:** 8  
-**Status:** in-progress  
+**Status:** done  
 **Created:** 31 janvier 2026  
 **Last Updated:** 31 janvier 2026  
 **Author:** Dev Agent (Amelia)
