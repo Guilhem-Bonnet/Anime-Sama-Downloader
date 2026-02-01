@@ -37,7 +37,7 @@ func (s *stubSubRepo) MarkDownloadedEpisodeMax(ctx context.Context, id string, e
 
 func TestSubscriptionService_Create_AutoLabelFromBaseURL(t *testing.T) {
 	repo := &stubSubRepo{}
-	svc := NewSubscriptionService(repo, nil, nil)
+	svc := NewSubscriptionService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	dto, err := svc.Create(ctx, "https://anime-sama.si/catalogue/solo-leveling/saison1/vostfr/", "", "auto")
@@ -54,7 +54,7 @@ func TestSubscriptionService_Create_AutoLabelFromBaseURL(t *testing.T) {
 
 func TestSubscriptionService_Create_CustomLabel(t *testing.T) {
 	repo := &stubSubRepo{}
-	svc := NewSubscriptionService(repo, nil, nil)
+	svc := NewSubscriptionService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	customLabel := "My Custom Anime"
@@ -75,7 +75,7 @@ func TestSubscriptionService_Get(t *testing.T) {
 		Player:  "auto",
 	}
 	repo := &getSubRepo{sub: sub}
-	svc := NewSubscriptionService(repo, nil, nil)
+	svc := NewSubscriptionService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	dto, err := svc.Get(ctx, "sub-1")
@@ -96,7 +96,7 @@ func TestSubscriptionService_List(t *testing.T) {
 		{ID: "sub-2", Label: "Anime 2", BaseURL: "url2", Player: "auto"},
 	}
 	repo := &listSubRepo{subs: subs}
-	svc := NewSubscriptionService(repo, nil, nil)
+	svc := NewSubscriptionService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	dtos, err := svc.List(ctx, 10)
@@ -113,7 +113,7 @@ func TestSubscriptionService_List(t *testing.T) {
 
 func TestSubscriptionService_Delete(t *testing.T) {
 	repo := &deleteSubRepo{deleted: false}
-	svc := NewSubscriptionService(repo, nil, nil)
+	svc := NewSubscriptionService(repo, nil, nil, nil)
 
 	ctx := context.Background()
 	err := svc.Delete(ctx, "sub-1")

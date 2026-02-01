@@ -19,6 +19,39 @@ Téléchargeur d’épisodes depuis **anime-sama.si** piloté par un **serveur G
 - AniList (token optionnel) : viewer, airing schedule, watchlist + import auto → abonnements
 - HLS/M3U8 via `ffmpeg` si disponible
 
+## Prérequis système
+
+| Dépendance | Version | Requis | Notes |
+|------------|---------|--------|-------|
+| **Go** | 1.22+ | ✅ Oui | Pour compiler le backend |
+| **ffmpeg** | 4.0+ | ✅ Oui | Pour télécharger les vidéos HLS/M3U8 |
+| **Node.js** | 18+ | ❌ Optionnel | Pour le développement frontend |
+| **Docker** | 20+ | ❌ Optionnel | Pour le déploiement conteneurisé |
+
+### Installation de ffmpeg
+
+```bash
+# Debian/Ubuntu
+sudo apt update && sudo apt install ffmpeg
+
+# macOS (Homebrew)
+brew install ffmpeg
+
+# Windows (Chocolatey)
+choco install ffmpeg
+
+# Vérifier l'installation
+ffmpeg -version
+```
+
+**⚠️ Sans ffmpeg, les téléchargements HLS/M3U8 ne fonctionneront pas.**
+
+### Vérifier les dépendances
+
+```bash
+./scripts/check-deps.sh
+```
+
 ## Démarrage rapide (local)
 
 ### 1) Lancer le serveur

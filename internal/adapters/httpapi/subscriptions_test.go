@@ -84,7 +84,7 @@ func TestSubscriptionsHandler_Create_Success(t *testing.T) {
 		},
 	}
 	bus := memorybus.New()
-	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, bus))
+	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, nil, bus))
 
 	reqBody := createSubscriptionRequest{
 		BaseURL: "https://example.com",
@@ -113,7 +113,7 @@ func TestSubscriptionsHandler_List_Success(t *testing.T) {
 		},
 	}
 	bus := memorybus.New()
-	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, bus))
+	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, nil, bus))
 
 	httpReq := httptest.NewRequest(http.MethodGet, "/subscriptions", nil)
 	rr := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestSubscriptionsHandler_Get_Success(t *testing.T) {
 		},
 	}
 	bus := memorybus.New()
-	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, bus))
+	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, nil, bus))
 
 	httpReq := httptest.NewRequest(http.MethodGet, "/subscriptions/sub-1", nil)
 	rr := httptest.NewRecorder()
@@ -155,7 +155,7 @@ func TestSubscriptionsHandler_Delete_Success(t *testing.T) {
 		},
 	}
 	bus := memorybus.New()
-	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, bus))
+	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, nil, bus))
 
 	httpReq := httptest.NewRequest(http.MethodDelete, "/subscriptions/sub-1", nil)
 	rr := httptest.NewRecorder()
@@ -172,7 +172,7 @@ func TestSubscriptionsHandler_Delete_Success(t *testing.T) {
 func TestSubscriptionsHandler_Create_InvalidJSON(t *testing.T) {
 	repo := &stubSubscriptionRepo{}
 	bus := memorybus.New()
-	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, bus))
+	handler := NewSubscriptionsHandler(app.NewSubscriptionService(repo, nil, nil, bus))
 
 	httpReq := httptest.NewRequest(http.MethodPost, "/subscriptions", bytes.NewReader([]byte("invalid")))
 	rr := httptest.NewRecorder()

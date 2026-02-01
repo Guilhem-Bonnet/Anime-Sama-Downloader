@@ -104,12 +104,27 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       }
       params.append('limit', '8');
 
-      const response = await fetch(`/api/v1/suggestions?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSuggestions(data.suggestions || []);
+      // Fallback to search endpoint (works with mock server)
+      const response = await fetch(`/api/search?${params.toString()}`);
+      if (!response.ok) {
+        setSuggestions([]);
         setSelectedIndex(-1);
+        return;
       }
+
+      const data = await response.json();
+      const results = data.results || [];
+      const mapped: Suggestion[] = results.map((item: any) => ({
+        query: item.title || item.anime_id || 'Unknown',
+        category: q ? 'popular' : 'trending',
+        score: 1,
+        metadata: {
+          episodes: item.episodes,
+        },
+      }));
+
+      setSuggestions(mapped);
+      setSelectedIndex(-1);
     } catch (err) {
       console.error('Failed to fetch suggestions:', err);
       setSuggestions([]);

@@ -13,10 +13,10 @@ type IEventBus interface {
 
 const (
 	// Event names (constants for consistency).
-	EventSearchCompleted  = "search.completed"
-	EventDownloadQueued   = "download.queued"
-	EventJobStarted       = "job.started"
-	EventJobProgress      = "job.progress"
-	EventJobCompleted     = "job.completed"
-	EventJobFailed        = "job.failed"
+	EventSearchCompleted = "search.completed"
+	EventDownloadQueued  = "download.queued"
+	EventJobStarted      = "job.started"
+	EventJobProgress     = "job.progress"
+	EventJobCompleted    = "job.completed"
+	EventJobFailed       = "job.failed"
 )

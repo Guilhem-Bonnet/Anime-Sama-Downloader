@@ -19,13 +19,24 @@ import (
 )
 
 type SubscriptionService struct {
-	repo ports.SubscriptionRepository
-	jobs *JobService
-	bus  ports.EventBus
+	repo            ports.SubscriptionRepository
+	jobCreator      ports.JobCreator   // Interface pour découplage
+	episodeResolver *EpisodeResolver   // Résolution d'épisodes déléguée
+	bus             ports.EventBus
 }
 
-func NewSubscriptionService(repo ports.SubscriptionRepository, jobs *JobService, bus ports.EventBus) *SubscriptionService {
-	return &SubscriptionService{repo: repo, jobs: jobs, bus: bus}
+// NewSubscriptionService creates a new SubscriptionService.
+// If episodeResolver is nil, a default one will be created.
+func NewSubscriptionService(repo ports.SubscriptionRepository, jobCreator ports.JobCreator, episodeResolver *EpisodeResolver, bus ports.EventBus) *SubscriptionService {
+	if episodeResolver == nil {
+		episodeResolver = NewEpisodeResolver()
+	}
+	return &SubscriptionService{
+		repo:            repo,
+		jobCreator:      jobCreator,
+		episodeResolver: episodeResolver,
+		bus:             bus,
+	}
 }
 
 type SubscriptionDTO struct {
@@ -208,26 +219,17 @@ func (s *SubscriptionService) Episodes(ctx context.Context, id string) (Episodes
 		return EpisodesResponse{}, err
 	}
 
-	jsText, err := FetchEpisodesJS(ctx, sub.BaseURL)
-	if err != nil {
-		return EpisodesResponse{}, err
-	}
-	eps, err := ParseEpisodesJS(jsText)
+	// Utiliser EpisodeResolver pour fetcher et résoudre les épisodes
+	resolved, err := s.episodeResolver.Resolve(ctx, sub.BaseURL, sub.Player)
 	if err != nil {
 		return EpisodesResponse{}, err
 	}
 
-	selected, urls := selectPlayer(sub.Player, eps.Players)
-	maxAvail := MaxAvailableEpisode(urls)
-	if maxAvail < 0 {
-		maxAvail = 0
-	}
-
-	out := make([]EpisodeStatus, 0, maxAvail)
-	for ep := 1; ep <= maxAvail; ep++ {
+	out := make([]EpisodeStatus, 0, resolved.MaxEpisode)
+	for ep := 1; ep <= resolved.MaxEpisode; ep++ {
 		available := false
-		if ep-1 >= 0 && ep-1 < len(urls) {
-			available = strings.TrimSpace(urls[ep-1]) != ""
+		if ep-1 >= 0 && ep-1 < len(resolved.URLs) {
+			available = strings.TrimSpace(resolved.URLs[ep-1]) != ""
 		}
 		out = append(out, EpisodeStatus{
 			Episode:    ep,
@@ -239,15 +241,15 @@ func (s *SubscriptionService) Episodes(ctx context.Context, id string) (Episodes
 
 	return EpisodesResponse{
 		Subscription:        toSubscriptionDTO(sub),
-		SelectedPlayer:      selected,
-		MaxAvailableEpisode: maxAvail,
+		SelectedPlayer:      resolved.SelectedPlayer,
+		MaxAvailableEpisode: resolved.MaxEpisode,
 		Episodes:            out,
 	}, nil
 }
 
 func (s *SubscriptionService) EnqueueEpisodes(ctx context.Context, id string, episodes []int) (EnqueueEpisodesResponse, error) {
-	if s.jobs == nil {
-		return EnqueueEpisodesResponse{}, errors.New("job service not configured")
+	if s.jobCreator == nil {
+		return EnqueueEpisodesResponse{}, errors.New("job creator not configured")
 	}
 	if len(episodes) == 0 {
 		return EnqueueEpisodesResponse{}, errors.New("missing episodes")
@@ -276,35 +278,26 @@ func (s *SubscriptionService) EnqueueEpisodes(ctx context.Context, id string, ep
 		return EnqueueEpisodesResponse{}, err
 	}
 
-	jsText, err := FetchEpisodesJS(ctx, sub.BaseURL)
+	// Utiliser EpisodeResolver
+	resolved, err := s.episodeResolver.Resolve(ctx, sub.BaseURL, sub.Player)
 	if err != nil {
 		return EnqueueEpisodesResponse{}, err
 	}
-	eps, err := ParseEpisodesJS(jsText)
-	if err != nil {
-		return EnqueueEpisodesResponse{}, err
-	}
-
-	selected, urls := selectPlayer(sub.Player, eps.Players)
 
 	enqueuedEpisodes := []int{}
 	enqueuedJobIDs := []string{}
 	skipped := []EnqueueSkippedEpisode{}
-	maxEp := MaxAvailableEpisode(urls)
-	if maxEp < 0 {
-		maxEp = 0
-	}
 
 	for _, ep := range norm {
-		if ep > maxEp {
+		if ep > resolved.MaxEpisode {
 			skipped = append(skipped, EnqueueSkippedEpisode{Episode: ep, Reason: "not available"})
 			continue
 		}
-		if ep-1 < 0 || ep-1 >= len(urls) {
+		if ep-1 < 0 || ep-1 >= len(resolved.URLs) {
 			skipped = append(skipped, EnqueueSkippedEpisode{Episode: ep, Reason: "missing url"})
 			continue
 		}
-		u := strings.TrimSpace(urls[ep-1])
+		u := strings.TrimSpace(resolved.URLs[ep-1])
 		if u == "" {
 			skipped = append(skipped, EnqueueSkippedEpisode{Episode: ep, Reason: "missing url"})
 			continue
@@ -319,7 +312,7 @@ func (s *SubscriptionService) EnqueueEpisodes(ctx context.Context, id string, ep
 			"source":         "anime-sama",
 		}
 		b, _ := json.Marshal(params)
-		created, err := s.jobs.Create(ctx, CreateJobRequest{Type: "download", Params: b})
+		created, err := s.jobCreator.Create(ctx, ports.JobCreationRequest{Type: "download", Params: b})
 		if err != nil {
 			skipped = append(skipped, EnqueueSkippedEpisode{Episode: ep, Reason: err.Error()})
 			continue
@@ -340,7 +333,7 @@ func (s *SubscriptionService) EnqueueEpisodes(ctx context.Context, id string, ep
 
 	return EnqueueEpisodesResponse{
 		Subscription:     toSubscriptionDTO(updated),
-		SelectedPlayer:   selected,
+		SelectedPlayer:   resolved.SelectedPlayer,
 		EnqueuedEpisodes: enqueuedEpisodes,
 		EnqueuedJobIDs:   enqueuedJobIDs,
 		Skipped:          skipped,
@@ -355,7 +348,8 @@ func (s *SubscriptionService) SyncOnce(ctx context.Context, id string, enqueue b
 		return SyncResult{}, err
 	}
 
-	jsText, err := FetchEpisodesJS(ctx, sub.BaseURL)
+	// Utiliser EpisodeResolver
+	resolved, err := s.episodeResolver.Resolve(ctx, sub.BaseURL, sub.Player)
 	if err != nil {
 		sub.LastCheckedAt = time.Now().UTC()
 		sub.NextCheckAt = time.Now().UTC().Add(30 * time.Minute)
@@ -364,50 +358,22 @@ func (s *SubscriptionService) SyncOnce(ctx context.Context, id string, enqueue b
 		return SyncResult{}, err
 	}
 
-	eps, err := ParseEpisodesJS(jsText)
-	if err != nil {
-		return SyncResult{}, err
-	}
-
-	selected := sub.Player
-	if selected == "" || strings.EqualFold(selected, "auto") {
-		selected = BestPlayer(eps.Players)
-		if selected == "auto" {
-			selected = ""
-		}
-	}
-	urls := eps.Players[selected]
-	if len(urls) == 0 {
-		// fallback to best
-		selected = BestPlayer(eps.Players)
-		urls = eps.Players[selected]
-	}
-
-	maxAvail := MaxAvailableEpisode(urls)
-	if maxAvail < 0 {
-		maxAvail = 0
-	}
-
 	now := time.Now().UTC()
-	sub.LastAvailableEpisode = maxAvail
+	sub.LastAvailableEpisode = resolved.MaxEpisode
 	sub.LastCheckedAt = now
 
-	// Basic next-check policy: if new stuff is available beyond what we've scheduled, check more often.
-	if sub.LastScheduledEpisode < maxAvail {
-		sub.NextCheckAt = now.Add(10 * time.Minute)
-	} else {
-		sub.NextCheckAt = now.Add(2 * time.Hour)
-	}
+	// Logique NextCheckAt: si nouveaux épisodes disponibles, vérifier plus souvent
+	sub.NextCheckAt = ComputeNextCheck(sub, resolved.MaxEpisode)
 
 	enqueuedEpisodes := []int{}
 	enqueuedJobIDs := []string{}
-	if enqueue && s.jobs != nil && sub.LastScheduledEpisode < maxAvail {
+	if enqueue && s.jobCreator != nil && sub.LastScheduledEpisode < resolved.MaxEpisode {
 		from := sub.LastScheduledEpisode + 1
-		for ep := from; ep <= maxAvail; ep++ {
-			if ep-1 < 0 || ep-1 >= len(urls) {
+		for ep := from; ep <= resolved.MaxEpisode; ep++ {
+			if ep-1 < 0 || ep-1 >= len(resolved.URLs) {
 				continue
 			}
-			u := urls[ep-1]
+			u := resolved.URLs[ep-1]
 			if strings.TrimSpace(u) == "" {
 				continue
 			}
@@ -421,7 +387,7 @@ func (s *SubscriptionService) SyncOnce(ctx context.Context, id string, enqueue b
 				"source":         "anime-sama",
 			}
 			b, _ := json.Marshal(params)
-			created, err := s.jobs.Create(ctx, CreateJobRequest{Type: "download", Params: b})
+			created, err := s.jobCreator.Create(ctx, ports.JobCreationRequest{Type: "download", Params: b})
 			if err != nil {
 				// stop on first enqueue error
 				break
@@ -441,8 +407,8 @@ func (s *SubscriptionService) SyncOnce(ctx context.Context, id string, enqueue b
 
 	return SyncResult{
 		Subscription:        toSubscriptionDTO(updated),
-		SelectedPlayer:      selected,
-		MaxAvailableEpisode: maxAvail,
+		SelectedPlayer:      resolved.SelectedPlayer,
+		MaxAvailableEpisode: resolved.MaxEpisode,
 		EnqueuedEpisodes:    enqueuedEpisodes,
 		EnqueuedJobIDs:      enqueuedJobIDs,
 		Message:             "note: episodes.js urls are host/embed urls; full video extraction pipeline is not implemented yet",

@@ -97,10 +97,9 @@ func TestSubscriptionService_Create_Success(t *testing.T) {
 			return sub, nil
 		},
 	}
-	jobs := &JobService{}
 	bus := &mockEventBus{}
 
-	service := NewSubscriptionService(repo, jobs, bus)
+	service := NewSubscriptionService(repo, nil, nil, bus)
 	ctx := context.Background()
 
 	dto, err := service.Create(ctx, "https://anime-sama.fr/catalogue/naruto", "Naruto", "auto")
@@ -125,8 +124,7 @@ func TestSubscriptionService_Create_Success(t *testing.T) {
 
 func TestSubscriptionService_Create_MissingBaseURL(t *testing.T) {
 	repo := &mockSubscriptionRepository{}
-	jobs := &JobService{}
-	service := NewSubscriptionService(repo, jobs, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	_, err := service.Create(ctx, "", "Naruto", "auto")
@@ -140,8 +138,7 @@ func TestSubscriptionService_Create_MissingBaseURL(t *testing.T) {
 
 func TestSubscriptionService_Create_InvalidBaseURL(t *testing.T) {
 	repo := &mockSubscriptionRepository{}
-	jobs := &JobService{}
-	service := NewSubscriptionService(repo, jobs, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	_, err := service.Create(ctx, "not a valid url", "", "auto")
@@ -156,8 +153,7 @@ func TestSubscriptionService_Create_DefaultPlayer(t *testing.T) {
 			return sub, nil
 		},
 	}
-	jobs := &JobService{}
-	service := NewSubscriptionService(repo, jobs, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	dto, err := service.Create(ctx, "https://anime-sama.fr/catalogue/naruto", "Naruto", "")
@@ -176,8 +172,7 @@ func TestSubscriptionService_Create_AutoLabel(t *testing.T) {
 			return sub, nil
 		},
 	}
-	jobs := &JobService{}
-	service := NewSubscriptionService(repo, jobs, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	dto, err := service.Create(ctx, "https://anime-sama.fr/catalogue/naruto", "", "auto")
@@ -211,7 +206,7 @@ func TestSubscriptionService_Update_Success(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	updateDTO := SubscriptionDTO{
@@ -236,7 +231,7 @@ func TestSubscriptionService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	updateDTO := SubscriptionDTO{ID: "non-existent"}
@@ -264,7 +259,7 @@ func TestSubscriptionService_Update_ManualEpisodeAdjustment(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	updateDTO := SubscriptionDTO{
@@ -293,7 +288,7 @@ func TestSubscriptionService_Delete_Success(t *testing.T) {
 	}
 
 	bus := &mockEventBus{}
-	service := NewSubscriptionService(repo, nil, bus)
+	service := NewSubscriptionService(repo, nil, nil, bus)
 	ctx := context.Background()
 
 	err := service.Delete(ctx, "sub-1")
@@ -313,7 +308,7 @@ func TestSubscriptionService_Delete_Error(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	err := service.Delete(ctx, "sub-1")
@@ -336,7 +331,7 @@ func TestSubscriptionService_List_Success(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	result, err := service.List(ctx, 10)
@@ -359,7 +354,7 @@ func TestSubscriptionService_List_Empty(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	result, err := service.List(ctx, 10)
@@ -388,7 +383,7 @@ func TestSubscriptionService_Get_Success(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	result, err := service.Get(ctx, "sub-1")
@@ -408,7 +403,7 @@ func TestSubscriptionService_Get_NotFound(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	_, err := service.Get(ctx, "non-existent")
@@ -436,7 +431,7 @@ func TestSubscriptionService_PublishesCreatedEvent(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, bus)
+	service := NewSubscriptionService(repo, nil, nil, bus)
 	ctx := context.Background()
 
 	service.Create(ctx, "https://anime-sama.fr/catalogue/naruto", "Naruto", "auto")
@@ -487,7 +482,7 @@ func TestSubscriptionService_Create_TrimsWhitespace(t *testing.T) {
 		},
 	}
 
-	service := NewSubscriptionService(repo, nil, nil)
+	service := NewSubscriptionService(repo, nil, nil, nil)
 	ctx := context.Background()
 
 	dto, err := service.Create(ctx, "  https://anime-sama.fr/catalogue/naruto  ", "  Naruto  ", "  auto  ")

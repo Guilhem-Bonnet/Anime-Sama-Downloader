@@ -82,7 +82,7 @@ export const useSearchStore = create<SearchState & SearchActions>()(
         setError(undefined);
 
         try {
-          const response = await fetch(`http://localhost:8000/api/search?q=${encodeURIComponent(searchQuery)}`);
+          const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
           if (!response.ok) throw new Error('Search failed');
 
           const data = await response.json();

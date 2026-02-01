@@ -34,10 +34,10 @@ const AVAILABLE_GENRES = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'All Status' },
-  { value: 'ongoing', label: 'Ongoing' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'planning', label: 'Planning' },
+  { value: '', label: 'Tous les statuts' },
+  { value: 'ongoing', label: 'En cours' },
+  { value: 'completed', label: 'Terminé' },
+  { value: 'planning', label: 'Prévu' },
 ];
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChange }) => {
@@ -92,13 +92,13 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
         className="flex items-center justify-between w-full px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
       >
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          {isExpanded ? 'Hide Filters' : 'Show Filters'}
+          {isExpanded ? 'Masquer les filtres' : 'Afficher les filtres'}
           {hasActiveFilters && (
             <span className="ml-2 text-xs text-cyan-500">
               ({filters.genres.length +
                 (filters.status ? 1 : 0) +
                 (filters.yearMin || filters.yearMax ? 1 : 0)}{' '}
-              active)
+              actifs)
             </span>
           )}
         </span>
@@ -140,7 +140,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
           {/* Status filter */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Status
+              Statut
             </label>
             <select
               value={filters.status}
@@ -159,7 +159,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Year Min
+                Année min.
               </label>
               <input
                 type="number"
@@ -171,7 +171,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Year Max
+                Année max.
               </label>
               <input
                 type="number"
@@ -189,7 +189,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ filters, onFiltersChan
               onClick={clearAllFilters}
               className="w-full px-4 py-2 text-sm text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium"
             >
-              Clear All Filters
+              Réinitialiser les filtres
             </button>
           )}
         </div>

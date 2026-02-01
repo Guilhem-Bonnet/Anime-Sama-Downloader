@@ -8,16 +8,21 @@ import { EmptySearchIllustration } from './illustrations/SakuraIllustrations';
 export const SearchResultsGrid: React.FC = () => {
   const { results, isSearching } = useSearchStore();
   const { addJob } = useJobsStore();
+  const [showStamp, setShowStamp] = React.useState(false);
 
   // TEMPORARY: Show mock data if no results
   const mockResults = [
-    {anime_id: 'test-1', title: 'Attack on Titan', episodes: 75, source: 'AnimeSama', image_url: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg'},
-    {anime_id: 'test-2', title: 'Demon Slayer', episodes: 26, source: 'AnimeSama', image_url: 'https://cdn.myanimelist.net/images/anime/1286/99889.jpg'},
+    {anime_id: 'mushishi', title: 'Mushishi', episodes: 26, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
+    {anime_id: 'mononoke', title: 'Mononoke', episodes: 12, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
+    {anime_id: 'natsume-yuujinchou', title: 'Natsume Yuujinchou', episodes: 13, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
+    {anime_id: 'samurai-champloo', title: 'Samurai Champloo', episodes: 26, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
   ];
   const displayResults = results.length > 0 ? results : mockResults;
 
   const handleDownload = async (animeId: string, title: string) => {
     try {
+      setShowStamp(true);
+      setTimeout(() => setShowStamp(false), 1400);
       const download = await apiClient.createDownload(animeId, 1);
       if (download && download.downloadId) {
         addJob({
@@ -62,50 +67,115 @@ export const SearchResultsGrid: React.FC = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {displayResults.map((result, index) => (
-        <div
-          key={result.anime_id}
-          className="group relative bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50 hover:scale-[1.02] hover:border-cyan-500/50 animate-fadeInUp"
-          style={{ animationDelay: `${index * 100}ms` }}
-        >
-          {/* Image avec overlay gradient */}
-          {result.image_url && (
-            <div className="relative h-64 overflow-hidden">
-              <img
-                src={result.image_url}
-                alt={result.title}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              {/* Badge épisodes */}
-              <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-medium text-white border border-white/20">
-                {result.episodes} eps
+    <div className="space-y-8">
+      {/* Résultats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className={`ink-stamp ${showStamp ? 'is-visible' : ''}`} aria-hidden="true" />
+        {displayResults.map((result, index) => (
+          <div
+            key={result.anime_id}
+            className="group relative frame-ornate overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] animate-fadeInUp"
+            style={{ 
+              animationDelay: `${index * 100}ms`,
+              background: 'linear-gradient(135deg, rgba(143,106,61,0.1), rgba(125,114,103,0.05))',
+            }}
+          >
+            {/* Image avec overlay gradient */}
+            {result.image_url && (
+              <div className="relative h-64 overflow-hidden">
+                <img
+                  src={result.image_url}
+                  alt={result.title}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                {/* Badge épisodes avec encre brune */}
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'rgba(20,17,22,0.85)',
+                  backdropFilter: 'blur(8px)',
+                  padding: '6px 12px',
+                  borderRadius: '999px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--sakura-text-light)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                }}>
+                  {result.episodes} épisodes
+                </div>
               </div>
-            </div>
-          )}
-          
-          {/* Contenu */}
-          <div className="p-5">
-            <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-magenta-500 group-hover:to-cyan-500 transition-all">
-              {result.title}
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-cyan-500"></span>
-              {result.source}
-            </p>
+            )}
             
-            {/* Bouton Download avec gradient */}
-            <button
-              onClick={() => handleDownload(result.anime_id, result.title)}
-              className="w-full py-3 px-4 bg-gradient-to-r from-magenta-600 to-pink-600 hover:from-magenta-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg shadow-magenta-500/30 hover:shadow-xl hover:shadow-magenta-500/50 transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <Download className="w-5 h-5" />
-              <span>Download</span>
-            </button>
+            {/* Contenu */}
+            <div style={{ padding: '16px' }}>
+              <h3 style={{
+                fontWeight: 700,
+                fontSize: '16px',
+                color: 'var(--sakura-text-primary)',
+                marginBottom: '12px',
+                lineHeight: '1.3',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}>
+                {result.title}
+              </h3>
+              <p style={{
+                fontSize: '13px',
+                color: 'var(--sakura-text-secondary)',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: 'var(--sakura-accent-brown-500)',
+                }}></span>
+                {result.source}
+              </p>
+              
+              {/* Bouton Download avec encre brune */}
+              <button
+                onClick={() => handleDownload(result.anime_id, result.title)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  border: '1.5px solid var(--sakura-accent-brown-500)',
+                  background: 'var(--sakura-accent-brown-500)',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  transition: 'all 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--sakura-accent-brown-600)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(143, 106, 61, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'var(--sakura-accent-brown-500)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <Download className="w-4 h-4" />
+                <span>Télécharger</span>
+              </button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 };

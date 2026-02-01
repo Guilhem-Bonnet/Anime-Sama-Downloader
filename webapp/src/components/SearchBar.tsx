@@ -12,6 +12,7 @@ export const SearchBar: React.FC = () => {
     useSearchStore();
   const [localQuery, setLocalQuery] = useState(query);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const debouncedQuery = useDebounce(localQuery, 500);
   const { addRecentSearch } = useRecentSearches();
 
@@ -65,9 +66,9 @@ export const SearchBar: React.FC = () => {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <form onSubmit={handleSubmit} className="mb-6 relative">
-        <div className="relative group">
+        <div className={`relative group search-focus-ink ${isFocused ? 'is-focused' : ''}`}>
           {/* Search Icon */}
-          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-cyan-500 transition-colors">
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-gray-200 transition-colors">
             <Search className="w-5 h-5" />
           </div>
           
@@ -75,9 +76,13 @@ export const SearchBar: React.FC = () => {
             type="text"
             value={localQuery}
             onChange={handleChange}
-            onFocus={() => setSuggestionsOpen(true)}
+            onFocus={() => {
+              setIsFocused(true);
+              setSuggestionsOpen(true);
+            }}
+            onBlur={() => setIsFocused(false)}
             placeholder="Rechercher un anime... (ex: Attack on Titan)"
-            className="w-full pl-14 pr-14 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-2 border-gray-200 dark:border-gray-700 focus:outline-none focus:border-transparent focus:ring-4 focus:ring-cyan-500/30 shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
+            className="w-full pl-14 pr-14 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-2 border-gray-200 dark:border-gray-700 focus:outline-none focus:border-transparent focus:ring-4 focus:ring-gray-500/20 shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
             disabled={isSearching}
             autoComplete="off"
           />
@@ -85,7 +90,7 @@ export const SearchBar: React.FC = () => {
           {/* Loading spinner */}
           {isSearching && (
             <div className="absolute right-5 top-1/2 -translate-y-1/2">
-              <Loader2 className="w-5 h-5 animate-spin text-cyan-500" />
+              <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
             </div>
           )}
           

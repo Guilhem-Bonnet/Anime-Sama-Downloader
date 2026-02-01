@@ -59,23 +59,23 @@ export const RecentSearchesDropdown: React.FC<RecentSearchesDropdownProps> = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-        title="Recent searches"
+        title="Recherches récentes"
       >
         <Clock className="w-4 h-4" />
-        <span>Recent ({filteredSearches.length})</span>
+        <span>Récents ({filteredSearches.length})</span>
       </button>
 
       {isOpen && (
         <div className="absolute top-full left-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Recent Searches
+              Recherches récentes
             </h3>
             <button
               onClick={handleClearAll}
               className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
             >
-              Clear All
+              Tout effacer
             </button>
           </div>
 
@@ -96,7 +96,7 @@ export const RecentSearchesDropdown: React.FC<RecentSearchesDropdownProps> = ({
                 <button
                   onClick={(e) => handleRemove(e, search.query)}
                   className="ml-2 p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-all"
-                  title="Remove from recent searches"
+                  title="Retirer des recherches"
                 >
                   <X className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                 </button>

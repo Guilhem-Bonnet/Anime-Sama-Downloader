@@ -6,14 +6,14 @@ import "fmt"
 type ErrorCode string
 
 const (
-	ErrSearchFailed      ErrorCode = "SEARCH_FAILED"
-	ErrDownloadFailed    ErrorCode = "DOWNLOAD_FAILED"
-	ErrJobQueueFull      ErrorCode = "JOB_QUEUE_FULL"
-	ErrInvalidInput      ErrorCode = "INVALID_INPUT"
-	ErrNotFound          ErrorCode = "NOT_FOUND"
-	ErrInternalServer    ErrorCode = "INTERNAL_SERVER_ERROR"
-	ErrUnauthorized      ErrorCode = "UNAUTHORIZED"
-	ErrConflict          ErrorCode = "CONFLICT"
+	ErrSearchFailed   ErrorCode = "SEARCH_FAILED"
+	ErrDownloadFailed ErrorCode = "DOWNLOAD_FAILED"
+	ErrJobQueueFull   ErrorCode = "JOB_QUEUE_FULL"
+	ErrInvalidInput   ErrorCode = "INVALID_INPUT"
+	ErrNotFound       ErrorCode = "NOT_FOUND"
+	ErrInternalServer ErrorCode = "INTERNAL_SERVER_ERROR"
+	ErrUnauthorized   ErrorCode = "UNAUTHORIZED"
+	ErrConflict       ErrorCode = "CONFLICT"
 )
 
 // AppError is the standard error type for the application.

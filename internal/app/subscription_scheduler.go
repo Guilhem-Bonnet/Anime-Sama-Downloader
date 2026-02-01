@@ -4,9 +4,27 @@ import (
 	"context"
 	"time"
 
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 	"github.com/rs/zerolog"
 )
+
+// ComputeNextCheck calculates when to check a subscription for new episodes.
+//
+// Logic:
+// - If new episodes available beyond last scheduled: check in 10 minutes
+// - Otherwise: check in 2 hours
+func ComputeNextCheck(sub domain.Subscription, maxAvailable int) time.Time {
+	now := time.Now().UTC()
+
+	if sub.LastScheduledEpisode < maxAvailable {
+		// Nouveaux épisodes disponibles → check fréquent
+		return now.Add(10 * time.Minute)
+	}
+
+	// À jour → check espacé
+	return now.Add(2 * time.Hour)
+}
 
 type SubscriptionScheduler struct {
 	logger zerolog.Logger

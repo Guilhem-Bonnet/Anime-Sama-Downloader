@@ -34,10 +34,126 @@ body {
 
 .sakura-ink-bg {
   background-image:
-    radial-gradient(1100px 680px at 12% 6%, rgba(217, 70, 239, 0.18), transparent 55%),
-    radial-gradient(900px 600px at 86% 10%, rgba(6, 182, 212, 0.14), transparent 60%),
-    radial-gradient(800px 700px at 55% 110%, rgba(251, 111, 138, 0.12), transparent 60%),
-    repeating-linear-gradient(135deg, rgba(255,255,255,0.03) 0 1px, transparent 1px 8px);
+    radial-gradient(1200px 700px at 15% 10%, rgba(245, 232, 208, 0.08), transparent 60%),
+    radial-gradient(900px 600px at 85% 20%, rgba(180, 160, 130, 0.08), transparent 60%),
+    linear-gradient(180deg, rgba(20,17,22,0.9), rgba(15,12,16,0.95)),
+    repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 1px, transparent 1px 10px),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 1px, transparent 1px 12px);
+  position: relative;
+}
+
+.sakura-ink-bg::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(180, 160, 130, 0.18);
+  pointer-events: none;
+}
+
+/* Ombres chinoises animées */
+.ink-silhouette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  filter: blur(0.2px);
+}
+
+.ink-silhouette::before,
+.ink-silhouette::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-size: 120% 120%;
+  mix-blend-mode: soft-light;
+}
+
+.ink-silhouette::before {
+  background-image:
+    radial-gradient(320px 140px at 18% 20%, rgba(20, 17, 22, 0.8), transparent 70%),
+    radial-gradient(280px 120px at 80% 18%, rgba(20, 17, 22, 0.75), transparent 70%),
+    radial-gradient(400px 180px at 50% 55%, rgba(20, 17, 22, 0.7), transparent 72%);
+  animation: silhouette-drift 24s ease-in-out infinite;
+}
+
+.ink-silhouette::after {
+  background-image:
+    radial-gradient(220px 100px at 28% 70%, rgba(10, 8, 12, 0.7), transparent 70%),
+    radial-gradient(260px 110px at 72% 72%, rgba(10, 8, 12, 0.65), transparent 70%);
+  animation: silhouette-drift 32s ease-in-out infinite reverse;
+}
+
+@keyframes silhouette-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(20px, -12px, 0); }
+}
+
+/* Easter egg discret */
+.easter-ink {
+  opacity: 0;
+  transform: translateY(2px);
+  transition: all 400ms ease;
+  font-family: var(--font-kanji);
+  font-size: 0.85rem;
+  color: rgba(201, 188, 166, 0.7);
+}
+
+.title-easter:hover .easter-ink {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tampon encre lors d'action */
+.ink-stamp {
+  position: fixed;
+  inset: auto 24px 24px auto;
+  width: 120px;
+  height: 120px;
+  border: 2px solid rgba(143, 106, 61, 0.7);
+  border-radius: 50%;
+  transform: scale(0.6) rotate(-8deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 400ms ease;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.04), transparent 60%);
+}
+
+.ink-stamp::after {
+  content: '完了';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-kanji);
+  color: rgba(143, 106, 61, 0.9);
+  font-size: 1.8rem;
+}
+
+.ink-stamp.is-visible {
+  opacity: 0.9;
+  transform: scale(1) rotate(-10deg);
+}
+
+/* Focus search silhouette */
+.search-focus-ink {
+  position: relative;
+}
+
+.search-focus-ink::after {
+  content: '';
+  position: absolute;
+  inset: -18px -10px -20px -10px;
+  border-radius: 24px;
+  border: 1px dashed rgba(143, 106, 61, 0.35);
+  opacity: 0;
+  transition: opacity 400ms ease;
+  pointer-events: none;
+}
+
+.search-focus-ink.is-focused::after {
+  opacity: 1;
 }
 
 .sakura-panel {
@@ -62,7 +178,7 @@ body {
 }
 
 .sakura-brush {
-  border: 2px solid rgba(217, 70, 239, 0.45);
+  border: 2px solid rgba(148, 163, 184, 0.5);
   border-radius: 999px;
   position: relative;
   padding: 0.1rem 0.6rem;
@@ -73,13 +189,13 @@ body {
   position: absolute;
   inset: -4px;
   border-radius: 999px;
-  border: 1px dashed rgba(6, 182, 212, 0.35);
+  border: 1px dashed rgba(148, 163, 184, 0.35);
   pointer-events: none;
 }
 
 .sakura-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(217,70,239,0.6), rgba(6,182,212,0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(148,163,184,0.6), rgba(71,85,105,0.6), transparent);
 }
 
 .sakura-tag {
@@ -98,7 +214,40 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 0.7rem;
-  color: rgba(251, 111, 138, 0.9);
+  color: rgba(203, 213, 225, 0.9);
+}
+
+.kanji-brush {
+  font-family: var(--font-kanji);
+  letter-spacing: 0.08em;
+  font-size: 0.9rem;
+  color: #c9bca6;
+}
+
+.frame-ornate {
+  position: relative;
+  border-radius: 26px;
+  border: 1px solid rgba(180, 160, 130, 0.25);
+  background-image:
+    linear-gradient(180deg, rgba(255, 248, 236, 0.04), transparent 60%),
+    radial-gradient(2px 2px at 18% 20%, rgba(255,255,255,0.08) 0 50%, transparent 60%),
+    radial-gradient(2px 2px at 80% 28%, rgba(255,255,255,0.06) 0 50%, transparent 60%);
+}
+
+.frame-ornate::before,
+.frame-ornate::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 20px;
+  border: 1px dashed rgba(180, 160, 130, 0.28);
+  pointer-events: none;
+}
+
+.frame-ornate::after {
+  inset: 22px;
+  border-style: solid;
+  border-color: rgba(180, 160, 130, 0.18);
 }
 
 /* -------- TYPOGRAPHIE DE BASE -------- */
@@ -134,13 +283,13 @@ p {
 }
 
 a {
-  color: var(--sakura-accent-magenta-500);
+  color: #8b7a5a;
   text-decoration: none;
   transition: color var(--transition-fast);
 }
 
 a:hover {
-  color: var(--sakura-accent-magenta-400);
+  color: #a8926b;
 }
 
 /* -------- LISTE -------- */
@@ -211,14 +360,14 @@ button {
 /* -------- SÉLECTION -------- */
 
 ::selection {
-  background-color: var(--sakura-accent-magenta-500);
-  color: white;
+  background-color: #6b7280;
+  color: #0b1220;
 }
 
 /* -------- FOCUS VISIBLE -------- */
 
 *:focus-visible {
-  outline: 2px solid var(--sakura-accent-magenta-500);
+  outline: 2px solid #8b7a5a;
   outline-offset: 2px;
 }
 
