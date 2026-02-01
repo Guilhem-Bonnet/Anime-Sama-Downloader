@@ -154,6 +154,7 @@ As a system, I want to persist job queue state to SQLite, so that jobs survive a
 
 ## Status
 
-**Current Status:** ready-for-dev  
+**Current Status:** in-progress  
 **Progress:** 0/6 major tasks completed (0%)  
-**Created:** 31 janvier 2026
+**Created:** 31 janvier 2026  
+**Started:** 31 janvier 2026

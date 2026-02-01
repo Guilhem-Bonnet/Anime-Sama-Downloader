@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4]
+stepsCompleted: [1, 2, 3, 4, 5, 6]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/00-PROJECT-BRIEF.md
@@ -376,6 +376,255 @@ lastUpdated: '2026-01-31'
 **Nice to Have** (COULD HAVE) :
 1. 🟡 Micro-interactions (pétales sakura)
 2. 🟡 Game-like feedback (badges, achievements)
+
+---
+
+## UX Pattern Analysis & Inspiration
+
+### Inspiring Products Analysis
+
+**Dragon's Dogma 2, Guild Wars 2, Dofus** — 3 sites web de jeux AAA professionnels
+
+**Ce qu'ils font bien** :
+
+1. **Navigation structurée sans surcharge**
+   - Menu horizontal clair : 5-7 sections max (Action, Système, Monde, etc.)
+   - Sections distinctes, chacune focalisée
+   - Pas de 20 menus ou flat anonymous layout
+
+2. **Hiérarchie visuelle puissante**
+   - Titre principal dominant
+   - Spacing clair entre sections
+   - Typo scale visible (grand pour titles, petit pour body)
+
+3. **Contenu > Décoration**
+   - Artwork conceptual soutient le message
+   - Pas de "joli pour joli"
+   - Dragon's Dogma utilise l'art du jeu lui-même = cohérence
+
+4. **Tone respectueux & engageant**
+   - "Préparez-vous pour votre grande aventure" (not "Click here")
+   - Parle au cœur du joueur
+   - Pas de corporate tone
+
+5. **CTA clairs**
+   - Boutons dominants
+   - Contraste fort
+   - Pas d'action cachée
+
+### Transferable UX Patterns
+
+**Navigation pour ASD** :
+- Adopt Dragon's Dogma pattern : Menu structuré [Recherche] [Téléchargements] [Queue] [Paramètres] [Mode Expert]
+- Adapt : Seulement 5 sections (vs 7), priorité sur recherche + queue
+
+**Hiérarchie Visuelle** :
+- Adopt : Typo scale puissante (titres 24px+, body 14px)
+- Adopt : Spacing large entre sections (jardin japonais principle)
+- Adapt : Noto Serif JP pour titres (calligraphie subtle, vs generique sans-serif)
+
+**Contenu Visuel** :
+- Adopt : Artwork intentionnel, plaçé avec purpose (pas scattered)
+- Adapt : Intégrer calligraphie + kanji + textures bois (vs artwork game screenshots)
+
+**Tone** :
+- Adopt : Langage humain, fun (Dragon's Dogma pattern)
+- Adapt : Pour Alex "Ton épisode est prêt !" (vs "Download completed")
+- Adapt : Pour Maya "Webhooks configurés" (vs technical jargon)
+
+**CTA & Buttons** :
+- Adopt : Boutons dominants, contraste fort
+- Adapt : Couleurs Sakura Night (magenta #D946EF, cyan #06B6D4) vs grey/blue
+
+### Anti-Patterns to Avoid
+
+**Basé sur vos dislikes** :
+
+1. ❌ **Aspect "kikoo jap"**
+   - Anti-pattern : Anime-style illustrations everywhere
+   - Solution : Japanese aesthetics subtle + modern (calligraphie, kanji optionnel)
+   - Reference : Dragon's Dogma tone respectueux, pas exagéré
+
+2. ❌ **Trop de néons**
+   - Anti-pattern : #FF00FF, #00FFFF saturated bright
+   - Solution : Sakura Night soft palette (magenta toned, cyan toned, pas saturé)
+   - Reference : Dragon's Dogma warm golds, not neon
+
+3. ❌ **Illustrations mal disposées**
+   - Anti-pattern : Random artwork scattered, no intentionality
+   - Solution : Artwork placed with purpose, spacing clair
+   - Reference : Dragon's Dogma sections = each has ONE hero image + context
+
+4. ❌ **DA incohérente**
+   - Anti-pattern : Colors scattered, no system
+   - Solution : Design system tokens CSS strict (Sakura Night)
+   - Reference : One palette, one typo system, applied everywhere
+
+5. ❌ **Site trop corpo**
+   - Anti-pattern : Corporate jargon, formal tone
+   - Solution : Human tone, fun language, emotional connection
+   - Reference : Dragon's Dogma speaks to players, not investors
+
+6. ❌ **Trop d'éléments mal implantés**
+   - Anti-pattern : Density, every pixel filled, no breathing room
+   - Solution : Negative space, jardin japonais principle (void = intentional)
+   - Reference : Dragon's Dogma has big empty spaces between sections
+
+7. ❌ **Trop éloigné du moderne**
+   - Anti-pattern : Skeuomorphic wood, fake textures, outdated patterns
+   - Solution : Contemporary design + subtle textures (not exaggerated)
+   - Reference : Dragon's Dogma modern web design, not retro
+
+### Design Inspiration Strategy
+
+**What to Adopt** :
+1. ✅ Navigation structurée (5-7 sections, clair)
+2. ✅ Hiérarchie visuelle puissante (typo, spacing)
+3. ✅ Artwork intentionnel (plaçé avec purpose)
+4. ✅ Tone humain & engageant
+5. ✅ CTA clairs & dominants
+
+**What to Adapt** :
+1. ✅ Dragon's Dogma color → Sakura Night palette (soft, not saturated)
+2. ✅ Dragon's Dogma typo → Noto Serif JP titles (calligraphie subtle)
+3. ✅ Dragon's Dogma sections → ASD sections (Search, Queue, Settings, Power User Mode)
+4. ✅ Dragon's Dogma artwork → Japanese aesthetics (bois texture, kanji, negative space)
+
+**What to Avoid** :
+1. ❌ Bright néons ou saturated colors
+2. ❌ "Kikoo jap" clichés (anime stereotypes)
+3. ❌ Too many small illustrations scattered
+4. ❌ Corporate or technical tone
+5. ❌ Dense layout with no breathing room
+6. ❌ Inconsistent design system
+
+**Final Vision** :
+> **Sakura Night : Modern + Respectful + Intentional**
+> 
+> One professional game site (Dragon's Dogma) + Your Japanese aesthetics (calligraphie, bois, kanji, jardin) = **Contemporary design with soul**, not clichéd "anime UI"
+
+---
+
+## Design System Foundation
+
+### Design System Choice: Themeable System (shadcn/ui or Chakra UI)
+
+**Decision** : **Option 3 — Themeable System**
+
+**Why This Approach**:
+
+1. **Timeline Safe** 
+   - Components ready-to-use
+   - You customize tokens (colors, typography, spacing)
+   - Faster than custom, more flexible than Material/Ant
+
+2. **Sakura Night Perfect Implementation**
+   - CSS tokens = your exact colors (magenta #D946EF, cyan #06B6D4)
+   - Noto Serif JP for titles (typography tokens)
+   - Spacing scale (4px multiples, jardin japonais principle)
+   - No compromise on visual uniqueness
+
+3. **Modern & Industry Standard**
+   - Tailwind (shadcn/ui) or Chakra UI = contemporary
+   - Not Material Design (too corporate for your vision)
+   - Not custom (too slow for 27-day timeline)
+
+4. **Mode Simple + Mode Expert**
+   - Theme toggle switches components display
+   - Same CSS tokens, different component composition
+   - No duplication, clean architecture
+
+5. **Developer Productivity**
+   - React developers productive immediately
+   - Copy-paste component pattern (shadcn/ui)
+   - Built-in accessibility (Chakra)
+
+### Recommended Stack
+
+**Primary Recommendation**: **shadcn/ui** (based on Tailwind CSS)
+
+**Why shadcn/ui**:
+- ✅ Copy-paste components (own your code)
+- ✅ Tailwind CSS for tokens (Sakura Night colors)
+- ✅ Customizable out of the box
+- ✅ Perfect for React + TypeScript
+- ✅ Modern, industry standard
+
+**Alternative**: **Chakra UI**
+- ✅ Accessible-first philosophy
+- ✅ Theme system (elegant token management)
+- ✅ Great for both Mode Simple + Mode Expert
+- ✅ Slightly higher learning curve
+
+**For ASD**: **Recommend shadcn/ui** (faster start, copy-paste pattern suits your timeline)
+
+### Implementation Approach
+
+**Phase 1 (Foundation)** :
+1. Set up shadcn/ui + Tailwind
+2. Create Sakura Night tokens
+   ```
+   colors:
+     - sakura-bg-base: #0A0E1A
+     - sakura-accent-magenta: #D946EF
+     - sakura-accent-cyan: #06B6D4
+     - etc.
+   ```
+3. Create base components (Button, Input, Card)
+4. Test Mode Simple theme
+
+**Phase 2 (Mode Expert)** :
+1. Extend components for Mode Expert
+2. Add dashboard-specific components (Stats, Logs, Webhooks)
+3. Theme toggle implementation
+4. Test both modes together
+
+### Customization Strategy
+
+**Sakura Night Customization** :
+
+1. **Colors** (tokens.config.ts)
+   - Base: Dark theme (#0A0E1A, #1A1F2E)
+   - Accents: Magenta (#D946EF), Cyan (#06B6D4)
+   - Semantic: Success (#4ADE80), Warning (#FBBF24), Error (#F87171)
+
+2. **Typography** (tailwind.config.ts)
+   - Display: Noto Serif JP (calligraphie, titles)
+   - Body: Inter (clean, readable)
+   - Mono: SF Mono (code, logs)
+
+3. **Spacing** (tailwind.config.ts)
+   - Scale: 4px, 8px, 12px, 16px, 20px, 24px, 32px... (4px multiples)
+   - Principle: Jardin japonais (generous spacing, negative space)
+
+4. **Components** (shadcn/ui copied + customized)
+   - Button: Primary (magenta), Secondary (cyan), Ghost
+   - Card: Glassmorphism (subtle blur)
+   - Input: Dark background, magenta focus
+   - Progress: Gradient magenta→cyan
+   - Badge: Semantic colors
+
+5. **Animations** (Tailwind variants)
+   - Transitions: 200ms (responsive feel)
+   - Micro-interactions: Sakura petal subtle effects
+   - No heavy animations (performance)
+
+### Design System Governance
+
+**Standards to Maintain**:
+1. ✅ All components use token colors (never hardcoded #hex)
+2. ✅ Spacing always uses scale (never arbitrary margin/padding)
+3. ✅ Typography respects scale (never random font-size)
+4. ✅ Animations within 200ms threshold (Alex's confidence)
+5. ✅ Dark mode only (no light mode needed)
+6. ✅ Accessibility: WCAG AA minimum
+
+**Code Review Checklist**:
+- [ ] Uses tokens, not hardcoded colors
+- [ ] Respects spacing scale
+- [ ] Animations < 200ms
+- [ ] Works in both Mode Simple + Mode Expert
+- [ ] Passes accessibility tests
 
 ---
 

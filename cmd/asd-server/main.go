@@ -56,6 +56,15 @@ func main() {
 	resolver := app.NewAnimeSamaHybridResolver(catalogueResolver, anilistSvc)
 	importSvc := app.NewAniListImportService(anilistSvc, catalogueResolver, subsSvc)
 
+	// Recover unfinished jobs from previous sessions
+	unfinishedJobs, err := jobsRepo.LoadUnfinishedJobs(ctx)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to load unfinished jobs")
+	} else if len(unfinishedJobs) > 0 {
+		logger.Info().Int("count", len(unfinishedJobs)).Msg("recovered unfinished jobs from previous session")
+		// Jobs will be picked up by workers via ClaimNextQueued
+	}
+
 	// Limiteur global (partagé) pour tous les workers + hook côté API settings.
 	downloadLimiter := app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)
 
