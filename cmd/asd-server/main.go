@@ -39,6 +39,11 @@ func main() {
 	}
 	defer func() { _ = db.Close() }()
 
+	// Initialize default settings
+	if err := sqlite.InitializeDefaults(db.SQL); err != nil {
+		logger.Fatal().Err(err).Msg("failed to initialize database defaults")
+	}
+
 	bus := memorybus.New()
 	jobsRepo := sqlite.NewJobsRepository(db.SQL)
 	jobsSvc := app.NewJobService(jobsRepo, bus)
