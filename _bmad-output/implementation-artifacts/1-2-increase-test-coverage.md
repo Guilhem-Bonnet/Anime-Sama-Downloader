@@ -146,7 +146,20 @@ Ajouter tests manquants (unit + integration), particulièrement sur `Subscriptio
 
 ## 📦 File List
 
-*To be updated as implementation progresses*
+### Created
+- `internal/app/subscriptions_full_test.go`
+- `internal/app/jobs_full_test.go`
+- `internal/domain/models_test.go`
+- `internal/adapters/httpapi/jobs_test.go`
+- `internal/adapters/httpapi/subscriptions_test.go`
+- `internal/adapters/sqlite/subscriptions_repo_test.go`
+- `internal/app/executors_test.go`
+- `internal/app/errors_test.go`
+- `internal/app/limiter_test.go`
+- `internal/app/settings_test.go`
+
+### Modified
+- `internal/app/animesama_test.go`
 
 ---
 

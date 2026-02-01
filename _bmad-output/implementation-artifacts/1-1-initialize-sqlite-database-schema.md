@@ -31,44 +31,44 @@ As a developer, I want to initialize the SQLite database with core tables, so th
 ## 🎯 Tasks/Subtasks
 
 ### Task 1 : Create Database Initialization Module
-- [ ] **1.1** : Create `internal/adapters/sqlite/schema.go` file
-- [ ] **1.2** : Define `InitDatabase(dbPath string) error` function
-- [ ] **1.3** : Implement idempotent CREATE TABLE IF NOT EXISTS logic
-- [ ] **1.4** : Set up proper SQLite schema with primary keys and constraints
-- [ ] **1.5** : Test database initialization with unit tests
+- [x] **1.1** : Create `internal/adapters/sqlite/schema.go` file
+- [x] **1.2** : Define `InitDatabase(dbPath string) error` function
+- [x] **1.3** : Implement idempotent CREATE TABLE IF NOT EXISTS logic
+- [x] **1.4** : Set up proper SQLite schema with primary keys and constraints
+- [x] **1.5** : Test database initialization with unit tests
 
 ### Task 2 : Create Settings Table Schema
-- [ ] **2.1** : Define settings table with `id`, `key`, `value`, `updated_at` columns
-- [ ] **2.2** : Implement default settings insertion (download_path, quality, hls_enabled)
-- [ ] **2.3** : Add validation for settings table structure
-- [ ] **2.4** : Test settings table operations
+- [x] **2.1** : Define settings table with `id`, `key`, `value`, `updated_at` columns
+- [x] **2.2** : Implement default settings insertion (download_path, quality, hls_enabled)
+- [x] **2.3** : Add validation for settings table structure
+- [x] **2.4** : Test settings table operations
 
 ### Task 3 : Create Jobs Table Schema
-- [ ] **3.1** : Define jobs table with all required columns: `id`, `animeId`, `status`, `episodes`, `createdAt`, `startedAt`, `completedAt`, `errorMessage`
-- [ ] **3.2** : Set up proper indexes on `id` and `status` for query performance
-- [ ] **3.3** : Implement constraints (NOT NULL for required fields)
-- [ ] **3.4** : Test jobs table operations
+- [x] **3.1** : Define jobs table with all required columns: `id`, `animeId`, `status`, `episodes`, `createdAt`, `startedAt`, `completedAt`, `errorMessage`
+- [x] **3.2** : Set up proper indexes on `id` and `status` for query performance
+- [x] **3.3** : Implement constraints (NOT NULL for required fields)
+- [x] **3.4** : Test jobs table operations
 
 ### Task 4 : Integrate with Application Startup
-- [ ] **4.1** : Call `InitDatabase()` during application bootstrap in `cmd/asd-server/main.go`
-- [ ] **4.2** : Handle database initialization errors with proper logging
-- [ ] **4.3** : Verify idempotency (run twice, verify no errors)
-- [ ] **4.4** : Test application startup with fresh database
+- [x] **4.1** : Call `InitDatabase()` during application bootstrap in `cmd/asd-server/main.go`
+- [x] **4.2** : Handle database initialization errors with proper logging
+- [x] **4.3** : Verify idempotency (run twice, verify no errors)
+- [x] **4.4** : Test application startup with fresh database
 
 ### Task 5 : Database Integrity Validation
-- [ ] **5.1** : Implement PRAGMA integrity_check validation after table creation
-- [ ] **5.2** : Return error if integrity check fails
-- [ ] **5.3** : Log successful initialization with details
-- [ ] **5.4** : Add tests for integrity validation
+- [x] **5.1** : Implement PRAGMA integrity_check validation after table creation
+- [x] **5.2** : Return error if integrity check fails
+- [x] **5.3** : Log successful initialization with details
+- [x] **5.4** : Add tests for integrity validation
 
 ### Task 6 : Unit Tests & Validation
-- [ ] **6.1** : Create `internal/adapters/sqlite/schema_test.go`
-- [ ] **6.2** : Test InitDatabase() with fresh database
-- [ ] **6.3** : Test idempotency (InitDatabase() called twice)
-- [ ] **6.4** : Test default settings are properly inserted
-- [ ] **6.5** : Test all tables exist with correct schema
-- [ ] **6.6** : Test PRAGMA integrity_check passes
-- [ ] **6.7** : Run all existing tests to ensure no regressions
+- [x] **6.1** : Create `internal/adapters/sqlite/schema_test.go`
+- [x] **6.2** : Test InitDatabase() with fresh database
+- [x] **6.3** : Test idempotency (InitDatabase() called twice)
+- [x] **6.4** : Test default settings are properly inserted
+- [x] **6.5** : Test all tables exist with correct schema
+- [x] **6.6** : Test PRAGMA integrity_check passes
+- [x] **6.7** : Run all existing tests to ensure no regressions
 
 ---
 
@@ -137,7 +137,12 @@ As a developer, I want to initialize the SQLite database with core tables, so th
 
 ## 📦 File List
 
-*To be updated as implementation progresses*
+### Created
+- `internal/adapters/sqlite/schema.go`
+- `internal/adapters/sqlite/schema_test.go`
+
+### Modified
+- `cmd/asd-server/main.go`
 
 ---
 

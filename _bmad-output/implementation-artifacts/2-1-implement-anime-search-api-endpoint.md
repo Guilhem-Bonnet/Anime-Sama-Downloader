@@ -1,24 +1,8 @@
 # Story 2.1: Implement Anime Search API Endpoint
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-}	Score  float64	Result AnimeSearchResulttype SearchResultWithScore struct {// SearchResultWithScore is used internally for ranking search results.}	EpisodeCount int    // Total number of episodes	Status       string // "ongoing", "completed", "planning", etc.	Year         int    // Year the anime was released	ThumbnailURL string // URL to thumbnail image	Title        string // Anime title	ID           string // Unique identifier for the animetype AnimeSearchResult struct {// AnimeSearchResult represents a single anime search result returned from search queries.**Story ID:** 2-1-implement-anime-search-api-endpoint  
+**Story ID:** 2-1-implement-anime-search-api-endpoint  
 **Story Points:** 5  
-**Status:** ready-for-dev  
+**Status:** done  
 **Created:** 31 janvier 2026  
 **Epic:** Epic 2 - Anime Search & Discovery
 

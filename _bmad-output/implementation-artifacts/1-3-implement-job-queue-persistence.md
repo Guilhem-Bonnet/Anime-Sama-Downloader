@@ -140,6 +140,21 @@ As a system, I want to persist job queue state to SQLite, so that jobs survive a
 
 ---
 
+## 📦 File List
+
+### Created
+- `internal/adapters/sqlite/migrations/005_add_job_timestamps.sql`
+- `internal/adapters/sqlite/jobs_persistence_test.go`
+- `internal/adapters/sqlite/jobs_integration_test.go`
+
+### Modified
+- `internal/domain/job.go`
+- `internal/adapters/sqlite/jobs_repo.go`
+- `internal/adapters/sqlite/jobs_repo_test.go`
+- `cmd/asd-server/main.go`
+
+---
+
 ## Status
 
 **Current Status:** done  
@@ -213,11 +228,4 @@ As a system, I want to persist job queue state to SQLite, so that jobs survive a
 **Decision Made:**
 Treated as code discovery exercise - implementation was mostly complete, focus was on verification via comprehensive tests.
 
----
-
-## Status
-
-**Current Status:** review  
-**Progress:** 6/6 major tasks completed (100%)  
-**All Acceptance Criteria:** ✅ SATISFIED  
-**Ready for Review:** YES  
+  
