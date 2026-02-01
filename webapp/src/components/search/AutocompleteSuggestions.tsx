@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDebounce } from '../../hooks/useDebounce';
 
 export interface AutocompleteSuggestion {
@@ -21,6 +22,7 @@ export function AutocompleteSuggestions({
   onClose,
   apiEndpoint = '/api/v1/search/autocomplete',
 }: AutocompleteSuggestionsProps) {
+  const navigate = useNavigate();
   const [suggestions, setSuggestions] = useState<AutocompleteSuggestion[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loading, setLoading] = useState(false);
@@ -29,6 +31,12 @@ export function AutocompleteSuggestions({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const debouncedQuery = useDebounce(query, 300);
+
+  // Handle selection: navigate to anime detail page
+  const handleSelect = (suggestion: AutocompleteSuggestion) => {
+    onSelect(suggestion);
+    navigate(`/anime/${suggestion.id}`);
+  };
 
   // Fetch autocomplete suggestions
   useEffect(() => {
@@ -183,7 +191,7 @@ export function AutocompleteSuggestions({
               className={`autocomplete-item ${
                 index === selectedIndex ? 'autocomplete-item-selected' : ''
               }`}
-              onClick={() => onSelect(suggestion)}
+              onClick={() => handleSelect(suggestion)}
               onMouseEnter={() => setSelectedIndex(index)}
             >
               <img
