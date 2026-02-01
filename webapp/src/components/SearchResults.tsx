@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { useSearchStore } from '../../stores/search.store';
-import { useJobsStore } from '../../stores/jobs.store';
-import { apiClient } from '../../utils/api';
+import { useSearchStore } from '../stores/search.store';
+import { useJobsStore } from '../stores/jobs.store';
+import { apiClient } from '../utils/api';
 
 export const SearchResultsGrid: React.FC = () => {
   const { results, isSearching } = useSearchStore();

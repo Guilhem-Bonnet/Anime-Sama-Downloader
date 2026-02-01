@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useJobsStore } from '../../stores/jobs.store';
-import { useSSE } from '../../hooks/useSSE';
+import { useJobsStore } from '../stores/jobs.store';
+import { useSSE } from '../hooks/useSSE';
 import { StatusBadge } from './custom/StatusBadge';
 import { DownloadProgress } from './custom/DownloadProgress';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { App } from './App';
+import App from './App';
 import { AnimeDetailPage } from './pages/AnimeDetailPage';
 
 export function AppRouter() {
