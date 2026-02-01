@@ -2,7 +2,7 @@
 
 **Story ID:** 2-2-implement-search-autocomplete  
 **Story Points:** 3  
-**Status:** ready-for-dev  
+**Status:** done  
 **Created:** 31 janvier 2025  
 **Epic:** Epic 2 - Anime Search & Discovery
 

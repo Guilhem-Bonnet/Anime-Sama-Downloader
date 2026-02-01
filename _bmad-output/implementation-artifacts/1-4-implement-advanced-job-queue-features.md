@@ -215,7 +215,27 @@ Total: 310 tests passing ✅
 
 ---
 
-## 📚 References
+## � File List
+
+### Created
+- `internal/domain/anime_search.go`
+- `internal/app/animesama_search_service.go`
+- `internal/app/animesama_search_service_test.go`
+- `internal/adapters/httpapi/search.go`
+- `internal/adapters/httpapi/search_test.go`
+- `internal/app/filelist_service.go`
+- `internal/app/filelist_service_test.go`
+- `internal/domain/file.go`
+- `internal/ports/filelist.go`
+
+### Modified
+- `internal/adapters/sqlite/jobs_repo.go` (concurrent tests)
+- `internal/adapters/sqlite/jobs_repo_test.go` (concurrent tests)
+- `go.mod`
+
+---
+
+## �📚 References
 
 - Story 1-3: Job Queue Persistence (parent story)
 - Story 2-1: Anime Search API Endpoint
