@@ -20,10 +20,12 @@ func NewJobsRepository(db *sql.DB) *JobsRepository {
 
 func (r *JobsRepository) Create(ctx context.Context, job domain.Job) (domain.Job, error) {
 	_, err := r.db.ExecContext(ctx, `
-		INSERT INTO jobs(id, type, state, progress, created_at, updated_at, params_json, result_json, error_code, error_message)
-		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO jobs(id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message)
+		VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`, job.ID, job.Type, string(job.State), job.Progress,
-		job.CreatedAt.Format(time.RFC3339), job.UpdatedAt.Format(time.RFC3339), job.ParamsJSON, job.ResultJSON, job.ErrorCode, job.ErrorMessage)
+		job.CreatedAt.Format(time.RFC3339), job.UpdatedAt.Format(time.RFC3339),
+		formatOptionalTime(job.StartedAt), formatOptionalTime(job.CompletedAt),
+		job.ParamsJSON, job.ResultJSON, job.ErrorCode, job.ErrorMessage)
 	if err != nil {
 		return domain.Job{}, err
 	}
@@ -33,10 +35,11 @@ func (r *JobsRepository) Create(ctx context.Context, job domain.Job) (domain.Job
 func (r *JobsRepository) Get(ctx context.Context, id string) (domain.Job, error) {
 	var j domain.Job
 	var createdAt, updatedAt string
+	var startedAt, completedAt sql.NullString
 	err := r.db.QueryRowContext(ctx, `
-		SELECT id, type, state, progress, created_at, updated_at, params_json, result_json, error_code, error_message
+		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message
 		FROM jobs WHERE id = ?
-	`, id).Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage)
+	`, id).Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.Job{}, ports.ErrNotFound
@@ -45,6 +48,8 @@ func (r *JobsRepository) Get(ctx context.Context, id string) (domain.Job, error)
 	}
 	j.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 	j.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+	j.StartedAt = parseOptionalTime(startedAt)
+	j.CompletedAt = parseOptionalTime(completedAt)
 	return j, nil
 }
 
@@ -53,7 +58,7 @@ func (r *JobsRepository) List(ctx context.Context, limit int) ([]domain.Job, err
 		limit = 100
 	}
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, type, state, progress, created_at, updated_at, params_json, result_json, error_code, error_message
+		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message
 		FROM jobs ORDER BY updated_at DESC LIMIT ?
 	`, limit)
 	if err != nil {
@@ -65,11 +70,14 @@ func (r *JobsRepository) List(ctx context.Context, limit int) ([]domain.Job, err
 	for rows.Next() {
 		var j domain.Job
 		var createdAt, updatedAt string
-		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage); err != nil {
+		var startedAt, completedAt sql.NullString
+		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage); err != nil {
 			return nil, err
 		}
 		j.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
 		j.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+		j.StartedAt = parseOptionalTime(startedAt)
+		j.CompletedAt = parseOptionalTime(completedAt)
 		out = append(out, j)
 	}
 	return out, rows.Err()
@@ -167,11 +175,40 @@ func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected do
 	if !domain.CanTransition(expected, next) {
 		return domain.Job{}, domain.ErrInvalidTransition
 	}
-	res, err := r.db.ExecContext(ctx, `
-		UPDATE jobs
-		SET state = ?, updated_at = ?
-		WHERE id = ? AND state = ?
-	`, string(next), time.Now().UTC().Format(time.RFC3339), id, string(expected))
+
+	now := time.Now().UTC()
+	nowStr := now.Format(time.RFC3339)
+
+	// Determine if we need to set started_at or completed_at
+	var startedAt, completedAt interface{}
+	
+	// Set started_at when transitioning to running state
+	if next == domain.JobRunning && expected == domain.JobQueued {
+		startedAt = nowStr
+	}
+	
+	// Set completed_at when reaching terminal state
+	if next.IsTerminal() {
+		completedAt = nowStr
+	}
+
+	// Build UPDATE query dynamically based on what needs to be set
+	query := "UPDATE jobs SET state = ?, updated_at = ?"
+	args := []interface{}{string(next), nowStr}
+
+	if startedAt != nil {
+		query += ", started_at = ?"
+		args = append(args, startedAt)
+	}
+	if completedAt != nil {
+		query += ", completed_at = ?"
+		args = append(args, completedAt)
+	}
+
+	query += " WHERE id = ? AND state = ?"
+	args = append(args, id, string(expected))
+
+	res, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return domain.Job{}, err
 	}
@@ -180,4 +217,54 @@ func (r *JobsRepository) UpdateState(ctx context.Context, id string, expected do
 		return domain.Job{}, ports.ErrNotFound
 	}
 	return r.Get(ctx, id)
+}
+
+// LoadUnfinishedJobs loads all jobs that are not in a terminal state.
+// This is used for job recovery on application startup.
+func (r *JobsRepository) LoadUnfinishedJobs(ctx context.Context) ([]domain.Job, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, type, state, progress, created_at, updated_at, started_at, completed_at, params_json, result_json, error_code, error_message
+		FROM jobs
+		WHERE state IN (?, ?)
+		ORDER BY created_at ASC
+	`, string(domain.JobQueued), string(domain.JobRunning))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []domain.Job{}
+	for rows.Next() {
+		var j domain.Job
+		var createdAt, updatedAt string
+		var startedAt, completedAt sql.NullString
+		if err := rows.Scan(&j.ID, &j.Type, &j.State, &j.Progress, &createdAt, &updatedAt, &startedAt, &completedAt, &j.ParamsJSON, &j.ResultJSON, &j.ErrorCode, &j.ErrorMessage); err != nil {
+			return nil, err
+		}
+		j.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+		j.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+		j.StartedAt = parseOptionalTime(startedAt)
+		j.CompletedAt = parseOptionalTime(completedAt)
+		out = append(out, j)
+	}
+	return out, rows.Err()
+}
+
+// Helper functions for optional timestamp handling
+func formatOptionalTime(t *time.Time) interface{} {
+	if t == nil {
+		return nil
+	}
+	return t.Format(time.RFC3339)
+}
+
+func parseOptionalTime(ns sql.NullString) *time.Time {
+	if !ns.Valid || ns.String == "" {
+		return nil
+	}
+	t, err := time.Parse(time.RFC3339, ns.String)
+	if err != nil {
+		return nil
+	}
+	return &t
 }

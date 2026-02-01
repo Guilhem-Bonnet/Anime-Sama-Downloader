@@ -28,6 +28,11 @@ type Job struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
+	// StartedAt is set when job transitions to JobRunning
+	StartedAt *time.Time
+	// CompletedAt is set when job reaches a terminal state (completed/failed/canceled)
+	CompletedAt *time.Time
+
 	ParamsJSON   []byte
 	ResultJSON   []byte
 	ErrorCode    string
