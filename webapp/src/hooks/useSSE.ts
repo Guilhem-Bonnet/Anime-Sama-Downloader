@@ -11,6 +11,10 @@ export function useSSE(url: string, onMessage?: EventListener) {
   }, [onMessage]);
 
   useEffect(() => {
+    if (!url) {
+      return;
+    }
+
     const eventSource = new EventSource(url);
 
     eventSource.onmessage = (event) => {

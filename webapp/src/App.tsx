@@ -70,6 +70,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div
+        className="sakura-ink-bg"
         style={{
           minHeight: '100vh',
           background: 'var(--sakura-bg-base)',
@@ -99,11 +100,13 @@ export default function App() {
           >
             <div>
               <h1 style={{ fontSize: 'var(--text-display)', fontWeight: 700 }}>
-                Anime-Sama Downloader
+                🎌 Anime-Sama Downloader
               </h1>
-              <p style={{ color: 'var(--sakura-text-secondary)', fontSize: '12px', marginTop: '6px' }}>
-                Sakura Night Design • MVP v1.0
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+                <span className="sakura-stamp">Sakura Night</span>
+                <span className="sakura-divider" style={{ width: '80px' }}></span>
+                <span style={{ color: 'var(--sakura-text-secondary)', fontSize: '12px' }}>MVP v1.0</span>
+              </div>
             </div>
             <ModeToggle />
           </div>
