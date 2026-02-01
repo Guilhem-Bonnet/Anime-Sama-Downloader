@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3]
+stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - _bmad-output/planning-artifacts/prd.md
   - _bmad-output/planning-artifacts/00-PROJECT-BRIEF.md
@@ -216,6 +216,166 @@ lastUpdated: '2026-01-31'
 - ✅ Sakura Night design system
 - ✅ SSE streaming pour job progress
 - ✅ Jellyfin wizard setup
+
+---
+
+## Desired Emotional Response
+
+### Primary Emotional Goals
+
+**Pour Alex 🍿 (Casual Fan)** :
+1. **Confiance** — Click → instant response (< 200ms). No waiting = confidence.
+2. **Beauté** — Look anime, feel anime. Magenta + cyan + dark mode = "this is for me."
+3. **Accomplissement** — "I downloaded my favorite episode!" (notification fun)
+4. **Sérénité face aux erreurs** — "L'app gère ça pour moi, pas mon problème"
+
+**Pour Maya 📚 (Expert)** :
+1. **Clarté absolue** — Show logs. Raw data. HTTP errors, stderr output.
+2. **Respect** — No "Are you sure?" pop-ups. Treat her like an engineer.
+3. **Maîtrise** — Dashboard expert riche, configuration puissante
+4. **Sentiment de découverte** — "Je comprends comment ça marche maintenant"
+
+**Composite Émergent** :
+1. **"Well-designed ecosystem"** — One app, different views. Like a restaurant with two menus.
+2. **"This app makes me smarter"** — Architecture transparency = learning opportunity (new from Exquisite Corpse)
+
+### Emotional Journey Mapping
+
+**Pour Alex** (progression émotionnelle) :
+- Ouvre l'app → 😍 "C'est beau !"
+- Tape titre → ✨ "Oh, une suggestion !"
+- Clique "Télécharger" → ✅ "Ajouté à la queue" (feedback immédiat)
+- Voit progress bar → 📊 "Je vois la progression"
+- Reçoit notification → 🎉 "C'est prêt !"
+- **Résultat** : 💕 Loyalty + engagement augmentée
+
+**Pour Maya** (progression émotionnelle) :
+- Active Power User Mode → ✨ "Dashboard expert !"
+- Configure webhooks → 🎯 "Étapes claires" (pas de magic, mais transparency)
+- Test webhook → ✅ "Ça marche !" (feedback immédiat)
+- Voit les logs → 🔧 "Je peux debugger"
+- Auto-download réussi → 💪 "Maîtrisé !"
+- **Résultat** : 🚀 Empowerment + expertise building
+
+### Micro-Emotions & Nuances
+
+**Pour Alex** :
+- ✨ **Surprise positive** : "Oh, des suggestions ? C'est cool !"
+- 🛡️ **Confiance** : "Ça marche immédiatement, ça ne casse pas"
+- 😍 **Délice** : "L'interface est jolie, j'aime l'utiliser"
+- 📞 **Connexion** : "C'est fait pour les fans d'anime"
+- 🏁 **Accomplissement** : "J'ai téléchargé mon épisode préféré !"
+
+**Pour Maya** :
+- 🧠 **Clarté** : "Je comprends exactement ce qui se passe"
+- 🎮 **Maîtrise** : "Je contrôle chaque paramètre"
+- 🔍 **Visibilité** : "Les logs me montrent tout"
+- ⚡ **Efficacité** : "C'est plus rapide qu'un script custom"
+- 🎖️ **Respect** : "Vous me traitez comme un expert"
+
+**À ÉVITER pour les deux** :
+- ❌ Confusion (qui fait quoi ?)
+- ❌ Silence radio (erreur invisible)
+- ❌ Sentiment de "pas de contrôle"
+- ❌ Beauté sans fonction
+
+### Design Implications for Emotional Goals
+
+**Si on veut "Confiance + Surprise"** :
+- ✅ Feedback immédiat (toast, couleurs) — < 200ms max
+- ✅ Animations fluides (pas de freeze)
+- ✅ Micro-interactions joyeuses (pétales sakura au download ?)
+- ✅ Erreurs claires (jamais silencieuses)
+
+**Si on veut "Maîtrise + Respect"** :
+- ✅ Dashboard expert avec stats visibles
+- ✅ Logs structurés, filtrables, raw (not pretty)
+- ✅ Test button pour webhooks (show request + response)
+- ✅ Mode Expert n'est jamais "caché" — c'est un choix respectueux
+- ✅ Pas de pop-ups "Are you sure?" — assume competence
+
+**Si on veut "Connexion à l'anime"** :
+- ✅ Visuels anime (Sakura Night design)
+- ✅ Langage décontracté, pas corporate
+- ✅ Couleurs magenta/cyan associées à l'anime
+- ✅ Notifications fun ("Ton épisode est là !")
+
+**Si on veut "This app makes me smarter"** :
+- ✅ Error messages teach (HTTP codes, not just "Failed")
+- ✅ Logs are learning content (why did this fail? See the stderr)
+- ✅ Architecture visibility (webhooks, retry logic, etc.)
+- ✅ Educational UI copy ("Here's how anime-sama scraping works...")
+
+### Critical Error Handling Scenarios
+
+**Pour Alex** (Protection Mode) :
+- ❌ Fail : Silent failure, no feedback
+- ❌ Fail : Technical error "HTTP 503"
+- ✅ Good : Toast "anime-sama.si is offline, retrying in 5 min"
+- ✅ Good : Background auto-retry, Alex never needs to know
+
+**Pour Maya** (Diagnostic Mode) :
+- ❌ Fail : Pretty error "Something went wrong"
+- ❌ Fail : No logs available to debug
+- ✅ Good : Full request + response visible
+  ```
+  POST https://jellyfin.myserver:8096/webhook
+  Status: Connection refused (ECONNREFUSED)
+  Possible causes: Wrong URL, Jellyfin not running
+  ```
+- ✅ Good : "Show technical details" button for raw logs
+
+**Pattern** : **Progressive disclosure** (logs hidden by default, clickable for Maya)
+
+### Emotional Design Principles (Refined)
+
+1. **Beauté crée l'engagement**
+   - Sakura Night n'est pas cosmétique, c'est stratégique
+   - Alex utilise votre app au lieu d'une autre parce que c'est beau
+   - **Mesure** : Engagement frequency (uses/week) should increase with beautiful UI
+
+2. **Transparence crée la confiance**
+   - Erreurs visibles = confiance accrue
+   - Logs accessibles pour Maya = respect du contrôle
+   - **Mesure** : Trust score (perceived control over system)
+
+3. **Immédiateté crée la satisfaction**
+   - < 200ms pour tout feedback
+   - Progress bars fluides (pas de freeze)
+   - **Mesure** : Response time < 200ms for all interactive elements
+
+4. **Progressivité crée l'accessibilité**
+   - Mode Simple accessible au démarrage
+   - Mode Expert à 1 clic pour qui veut
+   - Pas de sacrifice d'une persona pour l'autre
+   - **Mesure** : Both personas can accomplish core goals (Alex in Mode Simple, Maya in Mode Expert)
+
+5. **Langage humain crée la connexion**
+   - "Ton épisode est prêt !" (pas "Download complete")
+   - Messages d'erreur simples et encourageants
+   - **Mesure** : User sentiment in feedback (feelings of connection)
+
+6. **Architecture visibility crée l'expertise**
+   - Logs ne sont pas juste pour debugging, c'est du contenu éducatif
+   - Error messages teach HTTP concepts
+   - Webhooks config = teaching moment
+   - **Mesure** : Users learn about web systems (feedback indicates understanding)
+
+### Summary: Emotional Hierarchy
+
+**Top Priority** (MUST HAVE) :
+1. 🔴 Feedback < 200ms (Alex's confidence threshold)
+2. 🔴 Logs on demand (Maya's transparency requirement)
+3. 🔴 Support both personas (don't sacrifice one)
+
+**High Priority** (SHOULD HAVE) :
+1. 🟠 Beauté > Vitesse (at acceptable speed thresholds)
+2. 🟠 Auto + transparency + override (not magic)
+3. 🟠 Educational error messages
+
+**Nice to Have** (COULD HAVE) :
+1. 🟡 Micro-interactions (pétales sakura)
+2. 🟡 Game-like feedback (badges, achievements)
 
 ---
 
