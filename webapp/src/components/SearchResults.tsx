@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useSearchStore } from '../stores/search.store';
 import { useJobsStore } from '../stores/jobs.store';
 import { apiClient } from '../utils/api';
+import { Download, Play } from 'lucide-react';
 
 export const SearchResultsGrid: React.FC = () => {
   const { results, isSearching } = useSearchStore();
@@ -51,7 +52,11 @@ export const SearchResultsGrid: React.FC = () => {
   if (displayResults.length === 0 && !isSearching) {
     return (
       <div className="text-center py-20">
-        <div className="text-6xl mb-4">🔍</div>
+        <div className="flex justify-center mb-4">
+          <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-full">
+            <Play className="w-12 h-12 text-gray-400" />
+          </div>
+        </div>
         <p className="text-gray-600 dark:text-gray-400 text-lg">
           Aucun résultat trouvé. Essayez une autre recherche !
         </p>
@@ -98,7 +103,7 @@ export const SearchResultsGrid: React.FC = () => {
               onClick={() => handleDownload(result.anime_id, result.title)}
               className="w-full py-3 px-4 bg-gradient-to-r from-magenta-600 to-pink-600 hover:from-magenta-700 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg shadow-magenta-500/30 hover:shadow-xl hover:shadow-magenta-500/50 transition-all duration-300 flex items-center justify-center gap-2"
             >
-              <span>📥</span>
+              <Download className="w-5 h-5" />
               <span>Download</span>
             </button>
           </div>

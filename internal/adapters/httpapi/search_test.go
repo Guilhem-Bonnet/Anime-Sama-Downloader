@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
@@ -232,11 +233,16 @@ func TestSearchHandler_ServiceError(t *testing.T) {
 
 // Mock FileListService for testing
 type MockFileListService struct {
-	fileList *domain.FileList
-	err      error
+	fileList     *domain.FileList
+	err          error
+	shouldError  bool
+	errorMessage string
 }
 
 func (m *MockFileListService) GetFileList(ctx context.Context, animeID string) (*domain.FileList, error) {
+	if m.shouldError {
+		return nil, fmt.Errorf(m.errorMessage)
+	}
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -244,6 +250,9 @@ func (m *MockFileListService) GetFileList(ctx context.Context, animeID string) (
 }
 
 func (m *MockFileListService) GetFilesByAnimeTitle(ctx context.Context, title string) (*domain.FileList, error) {
+	if m.shouldError {
+		return nil, fmt.Errorf(m.errorMessage)
+	}
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -346,5 +355,212 @@ func TestFileListHandler_GetFiles_NoAnimeId(t *testing.T) {
 
 	if w.Code != http.StatusBadRequest {
 		t.Errorf("expected status 400, got %d", w.Code)
+	}
+}
+
+// TestFileListHandler_GetFiles_ServiceError tests internal service errors
+func TestFileListHandler_GetFiles_ServiceError(t *testing.T) {
+	mockService := &MockFileListService{
+		shouldError: true,
+		errorMessage: "internal service error",
+	}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime/1/files", nil)
+	w := httptest.NewRecorder()
+
+	// Simulate chi URL params
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	// Should return 404 for "not found" errors
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", w.Code)
+	}
+}
+
+// TestFileListHandler_GetFiles_LargeFileList tests handling of large file lists
+func TestFileListHandler_GetFiles_LargeFileList(t *testing.T) {
+	// Create service with large file list (1000 episodes)
+	largeFiles := make([]domain.File, 1000)
+	for i := range largeFiles {
+		largeFiles[i] = domain.File{
+			ID:       fmt.Sprintf("large-ep%d", i+1),
+			Name:     fmt.Sprintf("Episode %d", i+1),
+			Path:     fmt.Sprintf("/downloads/Episode_%04d.mkv", i+1),
+			Size:     350000000,
+			Duration: 1400,
+			Type:     "video/x-matroska",
+		}
+	}
+
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "large-1",
+			Files:   largeFiles,
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime/large-1/files", nil)
+	w := httptest.NewRecorder()
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"large-1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response FileListResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response.Files) != 1000 {
+		t.Errorf("expected 1000 files in response, got %d", len(response.Files))
+	}
+}
+
+// TestFileListHandler_GetFiles_JSONValidation tests response JSON structure
+func TestFileListHandler_GetFiles_JSONValidation(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files: []domain.File{
+				{
+					ID:       "1-ep1",
+					Name:     "Episode 1",
+					Path:     "/downloads/Episode_01.mkv",
+					Size:     350000000,
+					Duration: 1400,
+					Type:     "video/x-matroska",
+				},
+			},
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime/1/files", nil)
+	w := httptest.NewRecorder()
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", w.Code)
+	}
+
+	// Verify content-type
+	contentType := w.Header().Get("Content-Type")
+	if !strings.Contains(contentType, "application/json") {
+		t.Errorf("expected JSON content type, got %s", contentType)
+	}
+
+	// Verify JSON structure
+	var response FileListResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	// Verify required fields are present
+	if response.AnimeID == "" {
+		t.Error("response missing anime_id field")
+	}
+
+	if len(response.Files) == 0 {
+		t.Error("response missing files array")
+	}
+
+	// Verify file structure
+	file := response.Files[0]
+	if file.ID == "" || file.Name == "" || file.Path == "" || file.Type == "" {
+		t.Error("file missing required fields")
+	}
+}
+
+// TestFileListHandler_GetFiles_EmptyFileList tests anime with no episodes
+func TestFileListHandler_GetFiles_EmptyFileList(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "empty-1",
+			Files:   []domain.File{}, // No files
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime/empty-1/files", nil)
+	w := httptest.NewRecorder()
+
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"empty-1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var response FileListResponse
+	if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if len(response.Files) != 0 {
+		t.Errorf("expected 0 files, got %d", len(response.Files))
+	}
+}
+
+// TestFileListHandler_GetFiles_SpecialCharactersInID tests IDs with special characters
+func TestFileListHandler_GetFiles_SpecialCharactersInID(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "test-123",
+			Files: []domain.File{
+				{
+					ID:       "test-123-ep1",
+					Name:     "Episode 1",
+					Path:     "/downloads/Episode_01.mkv",
+					Size:     350000000,
+					Duration: 1400,
+					Type:     "video/x-matroska",
+				},
+			},
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+	
+	// Test various ID formats
+	testIDs := []string{
+		"test-123",
+		"anime_456",
+		"show.789",
+	}
+
+	for _, animeID := range testIDs {
+		mockService.fileList.AnimeID = animeID
+		req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/anime/%s/files", animeID), nil)
+		w := httptest.NewRecorder()
+
+		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+			URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{animeID}},
+		}))
+
+		handler.GetFiles(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("ID '%s': expected status 200, got %d", animeID, w.Code)
+		}
 	}
 }

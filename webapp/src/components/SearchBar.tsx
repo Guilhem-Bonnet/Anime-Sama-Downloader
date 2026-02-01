@@ -5,6 +5,7 @@ import { useRecentSearches } from '../hooks/useRecentSearches';
 import { FilterPanel } from './search/FilterPanel';
 import { RecentSearchesDropdown } from './search/RecentSearchesDropdown';
 import { SuggestionsDropdown } from './search/SuggestionsDropdown';
+import { Search, X, Loader2 } from 'lucide-react';
 
 export const SearchBar: React.FC = () => {
   const { query, filters, setQuery, setFilters, performSearch, isSearching, error } =
@@ -67,7 +68,7 @@ export const SearchBar: React.FC = () => {
         <div className="relative group">
           {/* Search Icon */}
           <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-cyan-500 transition-colors">
-            🔍
+            <Search className="w-5 h-5" />
           </div>
           
           <input
@@ -83,8 +84,8 @@ export const SearchBar: React.FC = () => {
           
           {/* Loading spinner */}
           {isSearching && (
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-2xl">
-              ⌛
+            <div className="absolute right-5 top-1/2 -translate-y-1/2">
+              <Loader2 className="w-5 h-5 animate-spin text-cyan-500" />
             </div>
           )}
           
@@ -96,9 +97,9 @@ export const SearchBar: React.FC = () => {
                 setLocalQuery('');
                 setQuery('');
               }}
-              className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-xl"
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           )}
 

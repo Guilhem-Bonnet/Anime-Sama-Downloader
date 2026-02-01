@@ -5,6 +5,7 @@ import { ModeToggle } from './components/custom/ModeToggle';
 import { SearchBar } from './components/SearchBar';
 import { SearchResultsGrid } from './components/SearchResults';
 import { DownloadMonitor } from './components/DownloadMonitor';
+import { Search, Download, Settings, Zap } from 'lucide-react';
 
 const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasError, setHasError] = React.useState(false);
@@ -57,10 +58,20 @@ export default function App() {
         <header className="border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-white via-pink-50/30 to-cyan-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-900 backdrop-blur-xl sticky top-0 z-40 shadow-lg">
           <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-magenta-600 via-pink-600 to-cyan-600 bg-clip-text text-transparent">
-                🎌 Anime-Sama Downloader
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-magenta-600 via-pink-600 to-cyan-600 bg-clip-text text-transparent flex items-center gap-3">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="url(#gradient)" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <defs>
+                    <linearGradient id="gradient" x1="2" y1="2" x2="22" y2="22">
+                      <stop offset="0%" stopColor="#d946ef" />
+                      <stop offset="50%" stopColor="#fb6f8a" />
+                      <stop offset="100%" stopColor="#06b6d4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                Anime-Sama Downloader
               </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Sakura Night Design • MVP v1.0</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium ml-11">Sakura Night Design • MVP v1.0</p>
             </div>
             <ModeToggle />
           </div>
@@ -82,11 +93,11 @@ export default function App() {
                 {activeView === view && (
                   <span className="absolute inset-x-0 -bottom-[2px] h-[3px] bg-gradient-to-r from-magenta-500 to-cyan-500 rounded-t-full" />
                 )}
-                <span className="text-xl mr-2">
-                  {view === 'search' && '🔍'}
-                  {view === 'downloads' && '📥'}
-                  {view === 'rules' && '⚙️'}
-                  {view === 'settings' && '⚡'}
+                <span className="mr-2">
+                  {view === 'search' && <Search className="w-5 h-5" />}
+                  {view === 'downloads' && <Download className="w-5 h-5" />}
+                  {view === 'rules' && <Settings className="w-5 h-5" />}
+                  {view === 'settings' && <Zap className="w-5 h-5" />}
                 </span>
                 {view.charAt(0).toUpperCase() + view.slice(1)}
               </button>
