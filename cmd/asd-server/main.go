@@ -62,6 +62,9 @@ func main() {
 		// For now, empty catalogue (will be populated by future stories)
 	}
 	searchSvc := app.NewAnimeSamaSearchService(searchCatalogue)
+	
+	// Create anime detail service (mock for now)
+	detailSvc := app.NewMockAnimeDetailService()
 
 	// Recover unfinished jobs from previous sessions
 	unfinishedJobs, err := jobsRepo.LoadUnfinishedJobs(ctx)
@@ -116,7 +119,7 @@ func main() {
 	updater := app.NewDownloadCompletionUpdater(logger.With().Str("component", "download-updater").Logger(), bus, subsRepo)
 	go updater.Run(shutdownCtx)
 
-	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, subsSvc, anilistSvc, importSvc, resolver, bus, downloadLimiter, searchSvc, func(updated domain.Settings) {
+	srv := httpapi.NewServer(logger, jobsSvc, settingsSvc, subsSvc, anilistSvc, importSvc, resolver, bus, downloadLimiter, searchSvc, detailSvc, func(updated domain.Settings) {
 		if updated.MaxWorkers > 0 {
 			pool.SetCount(updated.MaxWorkers)
 		}
