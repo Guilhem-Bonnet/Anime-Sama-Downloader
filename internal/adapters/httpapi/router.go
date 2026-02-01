@@ -68,8 +68,8 @@ func (s *Server) Router() http.Handler {
 		if s.importer != nil {
 			NewAniListImportHandler(s.importer).Routes(r)
 		}
-		if s.resolver != nil {
-			NewAnimeSamaHandler(s.resolver).Routes(r)
+		if s.resolver != nil || s.jobs != nil {
+			NewAnimeSamaHandler(s.resolver, s.jobs).Routes(r)
 		}
 		if s.settings != nil {
 			NewSettingsHandler(s.settings, func(updated domain.Settings) {

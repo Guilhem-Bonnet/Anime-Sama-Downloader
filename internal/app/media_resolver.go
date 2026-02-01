@@ -101,6 +101,7 @@ func resolveDirectMediaURL(ctx context.Context, raw string, depth int) (string, 
 	if raw == "" {
 		return "", errors.New("empty url")
 	}
+	raw = normalizeKnownVideoHost(raw)
 	if looksLikeDirectMediaURL(raw) {
 		return raw, nil
 	}
@@ -122,6 +123,10 @@ func resolveDirectMediaURL(ctx context.Context, raw string, depth int) (string, 
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0")
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	// Some hosts require a referer (anti-leech/anti-bot).
+	if base != nil && base.Scheme != "" && base.Host != "" {
+		req.Header.Set("Referer", base.Scheme+"://"+base.Host+"/")
+	}
 
 	client := &http.Client{Timeout: 15 * time.Second}
 	resp, err := client.Do(req)
@@ -165,4 +170,23 @@ func resolveDirectMediaURL(ctx context.Context, raw string, depth int) (string, 
 // It prefers mp4 over m3u8 when both are present.
 func ResolveDirectMediaURL(ctx context.Context, raw string) (string, error) {
 	return resolveDirectMediaURL(ctx, raw, 3)
+}
+
+func normalizeKnownVideoHost(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return raw
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return raw
+	}
+	h := strings.ToLower(strings.TrimPrefix(u.Host, "www."))
+	switch h {
+	case "vidmoly.to":
+		u.Host = "vidmoly.net"
+	case "oneupload.to":
+		u.Host = "oneupload.net"
+	}
+	return u.String()
 }

@@ -72,6 +72,36 @@ func TestDownloadExecutor_HTTPStatusErrorIsCoded(t *testing.T) {
 	}
 }
 
+func TestDownloadExecutor_HTMLResponseIsNotMedia(t *testing.T) {
+	ex := DownloadExecutor{}
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write([]byte("<html><body>embed</body></html>"))
+	}))
+	defer srv.Close()
+
+	job := domain.Job{
+		ID:         "jobhtml",
+		Type:       "download",
+		ParamsJSON: []byte(`{"url":"` + srv.URL + `"}`),
+	}
+
+	err := ex.Execute(context.Background(), job, ExecEnv{
+		UpdateProgress: func(float64) error { return nil },
+		UpdateResult:   func([]byte) error { return nil },
+		IsCanceled:     func() (bool, error) { return false, nil },
+		Destination:    t.TempDir(),
+	})
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	var coded *CodedError
+	if !errors.As(err, &coded) || coded.Code != "not_media" {
+		t.Fatalf("expected not_media coded error, got %T (%v)", err, err)
+	}
+}
+
 func TestDownloadExecutor_DownloadsToFileAndSetsResult(t *testing.T) {
 	ex := DownloadExecutor{}
 

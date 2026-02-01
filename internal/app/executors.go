@@ -201,7 +201,8 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 		return &CodedError{Code: "invalid_params", Message: "missing params.url"}
 	}
 
-	sourceURL := strings.TrimSpace(p.URL)
+	sourceURL := normalizeKnownVideoHost(strings.TrimSpace(p.URL))
+	p.URL = sourceURL
 	ua := "Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101 Firefox/120.0"
 
 	resolvedURL, _ := ResolveDirectMediaURL(ctx, p.URL)
@@ -359,6 +360,16 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	if resp.StatusCode >= 400 {
 		_ = os.Remove(tmpPath)
 		return &CodedError{Code: "http_status", Message: fmt.Sprintf("http error: %s", resp.Status)}
+	}
+
+	ct := strings.ToLower(strings.TrimSpace(resp.Header.Get("Content-Type")))
+	// Garde-fou: certaines URLs Anime-Sama sont des pages embed (HTML) qui nécessitent une
+	// résolution (m3u8/mp4). Si on télécharge du HTML, on préfère échouer clairement.
+	if (strings.Contains(ct, "text/html") || strings.Contains(ct, "application/xhtml")) &&
+		!strings.Contains(strings.ToLower(finalURL), ".mp4") &&
+		!strings.Contains(strings.ToLower(finalURL), ".m3u8") {
+		_ = os.Remove(tmpPath)
+		return &CodedError{Code: "not_media", Message: "got HTML instead of media; embed page requires media URL resolution"}
 	}
 
 	total := resp.ContentLength

@@ -40,7 +40,7 @@ type AniListImportConfirmRequest struct {
 
 type AniListImportConfirmItem struct {
 	BaseURL string `json:"baseUrl"`
-	Label   string `json:"label"`
+	Label   string `json:"label,omitempty"`
 	Player  string `json:"player,omitempty"`
 }
 
@@ -77,7 +77,7 @@ type AniListImportItemError struct {
 }
 
 type AniListImportService struct {
-	anilist  interface {
+	anilist interface {
 		Watchlist(ctx context.Context, statuses []string) ([]AniListWatchlistEntry, error)
 	}
 	resolver interface {
@@ -168,9 +168,6 @@ func (s *AniListImportService) Confirm(ctx context.Context, req AniListImportCon
 	errorsOut := []AniListImportItemError{}
 	for _, it := range req.Items {
 		label := strings.TrimSpace(it.Label)
-		if label == "" {
-			label = "Anime"
-		}
 		sub, err := s.subs.Create(ctx, it.BaseURL, label, it.Player)
 		if err != nil {
 			if errors.Is(err, ErrConflict) {

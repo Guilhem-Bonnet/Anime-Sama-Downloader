@@ -32,4 +32,3 @@ func (e *CodedError) Error() string {
 }
 
 func (e *CodedError) Unwrap() error { return e.Err }
-

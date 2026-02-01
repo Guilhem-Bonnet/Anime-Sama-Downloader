@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/text/unicode/norm"
-	"golang.org/x/text/transform"
-	"golang.org/x/text/runes"
 	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
 
 type AnimeSamaCandidate struct {
@@ -209,15 +210,15 @@ func (r *AnimeSamaCatalogueResolver) ResolveCandidates(ctx context.Context, titl
 		for tv, t := range titleVariantsForProbe(raw) {
 			slug := slugifyAnimeSamaTitle(t)
 			for vi, v := range slugVariants(slug) {
-			if _, ok := seenSlug[v]; ok {
-				continue
-			}
-			seenSlug[v] = struct{}{}
+				if _, ok := seenSlug[v]; ok {
+					continue
+				}
+				seenSlug[v] = struct{}{}
 
-			url, err := r.ProbeSlug(ctx, v)
-			if err != nil {
-				continue
-			}
+				url, err := r.ProbeSlug(ctx, v)
+				if err != nil {
+					continue
+				}
 
 				score := 0.8
 				if ti == 0 {

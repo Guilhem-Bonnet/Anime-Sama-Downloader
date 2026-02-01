@@ -3,7 +3,7 @@ services:
     image: golang:1.22-alpine
     container_name: asd-backend
     working_dir: /app
-    command: sh -lc "go run ./cmd/asd-server -addr 0.0.0.0:8080 -db /data/asd.db"
+    command: sh -c "apk add --no-cache ca-certificates ffmpeg && go run ./cmd/asd-server -addr 0.0.0.0:8080 -db /data/asd.db"
     ports:
       - "8080:8080"
     environment:

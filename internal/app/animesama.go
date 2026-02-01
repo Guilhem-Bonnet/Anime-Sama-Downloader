@@ -212,16 +212,13 @@ func isPlausibleEpisodeURL(u string) bool {
 
 func BestPlayer(players map[string][]string) string {
 	best := ""
+	bestScore := -1
 	bestCount := -1
 	for name, urls := range players {
-		c := 0
-		for _, u := range urls {
-			if u != "" {
-				c++
-			}
-		}
-		if c > bestCount {
-			bestCount = c
+		score, count := scorePlayerURLs(urls)
+		if score > bestScore || (score == bestScore && count > bestCount) {
+			bestScore = score
+			bestCount = count
 			best = name
 		}
 	}
@@ -229,6 +226,53 @@ func BestPlayer(players map[string][]string) string {
 		return "auto"
 	}
 	return best
+}
+
+func scorePlayerURLs(urls []string) (score int, count int) {
+	for _, u := range urls {
+		u = strings.TrimSpace(u)
+		if u == "" {
+			continue
+		}
+		count++
+		lu := strings.ToLower(u)
+
+		// Hosts that frequently require JS-only resolution or are blocked.
+		// Prefer to avoid them when another player exists.
+		if strings.Contains(lu, "embed4me.com") {
+			continue
+		}
+		if strings.Contains(lu, "vk.com/video_ext.php") {
+			score += 1
+			continue
+		}
+
+		// Direct URLs.
+		if strings.Contains(lu, ".mp4") {
+			score += 6
+			continue
+		}
+		if strings.Contains(lu, ".m3u8") {
+			score += 5
+			continue
+		}
+
+		// Known supported hosts (resolved via HTML parsing or unpacking in our stack).
+		if strings.Contains(lu, "oneupload.") ||
+			strings.Contains(lu, "vidmoly.") ||
+			strings.Contains(lu, "sendvid.") ||
+			strings.Contains(lu, "video.sibnet.") ||
+			strings.Contains(lu, "movearnpre.") ||
+			strings.Contains(lu, "mivalyo.") ||
+			strings.Contains(lu, "smoothpre.") {
+			score += 3
+			continue
+		}
+
+		// Unknown host: still count it, but with low confidence.
+		score += 1
+	}
+	return score, count
 }
 
 func MaxAvailableEpisode(urls []string) int {

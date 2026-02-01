@@ -18,7 +18,7 @@ type Subscription struct {
 	LastDownloadedEpisode int
 	LastAvailableEpisode  int
 
-	NextCheckAt  time.Time
+	NextCheckAt   time.Time
 	LastCheckedAt time.Time
 
 	CreatedAt time.Time

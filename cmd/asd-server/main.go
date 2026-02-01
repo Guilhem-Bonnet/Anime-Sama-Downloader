@@ -47,8 +47,9 @@ func main() {
 	subsRepo := sqlite.NewSubscriptionsRepository(db.SQL)
 	subsSvc := app.NewSubscriptionService(subsRepo, jobsSvc, bus)
 	anilistSvc := app.NewAniListService(settingsSvc.Get)
-	resolver := app.NewAnimeSamaCatalogueResolver()
-	importSvc := app.NewAniListImportService(anilistSvc, resolver, subsSvc)
+	catalogueResolver := app.NewAnimeSamaCatalogueResolver()
+	resolver := app.NewAnimeSamaHybridResolver(catalogueResolver, anilistSvc)
+	importSvc := app.NewAniListImportService(anilistSvc, catalogueResolver, subsSvc)
 
 	// Limiteur global (partagé) pour tous les workers + hook côté API settings.
 	downloadLimiter := app.NewDynamicLimiter(domain.DefaultSettings().MaxConcurrentDownloads)

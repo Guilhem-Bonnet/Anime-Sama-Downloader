@@ -47,7 +47,7 @@ type aniListGraphQLError struct {
 }
 
 type aniListGraphQLResponse[T any] struct {
-	Data   T                   `json:"data"`
+	Data   T                     `json:"data"`
 	Errors []aniListGraphQLError `json:"errors,omitempty"`
 }
 
@@ -131,6 +131,88 @@ func (s *AniListService) AiringSchedule(ctx context.Context, from, to time.Time,
 		return nil, errors.New(out.Errors[0].Message)
 	}
 	return out.Data.Page.AiringSchedules, nil
+}
+
+type AniListAnimeSearchResult struct {
+	ID       int      `json:"id"`
+	Synonyms []string `json:"synonyms"`
+	Title    struct {
+		Romaji  string `json:"romaji"`
+		English string `json:"english"`
+		Native  string `json:"native"`
+	} `json:"title"`
+}
+
+type aniListSearchData struct {
+	Page struct {
+		Media []AniListAnimeSearchResult `json:"media"`
+	} `json:"Page"`
+}
+
+// SearchAnimeTitles returns title variants for an anime query (romaji/english/native + synonyms).
+// This call does NOT require an AniList token.
+func (s *AniListService) SearchAnimeTitles(ctx context.Context, query string, limit int) ([]string, error) {
+	q := strings.TrimSpace(query)
+	if q == "" {
+		return nil, nil
+	}
+	if limit <= 0 {
+		limit = 5
+	}
+	if limit > 25 {
+		limit = 25
+	}
+
+	req := aniListGraphQLRequest{
+		Query: `query($search:String,$page:Int,$perPage:Int){
+			Page(page:$page, perPage:$perPage){
+				media(search:$search, type: ANIME, sort: SEARCH_MATCH){
+					id synonyms
+					title{ romaji english native }
+				}
+			}
+		}`,
+		Variables: map[string]any{"search": q, "page": 1, "perPage": limit},
+	}
+
+	var out aniListGraphQLResponse[aniListSearchData]
+	if err := s.do(ctx, "", req, &out); err != nil {
+		return nil, err
+	}
+	if len(out.Errors) > 0 {
+		return nil, errors.New(out.Errors[0].Message)
+	}
+
+	seen := map[string]string{}
+	add := func(v string) {
+		v = strings.TrimSpace(v)
+		if v == "" {
+			return
+		}
+		k := strings.ToLower(v)
+		if _, ok := seen[k]; ok {
+			return
+		}
+		seen[k] = v
+	}
+
+	for _, m := range out.Data.Page.Media {
+		add(m.Title.Romaji)
+		add(m.Title.English)
+		add(m.Title.Native)
+		for _, s := range m.Synonyms {
+			add(s)
+		}
+		if len(seen) >= 50 {
+			break
+		}
+	}
+
+	res := make([]string, 0, len(seen))
+	for _, v := range seen {
+		res = append(res, v)
+	}
+	return res, nil
 }
 
 type AniListWatchlistEntry struct {

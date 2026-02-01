@@ -26,7 +26,7 @@ func (r *SubscriptionsRepository) Create(ctx context.Context, sub domain.Subscri
 			last_scheduled_episode, last_downloaded_episode, last_available_episode,
 			next_check_at, last_checked_at,
 			created_at, updated_at
-		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`,
 		sub.ID, sub.BaseURL, sub.Label, sub.Player,
 		sub.LastScheduledEpisode, sub.LastDownloadedEpisode, sub.LastAvailableEpisode,

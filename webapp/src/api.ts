@@ -1,12 +1,13 @@
 const API = '/api/v1';
 
 async function parseError(r: Response): Promise<string> {
+  const raw = await r.text();
   try {
-    const j = await r.json();
+    const j = JSON.parse(raw);
     if (j && typeof j.error === 'string') return j.error;
     return JSON.stringify(j);
   } catch {
-    return await r.text();
+    return raw || `${r.status} ${r.statusText}`;
   }
 }
 
@@ -51,6 +52,28 @@ export type SyncResult = {
   enqueuedEpisodes: number[];
   enqueuedJobIDs: string[];
   message: string;
+};
+
+export type SubscriptionEpisodeStatus = {
+  episode: number;
+  available: boolean;
+  scheduled: boolean;
+  downloaded: boolean;
+};
+
+export type SubscriptionEpisodesResponse = {
+  subscription: Subscription;
+  selectedPlayer: string;
+  maxAvailableEpisode: number;
+  episodes: SubscriptionEpisodeStatus[];
+};
+
+export type SubscriptionEnqueueEpisodesResponse = {
+  subscription: Subscription;
+  selectedPlayer: string;
+  enqueuedEpisodes: number[];
+  enqueuedJobIds: string[];
+  skipped: Array<{ episode: number; reason: string }>;
 };
 
 export type JobState = 'queued' | 'running' | 'muxing' | 'completed' | 'failed' | 'canceled';
@@ -99,6 +122,55 @@ export type AnimeSamaResolveResponse = {
   candidates: AnimeSamaResolvedCandidate[];
 };
 
+export type AnimeSamaScanRequest = {
+  catalogueUrl: string;
+  maxSeason?: number;
+  langs?: string[];
+};
+
+export type AnimeSamaScanOption = {
+  baseUrl: string;
+  season: number;
+  lang: string;
+  selectedPlayer: string;
+  maxAvailableEpisode: number;
+};
+
+export type AnimeSamaScanResponse = {
+  options: AnimeSamaScanOption[];
+};
+
+export type AnimeSamaEpisodeStatus = {
+  episode: number;
+  available: boolean;
+};
+
+export type AnimeSamaEpisodesRequest = {
+  baseUrl: string;
+};
+
+export type AnimeSamaEpisodesResponse = {
+  baseUrl: string;
+  selectedPlayer: string;
+  maxAvailableEpisode: number;
+  episodes: AnimeSamaEpisodeStatus[];
+};
+
+export type AnimeSamaEnqueueRequest = {
+  baseUrl: string;
+  label?: string;
+  episodes: number[];
+};
+
+export type AnimeSamaEnqueueResponse = {
+  baseUrl: string;
+  label: string;
+  selectedPlayer: string;
+  enqueuedEpisodes: number[];
+  enqueuedJobIds: string[];
+  skipped: Array<{ episode: number; reason: string }>;
+};
+
 export type AniListImportAutoRequest = {
   statuses: string[];
   season: number;
@@ -129,11 +201,14 @@ export async function apiListSubscriptions(limit = 200): Promise<Subscription[]>
   return await fetchJson<Subscription[]>(`/subscriptions?limit=${encodeURIComponent(String(limit))}`);
 }
 
-export async function apiCreateSubscription(params: { baseUrl: string; label: string; player?: string }): Promise<Subscription> {
+export async function apiCreateSubscription(params: { baseUrl: string; label?: string; player?: string }): Promise<Subscription> {
+  const body: any = { baseUrl: params.baseUrl };
+  if (typeof params.label === 'string' && params.label.trim() !== '') body.label = params.label;
+  if (typeof params.player === 'string' && params.player.trim() !== '') body.player = params.player;
   return await fetchJson<Subscription>('/subscriptions/', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(params),
+    body: JSON.stringify(body),
   });
 }
 
@@ -155,6 +230,18 @@ export async function apiSyncAll(params: { enqueue?: boolean; dueOnly?: boolean;
   return await fetchJson(`/subscriptions/sync-all${qs}`, { method: 'POST' });
 }
 
+export async function apiGetSubscriptionEpisodes(id: string): Promise<SubscriptionEpisodesResponse> {
+  return await fetchJson<SubscriptionEpisodesResponse>(`/subscriptions/${encodeURIComponent(id)}/episodes`);
+}
+
+export async function apiEnqueueSubscriptionEpisodes(id: string, episodes: number[]): Promise<SubscriptionEnqueueEpisodesResponse> {
+  return await fetchJson<SubscriptionEnqueueEpisodesResponse>(`/subscriptions/${encodeURIComponent(id)}/enqueue`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ episodes }),
+  });
+}
+
 export async function apiListJobs(limit = 200): Promise<Job[]> {
   return await fetchJson<Job[]>(`/jobs?limit=${encodeURIComponent(String(limit))}`);
 }
@@ -174,6 +261,30 @@ export async function apiAniListAiring(days = 7, limit = 50): Promise<AniListAir
 
 export async function apiAnimeSamaResolve(req: AnimeSamaResolveRequest): Promise<AnimeSamaResolveResponse> {
   return await fetchJson<AnimeSamaResolveResponse>('/animesama/resolve', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+}
+
+export async function apiAnimeSamaScan(req: AnimeSamaScanRequest): Promise<AnimeSamaScanResponse> {
+	return await fetchJson<AnimeSamaScanResponse>('/animesama/scan', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify(req),
+	});
+}
+
+export async function apiAnimeSamaEpisodes(req: AnimeSamaEpisodesRequest): Promise<AnimeSamaEpisodesResponse> {
+  return await fetchJson<AnimeSamaEpisodesResponse>('/animesama/episodes', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(req),
+  });
+}
+
+export async function apiAnimeSamaEnqueue(req: AnimeSamaEnqueueRequest): Promise<AnimeSamaEnqueueResponse> {
+  return await fetchJson<AnimeSamaEnqueueResponse>('/animesama/enqueue', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(req),

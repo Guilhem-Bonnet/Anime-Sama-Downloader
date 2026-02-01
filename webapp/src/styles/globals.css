@@ -1,0 +1,166 @@
+/* ========================================
+   🌸 SAKURA NIGHT — Global Styles
+   ======================================== */
+
+/* -------- RESET & BASE -------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--sakura-bg-base);
+  color: var(--sakura-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-weight: var(--text-body-weight);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* -------- TYPOGRAPHIE DE BASE -------- */
+
+h1 {
+  font-size: var(--text-display);
+  line-height: var(--text-display-lh);
+  font-weight: var(--text-display-weight);
+}
+
+h2 {
+  font-size: var(--text-h1);
+  line-height: var(--text-h1-lh);
+  font-weight: var(--text-h1-weight);
+}
+
+h3 {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+  font-weight: var(--text-h2-weight);
+}
+
+h4,
+h5,
+h6 {
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  font-weight: var(--text-h3-weight);
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--sakura-accent-magenta-500);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--sakura-accent-magenta-400);
+}
+
+/* -------- LISTE -------- */
+
+ul,
+ol {
+  list-style: none;
+}
+
+/* -------- TABLES -------- */
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+}
+
+/* -------- IMAGES -------- */
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* -------- FORMULAIRES -------- */
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* -------- SCROLLBAR -------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--sakura-bg-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sakura-border-default);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--sakura-border-strong);
+}
+
+/* Firefox */
+* {
+  scrollbar-color: var(--sakura-border-default) var(--sakura-bg-surface);
+  scrollbar-width: thin;
+}
+
+/* -------- SÉLECTION -------- */
+
+::selection {
+  background-color: var(--sakura-accent-magenta-500);
+  color: white;
+}
+
+/* -------- FOCUS VISIBLE -------- */
+
+*:focus-visible {
+  outline: 2px solid var(--sakura-accent-magenta-500);
+  outline-offset: 2px;
+}
+
+/* -------- UTILITY -------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

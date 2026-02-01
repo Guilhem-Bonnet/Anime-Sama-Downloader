@@ -80,3 +80,11 @@ func TestResolveDirectMediaURL_DecodesEscapedSlashes(t *testing.T) {
 		t.Fatalf("expected %q, got %q", "http://"+trimmed+"/video.m3u8", got)
 	}
 }
+
+func TestNormalizeKnownVideoHost_VidmolyToNet(t *testing.T) {
+	in := "https://vidmoly.to/embed-abc123.html"
+	out := normalizeKnownVideoHost(in)
+	if out != "https://vidmoly.net/embed-abc123.html" {
+		t.Fatalf("expected %q, got %q", "https://vidmoly.net/embed-abc123.html", out)
+	}
+}

@@ -75,7 +75,7 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						"label":   map[string]any{"type": "string", "example": "Solo Leveling"},
 						"player":  map[string]any{"type": "string", "example": "auto"},
 					},
-					"required":             []any{"baseUrl", "label"},
+					"required":             []any{"baseUrl"},
 					"additionalProperties": false,
 				},
 				"SyncSubscriptionResult": map[string]any{
@@ -89,6 +89,57 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						"message":             map[string]any{"type": "string"},
 					},
 					"required":             []any{"subscription", "selectedPlayer", "maxAvailableEpisode", "enqueuedEpisodes", "enqueuedJobIds"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEpisodeStatus": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode":    map[string]any{"type": "integer", "minimum": 1},
+						"available":  map[string]any{"type": "boolean"},
+						"scheduled":  map[string]any{"type": "boolean"},
+						"downloaded": map[string]any{"type": "boolean"},
+					},
+					"required":             []any{"episode", "available", "scheduled", "downloaded"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEpisodesResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"subscription":        map[string]any{"$ref": "#/components/schemas/Subscription"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+						"episodes":            map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/SubscriptionEpisodeStatus"}},
+					},
+					"required":             []any{"subscription", "selectedPlayer", "maxAvailableEpisode", "episodes"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEnqueueEpisodesRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer", "minimum": 1}},
+					},
+					"required":             []any{"episodes"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEnqueueSkippedEpisode": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode": map[string]any{"type": "integer", "minimum": 1},
+						"reason":  map[string]any{"type": "string"},
+					},
+					"required":             []any{"episode", "reason"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEnqueueEpisodesResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"subscription":     map[string]any{"$ref": "#/components/schemas/Subscription"},
+						"selectedPlayer":   map[string]any{"type": "string"},
+						"enqueuedEpisodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+						"enqueuedJobIds":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"skipped":          map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/SubscriptionEnqueueSkippedEpisode"}},
+					},
+					"required":             []any{"subscription", "selectedPlayer", "enqueuedEpisodes", "enqueuedJobIds", "skipped"},
 					"additionalProperties": false,
 				},
 				"SyncAllSubscriptionsResponse": map[string]any{
@@ -238,7 +289,7 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 									"label":   map[string]any{"type": "string"},
 									"player":  map[string]any{"type": "string"},
 								},
-								"required":             []any{"baseUrl", "label"},
+								"required":             []any{"baseUrl"},
 								"additionalProperties": false,
 							},
 						},
@@ -309,35 +360,122 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"required":             []any{"created", "skipped", "errors"},
 					"additionalProperties": false,
 				},
-					"AnimeSamaResolveRequest": map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"titles":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"Sousou no Frieren", "Frieren: Beyond Journey's End"}},
-							"season":        map[string]any{"type": "integer", "minimum": 1, "example": 1},
-							"lang":          map[string]any{"type": "string", "example": "vostfr"},
-							"maxCandidates": map[string]any{"type": "integer", "minimum": 1, "maximum": 10, "example": 5},
-						},
-						"additionalProperties": false,
+				"AnimeSamaResolveRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"titles":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"Sousou no Frieren", "Frieren: Beyond Journey's End"}},
+						"season":        map[string]any{"type": "integer", "minimum": 1, "example": 1},
+						"lang":          map[string]any{"type": "string", "example": "vostfr"},
+						"maxCandidates": map[string]any{"type": "integer", "minimum": 1, "maximum": 10, "example": 5},
 					},
-					"AnimeSamaResolvedCandidate": map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"catalogueUrl": map[string]any{"type": "string"},
-							"baseUrl":      map[string]any{"type": "string"},
-							"slug":         map[string]any{"type": "string"},
-							"matchedTitle": map[string]any{"type": "string"},
-							"score":        map[string]any{"type": "number", "format": "double"},
-						},
-						"additionalProperties": false,
+					"additionalProperties": false,
+				},
+				"AnimeSamaResolvedCandidate": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"catalogueUrl": map[string]any{"type": "string"},
+						"baseUrl":      map[string]any{"type": "string"},
+						"slug":         map[string]any{"type": "string"},
+						"matchedTitle": map[string]any{"type": "string"},
+						"score":        map[string]any{"type": "number", "format": "double"},
 					},
-					"AnimeSamaResolveResponse": map[string]any{
-						"type": "object",
-						"properties": map[string]any{
-							"candidates": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaResolvedCandidate"}},
-						},
-						"required":             []any{"candidates"},
-						"additionalProperties": false,
+					"additionalProperties": false,
+				},
+				"AnimeSamaResolveResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"candidates": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaResolvedCandidate"}},
 					},
+					"required":             []any{"candidates"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaScanRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"catalogueUrl": map[string]any{"type": "string", "example": "https://anime-sama.si/catalogue/solo-leveling/"},
+						"maxSeason":    map[string]any{"type": "integer", "minimum": 1, "maximum": 20, "example": 5},
+						"langs":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"vostfr", "vf"}},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaScanOption": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":             map[string]any{"type": "string"},
+						"season":              map[string]any{"type": "integer"},
+						"lang":                map[string]any{"type": "string"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+					},
+					"required":             []any{"baseUrl", "season", "lang", "selectedPlayer", "maxAvailableEpisode"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaScanResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"options": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaScanOption"}},
+					},
+					"required":             []any{"options"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEpisodesRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl": map[string]any{"type": "string", "example": "https://anime-sama.si/catalogue/solo-leveling/saison1/vostfr/"},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEpisodeStatus": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode":   map[string]any{"type": "integer", "minimum": 1},
+						"available": map[string]any{"type": "boolean"},
+					},
+					"required":             []any{"episode", "available"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEpisodesResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":             map[string]any{"type": "string"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+						"episodes":            map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaEpisodeStatus"}},
+					},
+					"required":             []any{"baseUrl", "selectedPlayer", "maxAvailableEpisode", "episodes"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEnqueueRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":  map[string]any{"type": "string"},
+						"label":    map[string]any{"type": "string"},
+						"episodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer", "minimum": 1}},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEnqueueSkippedEpisode": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode": map[string]any{"type": "integer"},
+						"reason":  map[string]any{"type": "string"},
+					},
+					"required":             []any{"episode", "reason"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEnqueueResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":          map[string]any{"type": "string"},
+						"label":            map[string]any{"type": "string"},
+						"selectedPlayer":   map[string]any{"type": "string"},
+						"enqueuedEpisodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+						"enqueuedJobIds":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"skipped":          map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaEnqueueSkippedEpisode"}},
+					},
+					"required":             []any{"baseUrl", "label", "selectedPlayer", "enqueuedEpisodes", "enqueuedJobIds", "skipped"},
+					"additionalProperties": false,
+				},
 				"Error": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
@@ -664,6 +802,34 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					},
 				},
 			},
+			"/api/v1/subscriptions/{id}/episodes": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SubscriptionEpisodesResponse"),
+						"400": jsonErr,
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions/{id}/enqueue": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/SubscriptionEnqueueEpisodesRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SubscriptionEnqueueEpisodesResponse"),
+						"400": jsonErr,
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
 			"/api/v1/subscriptions/sync-all": map[string]any{
 				"post": map[string]any{
 					"responses": map[string]any{
@@ -710,6 +876,58 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					},
 					"responses": map[string]any{
 						"200": jsonOK("#/components/schemas/AnimeSamaResolveResponse"),
+						"400": jsonErr,
+						"501": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/scan": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaScanRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaScanResponse"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/episodes": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaEpisodesRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaEpisodesResponse"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/enqueue": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaEnqueueRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaEnqueueResponse"),
 						"400": jsonErr,
 						"501": jsonErr,
 						"502": jsonErr,

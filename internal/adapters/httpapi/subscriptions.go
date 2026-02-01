@@ -29,12 +29,14 @@ func (h *SubscriptionsHandler) Routes(r chi.Router) {
 		r.Put("/{id}", h.update)
 		r.Delete("/{id}", h.delete)
 		r.Post("/{id}/sync", h.sync)
+		r.Get("/{id}/episodes", h.episodes)
+		r.Post("/{id}/enqueue", h.enqueueEpisodes)
 	})
 }
 
 type createSubscriptionRequest struct {
 	BaseURL string `json:"baseUrl"`
-	Label   string `json:"label"`
+	Label   string `json:"label,omitempty"`
 	Player  string `json:"player,omitempty"`
 }
 
@@ -160,7 +162,7 @@ func (h *SubscriptionsHandler) syncAll(w http.ResponseWriter, r *http.Request) {
 	res := syncAllResponse{Results: []app.SyncResult{}, Errors: []struct {
 		ID    string `json:"id"`
 		Error string `json:"error"`
-	}{} }
+	}{}}
 
 	now := time.Now().UTC()
 	for _, sub := range subs {
@@ -178,5 +180,42 @@ func (h *SubscriptionsHandler) syncAll(w http.ResponseWriter, r *http.Request) {
 		res.Results = append(res.Results, rr)
 	}
 
+	httpjson.Write(w, http.StatusOK, res)
+}
+
+func (h *SubscriptionsHandler) episodes(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	res, err := h.subs.Episodes(r.Context(), id)
+	if err != nil {
+		if errors.Is(err, app.ErrNotFound) {
+			httpjson.WriteError(w, http.StatusNotFound, "not found")
+			return
+		}
+		httpjson.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	httpjson.Write(w, http.StatusOK, res)
+}
+
+type enqueueEpisodesRequest struct {
+	Episodes []int `json:"episodes"`
+}
+
+func (h *SubscriptionsHandler) enqueueEpisodes(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	var req enqueueEpisodesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpjson.WriteError(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	res, err := h.subs.EnqueueEpisodes(r.Context(), id, req.Episodes)
+	if err != nil {
+		if errors.Is(err, app.ErrNotFound) {
+			httpjson.WriteError(w, http.StatusNotFound, "not found")
+			return
+		}
+		httpjson.WriteError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	httpjson.Write(w, http.StatusOK, res)
 }
