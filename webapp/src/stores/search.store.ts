@@ -2,11 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface SearchResult {
-  animeId: string;
+  anime_id: string;   // from API
   title: string;
   episodes: number;
   source: string;
-  imageUrl?: string;
+  image_url?: string; // from API
   description?: string;
   genres?: string[];
   year?: number;
@@ -82,24 +82,7 @@ export const useSearchStore = create<SearchState & SearchActions>()(
         setError(undefined);
 
         try {
-          // Build query params
-          const params = new URLSearchParams();
-          params.append('q', searchQuery);
-
-          if (searchFilters.genres.length > 0) {
-            params.append('genres', searchFilters.genres.join(','));
-          }
-          if (searchFilters.status) {
-            params.append('status', searchFilters.status);
-          }
-          if (searchFilters.yearMin > 0) {
-            params.append('year_min', searchFilters.yearMin.toString());
-          }
-          if (searchFilters.yearMax > 0) {
-            params.append('year_max', searchFilters.yearMax.toString());
-          }
-
-          const response = await fetch(`/api/v1/search?${params.toString()}`);
+          const response = await fetch(`http://localhost:8000/api/search?q=${encodeURIComponent(searchQuery)}`);
           if (!response.ok) throw new Error('Search failed');
 
           const data = await response.json();

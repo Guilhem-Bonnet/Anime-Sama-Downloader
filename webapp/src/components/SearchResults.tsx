@@ -46,12 +46,12 @@ export const SearchResultsGrid: React.FC = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {results.map((result) => (
         <div
-          key={result.animeId}
+          key={result.anime_id}
           className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow"
         >
-          {result.imageUrl && (
+          {result.image_url && (
             <img
-              src={result.imageUrl}
+              src={result.image_url}
               alt={result.title}
               className="w-full h-32 object-cover rounded mb-3"
             />
@@ -61,7 +61,7 @@ export const SearchResultsGrid: React.FC = () => {
             {result.episodes} episodes • {result.source}
           </p>
           <button
-            onClick={() => handleDownload(result.animeId, result.title)}
+            onClick={() => handleDownload(result.anime_id, result.title)}
             className="w-full mt-3 px-4 py-2 bg-magenta-600 hover:bg-magenta-700 text-white rounded transition-colors"
           >
             Download

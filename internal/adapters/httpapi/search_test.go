@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
@@ -19,6 +21,13 @@ type MockAnimeSearchService struct {
 }
 
 func (m *MockAnimeSearchService) Search(ctx context.Context, query string) ([]domain.AnimeSearchResult, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.results, nil
+}
+
+func (m *MockAnimeSearchService) SearchWithFilters(ctx context.Context, filters ports.SearchFilters) ([]domain.AnimeSearchResult, error) {
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -218,5 +227,124 @@ func TestSearchHandler_ServiceError(t *testing.T) {
 
 	if errResp["error"] != "search error" {
 		t.Errorf("expected error message, got %v", errResp)
+	}
+}
+
+// Mock FileListService for testing
+type MockFileListService struct {
+	fileList *domain.FileList
+	err      error
+}
+
+func (m *MockFileListService) GetFileList(ctx context.Context, animeID string) (*domain.FileList, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.fileList, nil
+}
+
+func (m *MockFileListService) GetFilesByAnimeTitle(ctx context.Context, title string) (*domain.FileList, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.fileList, nil
+}
+
+// TestFileListHandler_GetFiles_Success tests successful file list retrieval
+func TestFileListHandler_GetFiles_Success(t *testing.T) {
+	mockService := &MockFileListService{
+		fileList: &domain.FileList{
+			AnimeID: "1",
+			Files: []domain.File{
+				{
+					ID:       "1-ep1",
+					Name:     "Naruto - Episode 1",
+					Path:     "/downloads/Naruto/Episode_01.mkv",
+					Size:     350000000,
+					Duration: 1400,
+					Type:     "video/x-matroska",
+				},
+				{
+					ID:       "1-ep2",
+					Name:     "Naruto - Episode 2",
+					Path:     "/downloads/Naruto/Episode_02.mkv",
+					Size:     360000000,
+					Duration: 1460,
+					Type:     "video/x-matroska",
+				},
+			},
+		},
+	}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime/1/files", nil)
+	w := httptest.NewRecorder()
+
+	// Simulate chi URL params
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"1"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", w.Code)
+	}
+
+	var resp FileListResponse
+	json.NewDecoder(w.Body).Decode(&resp)
+
+	if resp.AnimeID != "1" {
+		t.Errorf("expected anime ID '1', got '%s'", resp.AnimeID)
+	}
+
+	if len(resp.Files) != 2 {
+		t.Errorf("expected 2 files, got %d", len(resp.Files))
+	}
+
+	if resp.Count != 2 {
+		t.Errorf("expected count 2, got %d", resp.Count)
+	}
+}
+
+// TestFileListHandler_GetFiles_NotFound tests 404 handling
+func TestFileListHandler_GetFiles_NotFound(t *testing.T) {
+	mockService := &MockFileListService{
+		err: fmt.Errorf("anime not found"),
+	}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime/999/files", nil)
+	w := httptest.NewRecorder()
+
+	// Simulate chi URL params
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{"999"}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", w.Code)
+	}
+}
+
+// TestFileListHandler_GetFiles_NoAnimeId tests missing anime ID
+func TestFileListHandler_GetFiles_NoAnimeId(t *testing.T) {
+	mockService := &MockFileListService{}
+
+	handler := NewFileListHandler(mockService)
+	req := httptest.NewRequest("GET", "/api/v1/anime//files", nil)
+	w := httptest.NewRecorder()
+
+	// Simulate chi URL params with empty animeId
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, &chi.Context{
+		URLParams: chi.RouteParams{Keys: []string{"animeId"}, Values: []string{""}},
+	}))
+
+	handler.GetFiles(w, req)
+
+	if w.Code != http.StatusBadRequest {
+		t.Errorf("expected status 400, got %d", w.Code)
 	}
 }

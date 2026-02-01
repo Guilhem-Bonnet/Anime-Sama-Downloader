@@ -116,12 +116,90 @@ func parseCommaSeparated(s string) []string {
 	return result
 }
 
+// FileListHandler handles file listing requests
+type FileListHandler struct {
+	fileListService ports.FileListService
+}
+
+// NewFileListHandler creates a new file list handler
+func NewFileListHandler(fileListService ports.FileListService) *FileListHandler {
+	return &FileListHandler{
+		fileListService: fileListService,
+	}
+}
+
+// FileResponse represents a single file in the HTTP response
+type FileResponse struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Path     string `json:"path"`
+	Size     int64  `json:"size"`
+	Duration int    `json:"duration"`
+	Type     string `json:"type"`
+}
+
+// FileListResponse represents the complete file list response
+type FileListResponse struct {
+	AnimeID string          `json:"anime_id"`
+	Files   []FileResponse  `json:"files"`
+	Count   int             `json:"count"`
+}
+
+// GetFiles handles GET /api/v1/anime/{animeId}/files
+func (h *FileListHandler) GetFiles(w http.ResponseWriter, r *http.Request) {
+	animeID := chi.URLParam(r, "animeId")
+
+	if animeID == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]string{"error": "anime ID required"})
+		return
+	}
+
+	fileList, err := h.fileListService.GetFileList(r.Context(), animeID)
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+		return
+	}
+
+	// Map domain files to HTTP response
+	files := make([]FileResponse, len(fileList.Files))
+	for i, file := range fileList.Files {
+		files[i] = FileResponse{
+			ID:       file.ID,
+			Name:     file.Name,
+			Path:     file.Path,
+			Size:     file.Size,
+			Duration: file.Duration,
+			Type:     file.Type,
+		}
+	}
+
+	response := FileListResponse{
+		AnimeID: fileList.AnimeID,
+		Files:   files,
+		Count:   len(files),
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 // RegisterSearchRoutes registers search routes in the chi router
-func RegisterSearchRoutes(r chi.Router, searchService ports.AnimeSearch) {
+func RegisterSearchRoutes(r chi.Router, searchService ports.AnimeSearch, fileListService ports.FileListService) {
 	handler := NewSearchHandler(searchService)
 	r.Get("/search", handler.Search)
 
 	// Register autocomplete route
 	autocompleteHandler := NewAutocompleteHandler(searchService)
 	r.Get("/search/autocomplete", autocompleteHandler.handleAutocomplete)
+
+	// Register file listing route if service provided
+	if fileListService != nil {
+		fileListHandler := NewFileListHandler(fileListService)
+		r.Get("/anime/{animeId}/files", fileListHandler.GetFiles)
+	}
 }

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 // mockAutocompleteSearchService implements ports.AnimeSearch for testing
@@ -17,6 +18,13 @@ type mockAutocompleteSearchService struct {
 }
 
 func (m *mockAutocompleteSearchService) Search(ctx context.Context, query string) ([]domain.AnimeSearchResult, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return m.results, nil
+}
+
+func (m *mockAutocompleteSearchService) SearchWithFilters(ctx context.Context, filters ports.SearchFilters) ([]domain.AnimeSearchResult, error) {
 	if m.err != nil {
 		return nil, m.err
 	}

@@ -7,17 +7,22 @@ export interface ApiResponse<T> {
 }
 
 export interface SearchResult {
-  animeId: string;
+  anime_id?: string;  // from API
+  animeId?: string;   // internal
   title: string;
   episodes: number;
   source: string;
-  imageUrl?: string;
+  image_url?: string;  // from API
+  imageUrl?: string;   // internal
 }
 
 export interface Download {
-  downloadId: string;
-  animeId: string;
-  episodeNumber: number;
+  download_id?: string;  // from API
+  downloadId?: string;   // internal
+  anime_id?: string;     // from API
+  animeId?: string;      // internal
+  episode_number?: number; // from API
+  episodeNumber?: number;  // internal
   status: 'pending' | 'running' | 'completed' | 'failed';
   progress: number;
 }
@@ -32,7 +37,7 @@ export interface Job {
 class ApiClient {
   private baseUrl: string;
 
-  constructor(baseUrl = '/api') {
+  constructor(baseUrl = 'http://localhost:8000/api') {
     this.baseUrl = baseUrl;
   }
 
@@ -65,13 +70,25 @@ class ApiClient {
   }
 
   async search(query: string): Promise<SearchResult[]> {
-    const response = await this.request<SearchResult[]>('GET', `/search?q=${encodeURIComponent(query)}`);
-    return response.data || [];
+    try {
+      const response = await fetch(`${this.baseUrl}/search?q=${encodeURIComponent(query)}`);
+      const json = await response.json();
+      return json.results || [];
+    } catch (error) {
+      console.error('Search failed:', error);
+      return [];
+    }
   }
 
   async listDownloads(): Promise<Download[]> {
-    const response = await this.request<Download[]>('GET', '/downloads');
-    return response.data || [];
+    try {
+      const response = await fetch(`${this.baseUrl}/downloads`);
+      const json = await response.json();
+      return json.downloads || [];
+    } catch (error) {
+      console.error('List downloads failed:', error);
+      return [];
+    }
   }
 
   async createDownload(animeId: string, episodeNumber: number): Promise<Download> {

@@ -29,14 +29,15 @@ type Server struct {
 	bus      ports.EventBus
 	search   ports.AnimeSearch
 	detail   ports.AnimeDetailService
+	fileList ports.FileListService
 	// downloadLimiter est optionnel et permet d'appliquer maxConcurrentDownloads à chaud.
 	downloadLimiter *app.DynamicLimiter
 	// onSettingsUpdated est optionnel (ex: ajuster maxWorkers).
 	onSettingsUpdated func(domain.Settings)
 }
 
-func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, subs *app.SubscriptionService, anilist *app.AniListService, importer *app.AniListImportService, resolver AnimeSamaResolver, bus ports.EventBus, downloadLimiter *app.DynamicLimiter, search ports.AnimeSearch, detail ports.AnimeDetailService, onSettingsUpdated func(domain.Settings)) *Server {
-	return &Server{logger: logger, jobs: jobs, settings: settings, subs: subs, anilist: anilist, importer: importer, resolver: resolver, bus: bus, search: search, detail: detail, downloadLimiter: downloadLimiter, onSettingsUpdated: onSettingsUpdated}
+func NewServer(logger zerolog.Logger, jobs *app.JobService, settings *app.SettingsService, subs *app.SubscriptionService, anilist *app.AniListService, importer *app.AniListImportService, resolver AnimeSamaResolver, bus ports.EventBus, downloadLimiter *app.DynamicLimiter, search ports.AnimeSearch, detail ports.AnimeDetailService, fileList ports.FileListService, onSettingsUpdated func(domain.Settings)) *Server {
+	return &Server{logger: logger, jobs: jobs, settings: settings, subs: subs, anilist: anilist, importer: importer, resolver: resolver, bus: bus, search: search, detail: detail, fileList: fileList, downloadLimiter: downloadLimiter, onSettingsUpdated: onSettingsUpdated}
 }
 
 func (s *Server) Router() http.Handler {
@@ -86,7 +87,7 @@ func (s *Server) Router() http.Handler {
 			}).Routes(r)
 		}
 		if s.search != nil {
-			RegisterSearchRoutes(r, s.search)
+			RegisterSearchRoutes(r, s.search, s.fileList)
 		}
 		if s.detail != nil {
 			NewAnimeDetailHandler(s.detail).Routes(r)

@@ -1,5 +1,6 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { useUIStore } from './stores/ui.store';
+import { useSearchStore } from './stores/search.store';
 import { ModeToggle } from './components/custom/ModeToggle';
 import { SearchBar } from './components/SearchBar';
 import { SearchResultsGrid } from './components/SearchResults';
