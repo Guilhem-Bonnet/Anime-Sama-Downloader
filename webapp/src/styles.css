@@ -213,3 +213,103 @@ details{border:1px dashed rgba(255,255,255,.14); padding:10px; border-radius:14p
   .btn, .input, .select{transition:none}
   .btn:active{transform:none}
 }
+
+/* Autocomplete Suggestions */
+.autocomplete-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 8px;
+  background: linear-gradient(180deg, rgba(16, 24, 54, 0.96), rgba(12, 18, 40, 0.92));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow2);
+  max-height: 420px;
+  overflow-y: auto;
+  z-index: 50;
+  animation: autocomplete-fade-in 200ms ease;
+}
+
+@keyframes autocomplete-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.autocomplete-loading,
+.autocomplete-error,
+.autocomplete-no-results {
+  padding: 16px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.autocomplete-error {
+  color: var(--err);
+}
+
+.autocomplete-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+}
+
+.autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+  border: 1px solid transparent;
+}
+
+.autocomplete-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--border);
+}
+
+.autocomplete-item-selected {
+  background: rgba(124, 92, 255, 0.12);
+  border-color: rgba(124, 92, 255, 0.45);
+  border-left: 3px solid var(--accent);
+}
+
+.autocomplete-thumbnail {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.autocomplete-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.autocomplete-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.autocomplete-year {
+  font-size: 12px;
+  color: var(--muted);
+}

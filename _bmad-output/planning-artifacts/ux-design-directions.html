@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASD Design Directions — Sakura Night</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0A0E1A;
+            color: #F5F7FA;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .header {
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 48px;
+            font-weight: 300;
+            margin-bottom: 0.5rem;
+            color: #D946EF;
+        }
+
+        .header p {
+            color: #B0B8C1;
+            font-size: 18px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .controls button {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #2D3748;
+            background: transparent;
+            color: #F5F7FA;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 200ms;
+        }
+
+        .controls button.active {
+            border-color: #D946EF;
+            background: #D946EF;
+            color: #0A0E1A;
+        }
+
+        .controls button:hover {
+            border-color: #D946EF;
+        }
+
+        .mode-toggle {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+        }
+
+        .mode-toggle label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+
+        .mode-toggle input {
+            width: 50px;
+            height: 28px;
+            appearance: none;
+            background: #2D3748;
+            border-radius: 14px;
+            cursor: pointer;
+            position: relative;
+            transition: background 200ms;
+        }
+
+        .mode-toggle input:checked {
+            background: #D946EF;
+        }
+
+        .mockup-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(800px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .mockup {
+            display: none;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #2D3748;
+            background: #1A1F2E;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .mockup.active {
+            display: block;
+            animation: fadeIn 200ms;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .mockup-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #2D3748;
+        }
+
+        .mockup-title {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 28px;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            color: #D946EF;
+        }
+
+        .mockup-description {
+            color: #B0B8C1;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .mockup-content {
+            min-height: 600px;
+            padding: 2rem;
+        }
+
+        /* Direction 1: Harmony (Recommended) */
+        .harmony .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #2D3748;
+            padding-bottom: 1rem;
+        }
+
+        .harmony .nav-tabs button {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: none;
+            color: #B0B8C1;
+            cursor: pointer;
+            font-size: 16px;
+            border-bottom: 2px solid transparent;
+            transition: all 200ms;
+        }
+
+        .harmony .nav-tabs button.active {
+            color: #D946EF;
+            border-bottom-color: #D946EF;
+        }
+
+        .harmony .card {
+            background: #0A0E1A;
+            border: 1px solid #2D3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .harmony .card-title {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 20px;
+            font-weight: 400;
+            color: #F5F7FA;
+            margin-bottom: 0.5rem;
+        }
+
+        .harmony .card-meta {
+            color: #7A8492;
+            font-size: 13px;
+            margin-bottom: 1rem;
+        }
+
+        .harmony .progress-bar {
+            height: 4px;
+            background: #2D3748;
+            border-radius: 2px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .harmony .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D946EF, #06B6D4);
+            width: 65%;
+            transition: width 200ms;
+        }
+
+        .harmony .button-group {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .harmony .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background: #D946EF;
+            color: #0A0E1A;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 200ms;
+        }
+
+        .harmony .btn-primary:hover {
+            background: #f055ff;
+            transform: translateY(-2px);
+        }
+
+        .harmony .btn-secondary {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: #06B6D4;
+            border: 1px solid #06B6D4;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .harmony .btn-secondary:hover {
+            background: rgba(6, 182, 212, 0.1);
+        }
+
+        /* Direction 2: Bold Magenta */
+        .bold-magenta {
+            background: #000 !important;
+        }
+
+        .bold-magenta .mockup-content {
+            background: #0F0F1A;
+        }
+
+        .bold-magenta .card {
+            background: #1A1A2E;
+            border-color: #D946EF;
+            border-width: 2px;
+        }
+
+        .bold-magenta .btn-primary {
+            background: #FF00FF;
+            box-shadow: 0 0 20px rgba(217, 70, 239, 0.5);
+        }
+
+        /* Direction 3: Minimalist */
+        .minimalist .mockup-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .minimalist .card {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #2D3748;
+            padding: 2rem 0;
+            margin-bottom: 0;
+        }
+
+        .minimalist .card:last-child {
+            border-bottom: none;
+        }
+
+        .minimalist .btn-primary {
+            background: #06B6D4;
+            color: #0A0E1A;
+        }
+
+        /* Direction 4: Sidebar */
+        .sidebar .container {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .sidebar .sidebar-nav {
+            width: 200px;
+            border-right: 1px solid #2D3748;
+            padding-right: 1.5rem;
+        }
+
+        .sidebar .nav-item {
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            background: transparent;
+            border: none;
+            color: #B0B8C1;
+            text-align: left;
+            cursor: pointer;
+            border-left: 2px solid transparent;
+            transition: all 200ms;
+        }
+
+        .sidebar .nav-item.active {
+            color: #D946EF;
+            border-left-color: #D946EF;
+            background: rgba(217, 70, 239, 0.1);
+        }
+
+        .sidebar .main-content {
+            flex: 1;
+        }
+
+        /* Direction 5: Card Grid */
+        .grid-cards .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .grid-cards .card {
+            background: #0A0E1A;
+            border: 1px solid #2D3748;
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .grid-cards .card:hover {
+            border-color: #D946EF;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(217, 70, 239, 0.2);
+        }
+
+        /* Direction 6: Command Palette */
+        .command-palette .search-bar {
+            margin-bottom: 2rem;
+        }
+
+        .command-palette input {
+            width: 100%;
+            padding: 1rem;
+            background: #1A1F2E;
+            border: 1px solid #2D3748;
+            border-radius: 8px;
+            color: #F5F7FA;
+            font-size: 16px;
+        }
+
+        .command-palette input::placeholder {
+            color: #7A8492;
+        }
+
+        .command-palette .results {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .command-palette .result-item {
+            padding: 1rem;
+            border-left: 2px solid transparent;
+            cursor: pointer;
+            transition: all 200ms;
+        }
+
+        .command-palette .result-item:hover {
+            border-left-color: #D946EF;
+            background: rgba(217, 70, 239, 0.1);
+        }
+
+        /* Mode Expert adjustments */
+        body.mode-expert .harmony .mockup-content {
+            padding: 1rem;
+        }
+
+        body.mode-expert .harmony .card {
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        body.mode-expert .card-title {
+            font-size: 16px;
+        }
+
+        body.mode-expert .harmony .card-meta {
+            font-size: 12px;
+        }
+
+        .comparison {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: #1A1F2E;
+            border-radius: 12px;
+            border: 1px solid #2D3748;
+        }
+
+        .comparison h3 {
+            font-family: 'Noto Serif JP', serif;
+            font-size: 24px;
+            font-weight: 400;
+            color: #D946EF;
+            margin-bottom: 1.5rem;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .comparison-card {
+            background: #0A0E1A;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #2D3748;
+        }
+
+        .comparison-card h4 {
+            color: #D946EF;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .comparison-card ul {
+            list-style: none;
+            color: #B0B8C1;
+        }
+
+        .comparison-card li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #2D3748;
+        }
+
+        .comparison-card li:last-child {
+            border-bottom: none;
+        }
+
+        .rating {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .star {
+            color: #F59E0B;
+            font-size: 14px;
+        }
+
+        .star.empty {
+            color: #2D3748;
+        }
+    </style>
+</head>
+<body>
+    <div class="mode-toggle">
+        <label>
+            Mode: <strong id="mode-label">Simple</strong>
+            <input type="checkbox" id="mode-toggle">
+        </label>
+    </div>
+
+    <div class="header">
+        <h1>Design Directions — Sakura Night</h1>
+        <p>Explore 6 distinct visual approaches for ASD</p>
+    </div>
+
+    <div class="controls">
+        <button class="direction-btn active" data-direction="harmony">1. Harmony (Recommandé)</button>
+        <button class="direction-btn" data-direction="bold">2. Bold Magenta</button>
+        <button class="direction-btn" data-direction="minimalist">3. Minimalist</button>
+        <button class="direction-btn" data-direction="sidebar">4. Sidebar Nav</button>
+        <button class="direction-btn" data-direction="grid">5. Card Grid</button>
+        <button class="direction-btn" data-direction="command">6. Command Palette</button>
+    </div>
+
+    <div class="mockup-container">
+        <!-- Direction 1: Harmony -->
+        <div class="mockup harmony active" data-direction="harmony">
+            <div class="mockup-header">
+                <div class="mockup-title">Harmony</div>
+                <div class="mockup-description">Vertical Stack, Balanced visual weight, Hybrid tabs. Clean, scalable, respects Sakura Night aesthetic.</div>
+            </div>
+            <div class="mockup-content">
+                <div class="nav-tabs">
+                    <button class="active">Search</button>
+                    <button>Downloads</button>
+                    <button>Automations</button>
+                    <button>Settings</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">🎬 Trending Now</div>
+                    <div class="card-meta">Popular this week</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="background: #0A0E1A; padding: 1rem; border-radius: 6px; text-align: center;">
+                            Demon Slayer
+                        </div>
+                        <div style="background: #0A0E1A; padding: 1rem; border-radius: 6px; text-align: center;">
+                            Jujutsu Kaisen
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">⏳ Demon Slayer S3</div>
+                    <div class="card-meta">Ready by today, 5pm</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div style="font-size: 13px; color: #B0B8C1;">Status: Downloading (3/12 episodes)</div>
+                    <div class="button-group">
+                        <button class="btn-primary">View Details</button>
+                        <button class="btn-secondary">Pause</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">✅ Ready to Watch</div>
+                    <div class="card-meta">Your completed downloads</div>
+                    <div style="font-size: 13px; color: #B0B8C1; padding: 1rem 0;">
+                        Attack on Titan (45GB, 1080p)
+                    </div>
+                    <button class="btn-primary">Play in Jellyfin</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 2: Bold Magenta -->
+        <div class="mockup bold-magenta" data-direction="bold">
+            <div class="mockup-header">
+                <div class="mockup-title">Bold Magenta</div>
+                <div class="mockup-description">Same layout, magenta prominent, darker background. Gaming vibes, high visual impact.</div>
+            </div>
+            <div class="mockup-content">
+                <div style="margin-bottom: 2rem;">
+                    <div style="background: linear-gradient(90deg, #D946EF, #FF00FF); padding: 2rem; border-radius: 8px; text-align: center; font-weight: bold; color: #000;">
+                        🔍 SEARCH ANIME
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="color: #FF00FF; font-weight: bold; margin-bottom: 1rem;">⚡ Power Downloads</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div style="background: linear-gradient(135deg, #D946EF, #FF00FF); padding: 1rem; border-radius: 6px; text-align: center; color: #000; font-weight: bold;">
+                            STREAMING
+                        </div>
+                        <div style="background: linear-gradient(135deg, #D946EF, #FF00FF); padding: 1rem; border-radius: 6px; text-align: center; color: #000; font-weight: bold;">
+                            QUEUED
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div style="color: #FF00FF; font-weight: bold; margin-bottom: 1rem;">Demon Slayer S3 [IN PROGRESS]</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="background: linear-gradient(90deg, #FF00FF, #D946EF); width: 75%;"></div>
+                    </div>
+                    <button class="btn-primary" style="width: 100%; background: linear-gradient(90deg, #FF00FF, #D946EF); margin-top: 1rem;">→ LAUNCH</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 3: Minimalist -->
+        <div class="mockup minimalist" data-direction="minimalist">
+            <div class="mockup-header">
+                <div class="mockup-title">Minimalist</div>
+                <div class="mockup-description">Ultra-light density, lots of white space, cyan accents. Clean, serene, potentially too spacious.</div>
+            </div>
+            <div class="mockup-content">
+                <div class="card">
+                    <div class="card-title">Search</div>
+                    <div style="margin: 2rem 0; padding: 2rem; background: #0A0E1A; border-radius: 8px; text-align: center; color: #7A8492;">
+                        Find your next anime...
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Downloads</div>
+                    <div style="margin: 2rem 0; color: #B0B8C1;">
+                        Demon Slayer S3
+                    </div>
+                    <button class="btn-primary">View</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">Queue</div>
+                    <div style="margin: 2rem 0; color: #7A8492;">
+                        No items queued
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 4: Sidebar -->
+        <div class="mockup sidebar" data-direction="sidebar">
+            <div class="mockup-header">
+                <div class="mockup-title">Sidebar Nav</div>
+                <div class="mockup-description">Desktop-first, sidebar navigation. Great for dense info, less great for mobile.</div>
+            </div>
+            <div class="mockup-content">
+                <div class="container">
+                    <div class="sidebar-nav">
+                        <button class="nav-item active">🔍 Search</button>
+                        <button class="nav-item">📥 Downloads</button>
+                        <button class="nav-item">⚙️ Automations</button>
+                        <button class="nav-item">⚡ Power Mode</button>
+                        <button class="nav-item">📊 Logs</button>
+                        <button class="nav-item">⚙️ Settings</button>
+                    </div>
+                    <div class="main-content">
+                        <div class="card">
+                            <div class="card-title">Search Anime</div>
+                            <div style="margin: 1rem 0; padding: 1rem; background: #0A0E1A; border-radius: 6px;">
+                                Demon Slayer
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-title">Recent Downloads</div>
+                            <div style="font-size: 13px; color: #B0B8C1;">
+                                Attack on Titan<br>
+                                Jujutsu Kaisen
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 5: Card Grid -->
+        <div class="mockup grid-cards" data-direction="grid">
+            <div class="mockup-header">
+                <div class="mockup-title">Card Grid</div>
+                <div class="mockup-description">Cards in grid layout, visual variety. Good for discovery, less scannable for lists.</div>
+            </div>
+            <div class="mockup-content">
+                <div class="cards">
+                    <div class="card">
+                        <div class="card-title">Demon Slayer</div>
+                        <div class="card-meta">Season 3 • 12 episodes</div>
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;">Download</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Jujutsu Kaisen</div>
+                        <div class="card-meta">Season 2 • 25 episodes</div>
+                        <button class="btn-primary" style="width: 100%; margin-top: 1rem;">Download</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Attack on Titan</div>
+                        <div class="card-meta">Complete • 139 episodes</div>
+                        <button class="btn-secondary" style="width: 100%; margin-top: 1rem;">In Library</button>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">My Automations</div>
+                        <div class="card-meta">3 active rules</div>
+                        <button class="btn-secondary" style="width: 100%; margin-top: 1rem;">Configure</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Direction 6: Command Palette -->
+        <div class="mockup command-palette" data-direction="command">
+            <div class="mockup-header">
+                <div class="mockup-title">Command Palette</div>
+                <div class="mockup-description">Keyboard-first, search-dominated. Power user dream, Alex might be confused.</div>
+            </div>
+            <div class="mockup-content">
+                <div class="search-bar">
+                    <input type="text" placeholder="⌘K or Ctrl+K: search, rules, settings...">
+                </div>
+                <div class="results">
+                    <div class="result-item">
+                        <div style="color: #D946EF; font-weight: 600;">Search</div>
+                        <div style="font-size: 13px; color: #B0B8C1;">Find anime by title, genre, status</div>
+                    </div>
+                    <div class="result-item">
+                        <div style="color: #D946EF; font-weight: 600;">Download Now</div>
+                        <div style="font-size: 13px; color: #B0B8C1;">Instant download selected anime</div>
+                    </div>
+                    <div class="result-item">
+                        <div style="color: #D946EF; font-weight: 600;">Create Rule</div>
+                        <div style="font-size: 13px; color: #B0B8C1;">Auto-download on AniList, air date, etc.</div>
+                    </div>
+                    <div class="result-item">
+                        <div style="color: #D946EF; font-weight: 600;">View Logs</div>
+                        <div style="font-size: 13px; color: #B0B8C1;">See full execution history and errors</div>
+                    </div>
+                    <div class="result-item">
+                        <div style="color: #D946EF; font-weight: 600;">Settings</div>
+                        <div style="font-size: 13px; color: #B0B8C1;">Quality, language, Jellyfin config</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparison -->
+    <div class="comparison">
+        <h3>Design Evaluation Matrix</h3>
+        <div class="comparison-grid">
+            <div class="comparison-card">
+                <h4>1. Harmony ⭐⭐⭐⭐⭐</h4>
+                <ul>
+                    <li>✅ Scalable (works both modes)</li>
+                    <li>✅ Professional + modern</li>
+                    <li>✅ Clear information hierarchy</li>
+                    <li>✅ Dragon's Dogma inspired</li>
+                    <li>⭐ RECOMMENDED</li>
+                </ul>
+            </div>
+            <div class="comparison-card">
+                <h4>2. Bold Magenta ⭐⭐⭐</h4>
+                <ul>
+                    <li>✅ High visual impact</li>
+                    <li>✅ Gaming vibes</li>
+                    <li>❌ Less professional</li>
+                    <li>❌ Might tire eyes</li>
+                    <li>Use for: Gaming focus</li>
+                </ul>
+            </div>
+            <div class="comparison-card">
+                <h4>3. Minimalist ⭐⭐⭐</h4>
+                <ul>
+                    <li>✅ Very clean</li>
+                    <li>✅ Calm aesthetic</li>
+                    <li>❌ Might feel empty</li>
+                    <li>❌ Bad for Mode Expert</li>
+                    <li>Use for: Alex only</li>
+                </ul>
+            </div>
+            <div class="comparison-card">
+                <h4>4. Sidebar ⭐⭐⭐⭐</h4>
+                <ul>
+                    <li>✅ Great for dense info</li>
+                    <li>✅ Familiar pattern</li>
+                    <li>❌ Desktop-only</li>
+                    <li>❌ Wastes mobile space</li>
+                    <li>Use for: Desktop-first</li>
+                </ul>
+            </div>
+            <div class="comparison-card">
+                <h4>5. Card Grid ⭐⭐⭐</h4>
+                <ul>
+                    <li>✅ Visual variety</li>
+                    <li>✅ Good discovery</li>
+                    <li>❌ Less scannable</li>
+                    <li>❌ Horizontal scroll</li>
+                    <li>Use for: Browsing focus</li>
+                </ul>
+            </div>
+            <div class="comparison-card">
+                <h4>6. Command Palette ⭐⭐</h4>
+                <ul>
+                    <li>✅ Power user dream</li>
+                    <li>✅ Keyboard-first</li>
+                    <li>❌ Too complex</li>
+                    <li>❌ Bad for Alex</li>
+                    <li>Use for: Phase 2</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const directionBtns = document.querySelectorAll('.direction-btn');
+        const mockups = document.querySelectorAll('.mockup');
+        const modeToggle = document.getElementById('mode-toggle');
+        const modeLabel = document.getElementById('mode-label');
+
+        directionBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                directionBtns.forEach(b => b.classList.remove('active'));
+                mockups.forEach(m => m.classList.remove('active'));
+                
+                btn.classList.add('active');
+                const direction = btn.dataset.direction;
+                document.querySelector(`[data-direction="${direction}"]`).classList.add('active');
+            });
+        });
+
+        modeToggle.addEventListener('change', () => {
+            if (modeToggle.checked) {
+                document.body.classList.add('mode-expert');
+                modeLabel.textContent = 'Expert';
+            } else {
+                document.body.classList.remove('mode-expert');
+                modeLabel.textContent = 'Simple';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -74,4 +74,8 @@ func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 func RegisterSearchRoutes(r chi.Router, searchService ports.AnimeSearch) {
 	handler := NewSearchHandler(searchService)
 	r.Get("/search", handler.Search)
+	
+	// Register autocomplete route
+	autocompleteHandler := NewAutocompleteHandler(searchService)
+	r.Get("/search/autocomplete", autocompleteHandler.handleAutocomplete)
 }
