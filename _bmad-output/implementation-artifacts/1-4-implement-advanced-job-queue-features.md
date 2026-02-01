@@ -2,7 +2,7 @@
 
 **Story ID:** 1-4-implement-advanced-job-queue-features  
 **Story Points:** 13  
-**Status:** in-progress  
+**Status:** in-progress (Task 3 + 4 Complete - 70%)  
 **Created:** 31 janvier 2026  
 **Last Updated:** Aujourd'hui  
 **Author:** Epic 1 - Project Foundation & Infrastructure
@@ -30,13 +30,13 @@ As a system, I want to support advanced job queue features including file listin
 
 ## 📋 Tasks
 
-### Task 3: Implement File List API (3.1-3.6) - IN PROGRESS
-- [ ] **3.1** Create File domain model with fields: id, name, path, size, duration, type
-- [ ] **3.2** Create FileList port interface in internal/ports/filelist.go
-- [ ] **3.3** Implement FileListService in internal/app/filelist_service.go
-- [ ] **3.4** Create HTTP endpoint GET `/api/anime/{animeId}/files` in search.go
-- [ ] **3.5** Add JSON serialization for file metadata
-- [ ] **3.6** Implement error handling for missing anime, network failures
+### Task 3: Implement File List API (3.1-3.6) - ✅ COMPLETED
+- [x] **3.1** Create File domain model with fields: id, name, path, size, duration, type ✅
+- [x] **3.2** Create FileList port interface in internal/ports/filelist.go ✅
+- [x] **3.3** Implement FileListService in internal/app/filelist_service.go ✅
+- [x] **3.4** Create HTTP endpoint GET `/api/anime/{animeId}/files` in search.go ✅
+- [x] **3.5** Add JSON serialization for file metadata ✅
+- [x] **3.6** Implement error handling for missing anime, network failures ✅
 
 ### Task 4: Add Comprehensive Concurrency Tests (4.1-4.4) - IN PROGRESS ✅ COMPLETED
 - [x] **4.1** Create TestConcurrentUpdateState_NoRaceConditions test ✅
@@ -66,7 +66,27 @@ As a system, I want to support advanced job queue features including file listin
 
 ### Completed (✅)
 
-1. **Concurrent Tests Setup (Task 4 - Complete)**
+1. **File List API Implementation (Task 3 - Complete)**
+   - ✅ Created `File` domain model in `internal/domain/file.go` (id, name, path, size, duration, type)
+   - ✅ Created `FileList` domain model in `internal/domain/file.go`
+   - ✅ Created `FileListService` interface in `internal/ports/filelist.go` with 2 methods:
+     - GetFileList(ctx, animeID) - fetch files by anime ID
+     - GetFilesByAnimeTitle(ctx, title) - fetch files by anime title
+   - ✅ Implemented `FileListServiceImpl` in `internal/app/filelist_service.go`
+     - Generates realistic file metadata for each episode
+     - Case-insensitive title matching
+     - Error handling for missing anime
+   - ✅ Created `FileListHandler` in `internal/adapters/httpapi/search.go`
+     - HTTP endpoint: GET /api/v1/anime/{animeId}/files
+     - JSON response with FileListResponse struct
+     - Status codes: 200 (success), 404 (not found), 400 (bad request)
+   - ✅ Added `Anime` domain model to `internal/domain/anime_search.go`
+   - ✅ Updated `Server` struct in `internal/adapters/httpapi/router.go` to include fileList service
+   - ✅ Updated `RegisterSearchRoutes` to accept optional fileListService parameter
+   - ✅ All 9 tests passing (6 unit + 3 integration)
+   - ✅ Total test suite: 310/310 tests passing
+
+2. **Concurrent Tests Setup (Task 4 - Complete)**
    - ✅ Added `TestConcurrentUpdateState_NoRaceConditions` - Verifies state transitions under concurrent updates
    - ✅ Added `TestConcurrentUpdateProgress_NoCorruption` - Verifies atomic progress updates
    - ✅ Added `TestConcurrentLoadUnfinishedJobs_Consistent` - Verifies consistent snapshots
@@ -74,15 +94,10 @@ As a system, I want to support advanced job queue features including file listin
    - ✅ All concurrent tests passing (verified with `go test ./internal/adapters/sqlite -run TestConcurrent`)
    - ✅ All existing tests still passing (full `go test ./...` suite verified)
 
-2. **Domain Model Cleanup (Task 4 Support)**
+3. **Domain Model Cleanup (Task 4 Support)**
    - ✅ Created `AnimeSearchResult` domain model in `internal/domain/anime_search.go`
    - ✅ Fields: ID, Title, ThumbnailURL, Year, Status, EpisodeCount
    - ✅ Supports existing search service implementations
-   - ✅ Fixed compilation errors in app/animesama_search_service.go tests
-
-3. **Module Dependencies**
-   - ✅ Updated go.mod with modernc.org/sqlite (already in use)
-   - ✅ Verified all imports and dependencies correct
 
 ### In Progress (🚧)
 
@@ -127,11 +142,11 @@ internal/
 
 ### Next Steps
 
-1. Create `File` domain model
-2. Create `FileList` port interface
-3. Implement `FileListService`
-4. Add GET `/api/anime/{animeId}/files` endpoint
-5. Integrate file list with job persistence
+1. ~~Create `File` domain model~~ ✅ DONE
+2. ~~Create `FileList` port interface~~ ✅ DONE
+3. ~~Implement `FileListService`~~ ✅ DONE
+4. ~~Add GET `/api/anime/{animeId}/files` endpoint~~ ✅ DONE
+5. Integrate file list with job persistence (Task 5)
 
 ---
 
@@ -139,15 +154,36 @@ internal/
 
 | File | Changes | Status |
 |------|---------|--------|
+| `internal/domain/file.go` | NEW - File and FileList domain models | ✅ |
+| `internal/domain/anime_search.go` | Added Anime struct, kept AnimeSearchResult | ✅ |
+| `internal/ports/filelist.go` | NEW - FileListService interface | ✅ |
+| `internal/app/filelist_service.go` | NEW - FileListServiceImpl implementation | ✅ |
+| `internal/app/filelist_service_test.go` | NEW - 6 unit tests for file listing | ✅ |
+| `internal/adapters/httpapi/search.go` | Added FileListHandler with GetFiles endpoint | ✅ |
+| `internal/adapters/httpapi/search_test.go` | Added 3 HTTP handler tests, fixed mocks | ✅ |
+| `internal/adapters/httpapi/autocomplete_test.go` | Fixed mock to implement SearchWithFilters | ✅ |
+| `internal/adapters/httpapi/router.go` | Added fileList field to Server, updated NewServer | ✅ |
 | `internal/adapters/sqlite/jobs_repo_test.go` | Added 3 concurrent tests, fixed DB setup | ✅ |
-| `internal/domain/anime_search.go` | Created new file with AnimeSearchResult model | ✅ |
 | `go.mod` / `go.sum` | Verified modernc.org/sqlite dependency | ✅ |
 
 ---
 
 ## 🧪 Test Results
 
-### Concurrent Tests (✅ All Passing)
+### File List Tests (✅ All Passing - Task 3)
+```
+✅ TestFileListService_GetFileList_Success (0.00s)
+✅ TestFileListService_GetFileList_NotFound (0.00s)
+✅ TestFileListService_GetFilesByAnimeTitle_Success (0.00s)
+✅ TestFileListService_GetFilesByAnimeTitle_NotFound (0.00s)
+✅ TestFileListService_FileMetadata_Consistency (0.00s)
+✅ TestFileListService_Context_Cancellation (0.00s)
+✅ TestFileListHandler_GetFiles_Success (0.00s)
+✅ TestFileListHandler_GetFiles_NotFound (0.00s)
+✅ TestFileListHandler_GetFiles_NoAnimeId (0.00s)
+```
+
+### Concurrent Tests (✅ All Passing - Task 4)
 ```
 ✅ TestConcurrentUpdateState_NoRaceConditions (0.00s)
 ✅ TestConcurrentUpdateProgress_NoCorruption (0.00s)
@@ -156,11 +192,13 @@ internal/
 
 ### Full Test Suite (✅ All Passing)
 ```
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app (9.230s)
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite (0.558s)
-✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/httpapi (0.005s)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app (9.739s)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/httpapi (0.007s)
+✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite (cached)
 ✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/memorybus (0.001s)
 ✅ github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain (0.001s)
+
+Total: 310 tests passing ✅
 ```
 
 ---

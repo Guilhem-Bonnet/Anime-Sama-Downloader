@@ -42,6 +42,14 @@ const ErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 export default function App() {
   const { activeView, setActiveView } = useUIStore();
+  const { performSearch, results } = useSearchStore();
+
+  // Load initial data on mount
+  useEffect(() => {
+    if (results.length === 0) {
+      performSearch('anime'); // Load default results
+    }
+  }, []);
 
   return (
     <ErrorBoundary>
