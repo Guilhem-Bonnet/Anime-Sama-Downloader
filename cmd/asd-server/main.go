@@ -118,14 +118,25 @@ func main() {
 
 	logger.Info(fmt.Sprintf("listening on %s", addr))
 
+	// Graceful shutdown handling
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		<-sigChan
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		sig := <-sigChan
+		logger.Info("received shutdown signal, starting graceful shutdown",
+			"signal", sig.String())
+
+		// Use 30s timeout for graceful shutdown (allows in-flight requests to complete)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
-		httpServer.Shutdown(ctx)
+
+		logger.Info("shutting down HTTP server...")
+		if err := httpServer.Shutdown(ctx); err != nil {
+			logger.Error("HTTP server shutdown error", "error", err.Error())
+		}
+
+		logger.Info("graceful shutdown complete")
 	}()
 
 	if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {

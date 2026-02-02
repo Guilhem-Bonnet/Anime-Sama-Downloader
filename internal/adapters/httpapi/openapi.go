@@ -657,6 +657,76 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"required":             []any{"type", "params"},
 					"additionalProperties": false,
 				},
+				// Search schemas
+				"SearchResult": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":            map[string]any{"type": "string"},
+						"title":         map[string]any{"type": "string"},
+						"thumbnail_url": map[string]any{"type": "string"},
+						"year":          map[string]any{"type": "integer"},
+						"status":        map[string]any{"type": "string"},
+						"episode_count": map[string]any{"type": "integer"},
+					},
+					"required":             []any{"id", "title"},
+					"additionalProperties": false,
+				},
+				"SearchResultList": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"$ref": "#/components/schemas/SearchResult"},
+				},
+				"AutocompleteResult": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"suggestions": map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+					},
+					"required":             []any{"suggestions"},
+					"additionalProperties": false,
+				},
+				// FileList schemas
+				"FileMetadata": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"file_name":     map[string]any{"type": "string"},
+						"file_size":     map[string]any{"type": "integer", "format": "int64"},
+						"file_type":     map[string]any{"type": "string"},
+						"duration":      map[string]any{"type": "integer"},
+						"resolution":    map[string]any{"type": "string"},
+						"download_url":  map[string]any{"type": "string"},
+						"episode_number": map[string]any{"type": "integer"},
+					},
+					"required":             []any{"file_name", "file_size", "file_type"},
+					"additionalProperties": false,
+				},
+				"FileListResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"anime_id":    map[string]any{"type": "string"},
+						"anime_title": map[string]any{"type": "string"},
+						"total_files": map[string]any{"type": "integer"},
+						"total_size":  map[string]any{"type": "integer", "format": "int64"},
+						"files":       map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/FileMetadata"}},
+					},
+					"required":             []any{"anime_id", "anime_title", "total_files", "total_size", "files"},
+					"additionalProperties": false,
+				},
+				// AnimeDetail schema
+				"AnimeDetail": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":            map[string]any{"type": "string"},
+						"title":         map[string]any{"type": "string"},
+						"thumbnail_url": map[string]any{"type": "string"},
+						"description":   map[string]any{"type": "string"},
+						"year":          map[string]any{"type": "integer"},
+						"status":        map[string]any{"type": "string"},
+						"episode_count": map[string]any{"type": "integer"},
+						"genres":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"synonyms":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+					},
+					"required":             []any{"id", "title"},
+					"additionalProperties": false,
+				},
 			},
 		},
 		"paths": map[string]any{
@@ -671,6 +741,68 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 			"/api/v1/events": map[string]any{
 				"get": map[string]any{"responses": map[string]any{"200": map[string]any{"description": "SSE"}}},
+			},
+			// Search endpoints
+			"/api/v1/search": map[string]any{
+				"get": map[string]any{
+					"summary":     "Search anime by query and filters",
+					"description": "Search for anime with optional filters (genres, status, year range).",
+					"parameters": []any{
+						map[string]any{"name": "q", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Search query"},
+						map[string]any{"name": "genres", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Comma-separated genres"},
+						map[string]any{"name": "status", "in": "query", "schema": map[string]any{"type": "string", "enum": []any{"ongoing", "completed", "planning"}}, "description": "Filter by status"},
+						map[string]any{"name": "year_min", "in": "query", "schema": map[string]any{"type": "integer"}, "description": "Minimum year"},
+						map[string]any{"name": "year_max", "in": "query", "schema": map[string]any{"type": "integer"}, "description": "Maximum year"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SearchResultList"),
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/search/autocomplete": map[string]any{
+				"get": map[string]any{
+					"summary":     "Get search autocomplete suggestions",
+					"description": "Returns autocomplete suggestions for partial search queries.",
+					"parameters": []any{
+						map[string]any{"name": "q", "in": "query", "required": true, "schema": map[string]any{"type": "string"}, "description": "Partial search query"},
+						map[string]any{"name": "limit", "in": "query", "schema": map[string]any{"type": "integer", "default": 10}, "description": "Max suggestions"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AutocompleteResult"),
+						"400": jsonErr,
+					},
+				},
+			},
+			// Anime detail endpoint
+			"/api/v1/anime/{id}": map[string]any{
+				"get": map[string]any{
+					"summary":     "Get anime details",
+					"description": "Returns detailed information about a specific anime.",
+					"parameters": []any{
+						map[string]any{"name": "id", "in": "path", "required": true, "schema": map[string]any{"type": "string"}, "description": "Anime ID"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeDetail"),
+						"404": jsonErr,
+					},
+				},
+			},
+			// File list endpoint
+			"/api/v1/anime/{animeId}/files": map[string]any{
+				"get": map[string]any{
+					"summary":     "Get files for an anime",
+					"description": "Returns a list of downloadable files for a specific anime.",
+					"parameters": []any{
+						map[string]any{"name": "animeId", "in": "path", "required": true, "schema": map[string]any{"type": "string"}, "description": "Anime ID"},
+						map[string]any{"name": "offset", "in": "query", "schema": map[string]any{"type": "integer", "default": 0}, "description": "Pagination offset"},
+						map[string]any{"name": "limit", "in": "query", "schema": map[string]any{"type": "integer", "default": 20}, "description": "Pagination limit"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/FileListResponse"),
+						"404": jsonErr,
+					},
+				},
 			},
 			"/api/v1/jobs": map[string]any{
 				"get": map[string]any{
