@@ -1,53 +1,17 @@
-/* Fonts (parchemin + kanji) */
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Source+Serif+4:wght@400;500;600&family=Yuji+Syuku&display=swap');
+/* Fonts Inter + Noto Serif JP */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+JP:wght@400;500;600;700&display=swap');
+
+/* Import Kabuki Adaptatif Design System */
+@import './styles/tokens.css';
+@import './styles/globals.css';
+@import './styles/animations.css';
+@import './styles/components.css';
+@import './styles/components-anime.css';
 
 /* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* ========================================
-   🌸 SAKURA NIGHT — Custom Styles
-   ======================================== */
-
-@layer base {
-  :root {
-    /* Sakura Night Colors */
-    --color-magenta-500: #d946ef;
-    --color-magenta-600: #c026d3;
-    --color-cyan-500: #06b6d4;
-    --color-cyan-600: #0891b2;
-    --color-pink-500: #fb6f8a;
-  }
-
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
-  body {
-    font-family: var(--font-sans);
-    background: var(--sakura-bg-base);
-    color: var(--sakura-text-primary);
-    min-height: 100vh;
-  }
-}
-
-/* Custom animations */
-@layer utilities {
-  .text-gradient-sakura {
-    background: linear-gradient(to right, #8f6a3d, #a8926b, #5a5249);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
   }
   to {
     opacity: 1;
