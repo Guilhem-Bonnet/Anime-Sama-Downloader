@@ -1,9 +1,39 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '../components/ui/Button';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { useSettingsStore } from '../stores/settings.store';
 
 export function SettingsPage() {
+  const {
+    downloadFolder,
+    maxConcurrentDownloads,
+    preferredQuality,
+    enableNotifications,
+    autoDeleteAfterDownload,
+    autoCheckUpdates,
+    isDirty,
+    isLoading,
+    updateSettings,
+    saveSettings,
+    loadSettings,
+    resetSettings,
+  } = useSettingsStore();
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const handleSave = async () => {
+    await saveSettings();
+  };
+
+  const handleReset = () => {
+    if (confirm('Réinitialiser tous les paramètres à leurs valeurs par défaut ?')) {
+      resetSettings();
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <Card className="frame-ornate">
@@ -27,7 +57,11 @@ export function SettingsPage() {
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--sakura-text-secondary)' }}>
                 Dossier de téléchargement
               </span>
-              <Input placeholder="/media/anime" defaultValue="/media/anime" />
+                <Input
+                  placeholder="/media/anime"
+                  value={downloadFolder}
+                  onChange={(e) => updateSettings({ downloadFolder: e.target.value })}
+                />
             </label>
           </CardBody>
         </Card>
@@ -38,7 +72,13 @@ export function SettingsPage() {
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--sakura-text-secondary)' }}>
                 Téléchargements simultanés
               </span>
-              <Input type="number" min="1" max="5" defaultValue="2" />
+                <Input
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={String(maxConcurrentDownloads)}
+                  onChange={(e) => updateSettings({ maxConcurrentDownloads: parseInt(e.target.value) || 1 })}
+                />
             </label>
           </CardBody>
         </Card>
@@ -50,6 +90,8 @@ export function SettingsPage() {
                 Qualité préférée
               </span>
               <select
+                value={preferredQuality}
+                onChange={(e) => updateSettings({ preferredQuality: e.target.value as '480p' | '720p' | '1080p' })}
                 style={{
                   padding: '8px 12px',
                   borderRadius: '12px',
@@ -60,9 +102,9 @@ export function SettingsPage() {
                   cursor: 'pointer',
                 }}
               >
-                <option>720p</option>
-                <option selected>1080p</option>
-                <option>480p</option>
+                <option value="480p">480p</option>
+                <option value="720p">720p</option>
+                <option value="1080p">1080p</option>
               </select>
             </label>
           </CardBody>
@@ -73,7 +115,12 @@ export function SettingsPage() {
         <Card className="frame-ornate">
           <CardBody>
             <label className="flex" style={{ alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-              <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+              <input
+                type="checkbox"
+                checked={enableNotifications}
+                onChange={(e) => updateSettings({ enableNotifications: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
               <span style={{ color: 'var(--sakura-text-primary)' }}>
                 Activer les notifications du navigateur
               </span>
@@ -84,7 +131,12 @@ export function SettingsPage() {
         <Card className="frame-ornate">
           <CardBody>
             <label className="flex" style={{ alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-              <input type="checkbox" style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+              <input
+                type="checkbox"
+                checked={autoDeleteAfterDownload}
+                onChange={(e) => updateSettings({ autoDeleteAfterDownload: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
               <span style={{ color: 'var(--sakura-text-primary)' }}>
                 Supprimer automatiquement après téléchargement
               </span>
@@ -95,7 +147,12 @@ export function SettingsPage() {
         <Card className="frame-ornate">
           <CardBody>
             <label className="flex" style={{ alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
-              <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+              <input
+                type="checkbox"
+                checked={autoCheckUpdates}
+                onChange={(e) => updateSettings({ autoCheckUpdates: e.target.checked })}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
               <span style={{ color: 'var(--sakura-text-primary)' }}>
                 Vérifier les mises à jour automatiquement
               </span>
@@ -124,8 +181,12 @@ export function SettingsPage() {
       </Card>
 
       <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-        <Button variant="secondary">Réinitialiser les paramètres</Button>
-        <Button variant="primary">💾 Enregistrer les paramètres</Button>
+        <Button variant="secondary" onClick={handleReset} disabled={isLoading}>
+          Réinitialiser les paramètres
+        </Button>
+        <Button variant="primary" onClick={handleSave} disabled={!isDirty || isLoading}>
+          💾 {isLoading ? 'Enregistrement...' : 'Enregistrer les paramètres'}
+        </Button>
       </div>
     </div>
   );

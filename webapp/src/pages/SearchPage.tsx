@@ -4,7 +4,7 @@ import { SearchResultsGrid } from '../components/SearchResults';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
 import { HeroLandscapeIllustration } from '../components/illustrations/SakuraIllustrations';
 
-export function SearchPage() {
+export const SearchPage = React.memo(function SearchPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <Card className="frame-ornate">
@@ -27,4 +27,4 @@ export function SearchPage() {
       <SearchResultsGrid />
     </div>
   );
-}
+});

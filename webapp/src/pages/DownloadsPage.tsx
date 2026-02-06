@@ -3,7 +3,7 @@ import { DownloadMonitor } from '../components/DownloadMonitor';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
 import { EmptyDownloadsIllustration } from '../components/illustrations/SakuraIllustrations';
 
-export function DownloadsPage() {
+export const DownloadsPage = React.memo(function DownloadsPage() {
   return (
     <Card className="frame-ornate">
       <CardHeader>
@@ -20,4 +20,4 @@ export function DownloadsPage() {
       </CardBody>
     </Card>
   );
-}
+});

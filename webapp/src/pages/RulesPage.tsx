@@ -3,7 +3,7 @@ import { Button } from '../components/ui/Button';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 
-export function RulesPage() {
+export const RulesPage = React.memo(function RulesPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <Card className="frame-ornate">
@@ -61,4 +61,4 @@ export function RulesPage() {
       </div>
     </div>
   );
-}
+});
