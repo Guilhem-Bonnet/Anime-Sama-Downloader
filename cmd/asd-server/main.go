@@ -88,7 +88,8 @@ func main() {
 	_, animeCatalogue := devCatalogue()
 	searchService := app.NewAniListSearchService() // Real AniList-backed search
 	fileListService := app.NewFileListService(animeCatalogue)
-	detailService := app.NewMockAnimeDetailService()
+	mockDetail := app.NewMockAnimeDetailService()
+	detailService := app.NewAniListDetailService(mockDetail) // AniList for al-* IDs, fallback to mock
 	recommendationsService := app.NewRecommendationsService(nil) // TODO: feed from AniList
 
 	server := httpapi.NewServer(
