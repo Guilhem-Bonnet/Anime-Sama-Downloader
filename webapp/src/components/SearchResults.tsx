@@ -5,11 +5,22 @@ import { EmptySearchIllustration } from './illustrations/NocturneIllustrations';
 import { useNavigate } from 'react-router-dom';
 
 export const SearchResultsGrid: React.FC = () => {
-  const { results, isSearching } = useSearchStore();
+  const { results, isSearching, query } = useSearchStore();
   const navigate = useNavigate();
   const [showStamp, setShowStamp] = React.useState(false);
+  const [catalogue, setCatalogue] = React.useState<typeof results>([]);
 
-  const displayResults = results;
+  // Charger le catalogue complet au montage pour afficher les anime disponibles
+  React.useEffect(() => {
+    fetch('/api/v1/search?q=')
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setCatalogue(data); })
+      .catch(() => {});
+  }, []);
+
+  // Si l'utilisateur a cherché → afficher les résultats ; sinon → afficher le catalogue
+  const hasSearched = query.trim().length > 0;
+  const displayResults = hasSearched ? results : catalogue;
 
   const handleViewDetail = (animeId: string) => {
     navigate(`/anime/${animeId}`);
@@ -36,7 +47,9 @@ export const SearchResultsGrid: React.FC = () => {
       <div className="text-center py-20">
         <EmptySearchIllustration />
         <p className="text-gray-600 dark:text-gray-400 text-lg mt-4">
-          Aucun résultat trouvé. Essayez une autre recherche !
+          {hasSearched
+            ? 'Aucun résultat trouvé. Essayez : Mushishi, Dororo, Samurai Champloo...'
+            : 'Chargement du catalogue...'}
         </p>
       </div>
     );
@@ -44,6 +57,16 @@ export const SearchResultsGrid: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      {/* Titre section */}
+      <h3 style={{
+        fontSize: '18px',
+        fontWeight: 700,
+        color: 'var(--night-text-primary)',
+        borderBottom: '2px solid var(--night-accent-brown-500)',
+        paddingBottom: '8px',
+      }}>
+        {hasSearched ? `Résultats pour « ${query} »` : 'Catalogue disponible'}
+      </h3>
       {/* Résultats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <div className={`ink-stamp ${showStamp ? 'is-visible' : ''}`} aria-hidden="true" />

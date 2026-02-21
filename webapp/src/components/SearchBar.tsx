@@ -85,7 +85,7 @@ export const SearchBar: React.FC = () => {
               setSuggestionsOpen(true);
             }}
             onBlur={() => setIsFocused(false)}
-            placeholder="Rechercher un anime... (ex: Attack on Titan)"
+            placeholder="Rechercher un anime... (ex: Mushishi, Dororo, Samurai Champloo)"
             className="input w-full pl-14 pr-14 py-4 rounded-2xl text-lg shadow-lg hover:shadow-xl transition-all duration-300"
             autoComplete="off"
           />
