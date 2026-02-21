@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { apiCreateJob } from '../api';
+import { apiAnimeSamaResolve, apiAnimeSamaEnqueue } from '../api';
 import { useJobsStore } from '../stores/jobs.store';
 
 interface Episode {
@@ -32,7 +32,6 @@ export function AnimeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const loadJobs = useJobsStore((s) => s.loadJobs);
-  const addJobs = useJobsStore((s) => s.addJobs);
   const [anime, setAnime] = useState<AnimeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,37 +103,57 @@ export function AnimeDetailPage() {
     setDownloading(true);
 
     try {
-      const entries = Array.from(selectedEpisodes).map((key) => {
+      // Groupe les épisodes sélectionnés par saison
+      const bySeason = new Map<number, number[]>();
+      Array.from(selectedEpisodes).forEach((key) => {
         const [seasonStr, epStr] = key.split('-');
-        return { season: Number(seasonStr), episode: Number(epStr) };
+        const season = Number(seasonStr);
+        const ep = Number(epStr);
+        if (!bySeason.has(season)) bySeason.set(season, []);
+        bySeason.get(season)!.push(ep);
       });
 
-      // Find episode URLs from loaded anime data
-      const promises = entries.map(({ season, episode }) => {
-        const s = anime.seasons.find((ss) => ss.number === season);
-        const ep = s?.episodes.find((e) => e.number === episode);
-        const seasonPad = String(season).padStart(2, '0');
-        const epPad = String(episode).padStart(2, '0');
-        const label = `${anime.title} - S${seasonPad}E${epPad}`;
+      const warnings: string[] = [];
 
-        return apiCreateJob('download', {
-          url: ep?.url || '',
-          animeTitle: anime.title,
-          animeId: anime.id,
-          seasonNumber: season,
-          episodeNumber: episode,
-          label,
-          filename: `${label}.mp4`,
+      for (const [season, episodes] of bySeason) {
+        // 1. Résolution de l'URL anime-sama pour cette saison
+        let baseUrl: string | null = null;
+        try {
+          const resolveResp = await apiAnimeSamaResolve({
+            titles: [anime.title],
+            season,
+            lang: 'vostfr',
+          });
+          baseUrl = resolveResp.candidates[0]?.baseUrl ?? null;
+        } catch (_) {
+          // resolver non disponible ou erreur réseau
+        }
+
+        if (!baseUrl) {
+          warnings.push(`Saison ${season} : source anime-sama introuvable pour "${anime.title}"`);
+          continue;
+        }
+
+        // 2. Enqueue des épisodes avec les vraies URLs
+        const resp = await apiAnimeSamaEnqueue({
+          baseUrl,
+          label: anime.title,
+          episodes,
         });
-      });
 
-      const createdJobs = await Promise.all(promises);
-      // 1. Ajoute les jobs au store immédiatement (visible avant même le refresh)
-      addJobs(createdJobs);
-      // 2. Force un rechargement pour avoir l'état final (peut déjà être failed)
+        resp.skipped.forEach((s) => {
+          warnings.push(`Épisode ${s.episode} ignoré : ${s.reason}`);
+        });
+      }
+
+      // Rechargement du store pour avoir l'état final
       await loadJobs();
       setSelectedEpisodes(new Set());
       navigate('/downloads');
+
+      if (warnings.length > 0) {
+        console.warn('[AnimeDetailPage] avertissements enqueue:', warnings);
+      }
     } catch (err: any) {
       alert(err.message || 'Échec de la création des téléchargements');
     } finally {
