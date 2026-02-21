@@ -31,9 +31,11 @@ export const useJobsStore = create<JobsState & JobsActions>((set, get) => ({
   loadJobs: async (limit = 200) => {
     set({ isLoading: true, error: undefined });
     try {
-      const jobs = await apiListJobs(limit);
-      set({ jobs });
+      const fetched = await apiListJobs(limit);
+      // API is source of truth — replace store jobs with fresh data
+      set({ jobs: fetched });
     } catch (error) {
+      // Don't clear existing jobs on failure — stale data is better than nothing
       set({ error: error instanceof Error ? error.message : 'Échec du chargement des jobs' });
     } finally {
       set({ isLoading: false });

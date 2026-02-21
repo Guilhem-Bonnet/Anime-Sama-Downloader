@@ -48,11 +48,13 @@ function friendlyError(job: Job): string {
 }
 
 export const DownloadMonitor: React.FC = () => {
-  const { jobs, loadJobs, updateJobFromSSE, cancelJob } = useJobsStore();
+  const { jobs, isLoading, loadJobs, updateJobFromSSE, cancelJob } = useJobsStore();
 
-  // Load jobs on mount
+  // Load on mount + poll every 10s to stay fresh (SSE may miss events)
   useEffect(() => {
     loadJobs();
+    const interval = setInterval(() => loadJobs(), 10_000);
+    return () => clearInterval(interval);
   }, []);
 
   // Single SSE connection for all job events
@@ -62,7 +64,27 @@ export const DownloadMonitor: React.FC = () => {
     }
   });
 
-  if (jobs.length === 0) {
+  // While loading and store is empty, show skeleton (not empty state)
+  if (isLoading && jobs.length === 0) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 0' }}>
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            style={{
+              height: '80px',
+              background: 'var(--night-bg-secondary, #1e1e1e)',
+              borderRadius: '8px',
+              opacity: 0.5,
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  if (!isLoading && jobs.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '48px 16px' }}>
         <EmptyDownloadsIllustration />
