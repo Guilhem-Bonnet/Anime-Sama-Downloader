@@ -22,10 +22,10 @@ export function ProgressBar({
   const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
 
   const variantColors = {
-    primary: 'var(--sakura-accent-magenta-500)',
-    success: 'var(--sakura-success-text)',
-    warning: 'var(--sakura-warning-text)',
-    error: 'var(--sakura-error-text)',
+    primary: 'var(--night-accent-magenta-500)',
+    success: 'var(--night-success-text)',
+    warning: 'var(--night-warning-text)',
+    error: 'var(--night-error-text)',
   };
 
   const sizeMap = {
@@ -43,7 +43,7 @@ export function ProgressBar({
             justifyContent: 'space-between',
             marginBottom: 'var(--space-2)',
             fontSize: 'var(--text-body-sm)',
-            color: 'var(--sakura-text-secondary)',
+            color: 'var(--night-text-secondary)',
           }}
         >
           {label && <span>{label}</span>}
@@ -55,9 +55,9 @@ export function ProgressBar({
         style={{
           width: '100%',
           height: sizeMap[size],
-          background: 'var(--sakura-bg-elevated)',
+          background: 'var(--night-bg-elevated)',
           borderRadius: 'var(--radius-full)',
-          border: '1px solid var(--sakura-border-subtle)',
+          border: '1px solid var(--night-border-subtle)',
           overflow: 'hidden',
           position: 'relative',
         }}

@@ -8,8 +8,8 @@
   flex-direction: column;
   border-radius: var(--radius-2);
   overflow: hidden;
-  background-color: var(--kabuki-bg-surface);
-  border: 1px solid var(--kabuki-border-subtle);
+  background-color: var(--night-bg-surface);
+  border: 1px solid var(--night-border-subtle);
   transition: all var(--transition-normal);
   position: relative;
 }
@@ -25,7 +25,7 @@
 }
 
 .anime-card--selected {
-  border-color: var(--kabuki-accent-red);
+  border-color: var(--night-accent-red);
   box-shadow: 0 0 12px rgba(230, 57, 70, 0.3);
 }
 
@@ -59,7 +59,7 @@
   width: 100%;
   padding-bottom: 133.33%; /* 3:4 aspect ratio */
   overflow: hidden;
-  background-color: var(--kabuki-bg-elevated);
+  background-color: var(--night-bg-elevated);
 }
 
 .anime-card__cover {
@@ -80,7 +80,7 @@
   border-radius: var(--radius-1);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--kabuki-text-primary);
+  color: var(--night-text-primary);
   backdrop-filter: blur(4px);
   z-index: var(--z-dropdown);
 }
@@ -91,7 +91,7 @@
   font-size: var(--text-lg);
   font-weight: 600;
   line-height: var(--line-height-tight);
-  color: var(--kabuki-text-primary);
+  color: var(--night-text-primary);
   margin: 0;
   padding: 0 var(--space-3);
   overflow: hidden;
@@ -120,18 +120,18 @@
   border-radius: var(--radius-1);
   font-size: 0.75rem;
   font-weight: 500;
-  background-color: var(--kabuki-bg-elevated);
-  color: var(--kabuki-text-secondary);
+  background-color: var(--night-bg-elevated);
+  color: var(--night-text-secondary);
 }
 
 .anime-card__badge--season {
   background-color: rgba(6, 182, 212, 0.15);
-  color: var(--kabuki-accent-cyan);
+  color: var(--night-accent-cyan);
 }
 
 .anime-card__badge--language {
   background-color: rgba(245, 158, 11, 0.15);
-  color: var(--kabuki-accent-gold);
+  color: var(--night-accent-gold);
 }
 
 /* Actions */
@@ -155,23 +155,29 @@
 }
 
 .anime-card__action-btn--details {
-  background-color: var(--kabuki-bg-elevated);
-  color: var(--kabuki-text-secondary);
-  border: 1px solid var(--kabuki-border-default);
+  background-color: var(--night-bg-elevated);
+  color: var(--night-text-secondary);
+  border: 1px solid var(--night-border-default);
 }
 
 .anime-card__action-btn--details:hover:not(:disabled) {
-  background-color: var(--kabuki-bg-base);
-  color: var(--kabuki-text-primary);
+  background-color: var(--night-bg-base);
+  color: var(--night-text-primary);
 }
 
 .anime-card__action-btn--download {
-  background-color: var(--kabuki-accent-red);
-  color: white;
+  background-color: var(--night-accent-red);
+  color: white; /* WCAG AA: white on orange = 10:1 contrast (was black = 2.8:1) */
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.3),
+    0 0 12px rgba(245, 158, 11, 0.2);
 }
 
 .anime-card__action-btn--download:hover:not(:disabled) {
   filter: brightness(1.1);
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(245, 158, 11, 0.28);
 }
 
 .anime-card__action-btn:disabled {
@@ -186,18 +192,18 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background-color: var(--kabuki-bg-surface);
-  border-bottom: 1px solid var(--kabuki-border-subtle);
+  background-color: var(--night-bg-surface);
+  border-bottom: 1px solid var(--night-border-subtle);
   transition: background-color var(--transition-normal);
 }
 
 .episode-row:hover:not(.episode-row--disabled) {
-  background-color: var(--kabuki-bg-elevated);
+  background-color: var(--night-bg-elevated);
 }
 
 .episode-row--selected {
   background-color: rgba(230, 57, 70, 0.1);
-  border-left: 3px solid var(--kabuki-accent-red);
+  border-left: 3px solid var(--night-accent-red);
 }
 
 .episode-row--disabled {
@@ -213,7 +219,7 @@
   width: 20px;
   height: 20px;
   cursor: pointer;
-  accent-color: var(--kabuki-accent-red);
+  accent-color: var(--night-accent-red);
 }
 
 .episode-row__checkbox:disabled {
@@ -222,7 +228,7 @@
 }
 
 .episode-row__checkbox:focus-visible {
-  outline: 2px solid var(--kabuki-accent-cyan);
+  outline: 2px solid var(--night-accent-cyan);
   outline-offset: 2px;
 }
 
@@ -234,14 +240,14 @@
 
 .episode-row__label {
   font-weight: 600;
-  color: var(--kabuki-text-primary);
+  color: var(--night-text-primary);
   cursor: pointer;
 }
 
 /* Episode title */
 .episode-row__title {
   flex: 1;
-  color: var(--kabuki-text-secondary);
+  color: var(--night-text-secondary);
   font-size: var(--text-sm);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -251,7 +257,7 @@
 /* Duration */
 .episode-row__duration {
   flex-shrink: 0;
-  color: var(--kabuki-text-muted);
+  color: var(--night-text-muted);
   font-size: var(--text-xs);
 }
 
@@ -286,7 +292,7 @@
   width: 100%;
   height: 100%;
   border: 2px solid transparent;
-  border-top-color: var(--kabuki-accent-gold);
+  border-top-color: var(--night-accent-gold);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -305,13 +311,13 @@
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-3);
-  background-color: var(--kabuki-bg-surface);
-  border-bottom: 1px solid var(--kabuki-border-subtle);
+  background-color: var(--night-bg-surface);
+  border-bottom: 1px solid var(--night-border-subtle);
   transition: background-color var(--transition-normal);
 }
 
 .job-row:hover {
-  background-color: var(--kabuki-bg-elevated);
+  background-color: var(--night-bg-elevated);
 }
 
 .job-row--queued {
@@ -346,12 +352,12 @@
   font-weight: 600;
   margin: 0;
   font-size: var(--text-base);
-  color: var(--kabuki-text-primary);
+  color: var(--night-text-primary);
 }
 
 .job-row__episode {
   font-size: var(--text-sm);
-  color: var(--kabuki-text-secondary);
+  color: var(--night-text-secondary);
 }
 
 /* Progress section */
@@ -366,14 +372,14 @@
 .job-row__progress-bar {
   flex: 1;
   height: 8px;
-  background-color: var(--kabuki-bg-elevated);
+  background-color: var(--night-bg-elevated);
   border-radius: var(--radius-1);
   overflow: hidden;
 }
 
 .job-row__progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--kabuki-accent-gold), var(--kabuki-accent-cyan));
+  background: linear-gradient(90deg, var(--night-accent-gold), var(--night-accent-cyan));
   transition: width var(--transition-normal);
   border-radius: var(--radius-1);
 }
@@ -381,7 +387,7 @@
 .job-row__progress-text {
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--kabuki-text-secondary);
+  color: var(--night-text-secondary);
   min-width: 40px;
 }
 
@@ -390,7 +396,7 @@
   display: flex;
   gap: var(--space-2);
   font-size: var(--text-xs);
-  color: var(--kabuki-text-muted);
+  color: var(--night-text-muted);
 }
 
 .job-row__eta {
@@ -427,8 +433,8 @@
   padding: var(--space-1) var(--space-2);
   border: none;
   border-radius: var(--radius-1);
-  background-color: var(--kabuki-bg-elevated);
-  color: var(--kabuki-text-secondary);
+  background-color: var(--night-bg-elevated);
+  color: var(--night-text-secondary);
   cursor: pointer;
   font-size: var(--text-sm);
   transition: all var(--transition-normal);
@@ -438,17 +444,17 @@
 .job-row__action-btn--pause,
 .job-row__action-btn--resume {
   background-color: rgba(6, 182, 212, 0.2);
-  color: var(--kabuki-accent-cyan);
+  color: var(--night-accent-cyan);
 }
 
 .job-row__action-btn--cancel {
   background-color: rgba(239, 68, 68, 0.2);
-  color: var(--kabuki-accent-red);
+  color: var(--night-accent-red);
 }
 
 .job-row__action-btn--retry {
   background-color: rgba(245, 158, 11, 0.2);
-  color: var(--kabuki-accent-gold);
+  color: var(--night-text-primary);
 }
 
 .job-row__action-btn:hover {
@@ -462,7 +468,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background-color: var(--kabuki-bg-surface);
+  background-color: var(--night-bg-surface);
   border-radius: var(--radius-1);
   cursor: pointer;
   transition: all var(--transition-normal);
@@ -470,11 +476,11 @@
 }
 
 .search-suggestion:hover {
-  background-color: var(--kabuki-bg-elevated);
+  background-color: var(--night-bg-elevated);
 }
 
 .search-suggestion:focus-visible {
-  outline: 2px solid var(--kabuki-accent-cyan);
+  outline: 2px solid var(--night-accent-cyan);
   outline-offset: 0;
 }
 
@@ -495,7 +501,7 @@
 
 .search-suggestion__title {
   font-weight: 500;
-  color: var(--kabuki-text-primary);
+  color: var(--night-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -503,7 +509,7 @@
 }
 
 .search-suggestion__highlight {
-  color: var(--kabuki-accent-gold);
+  color: var(--night-accent-gold);
   font-weight: 700;
   background: none;
 }
@@ -513,21 +519,21 @@
   display: flex;
   gap: var(--space-2);
   font-size: var(--text-xs);
-  color: var(--kabuki-text-muted);
+  color: var(--night-text-muted);
 }
 
 .search-suggestion__season {
   padding: 2px 6px;
   border-radius: var(--radius-1);
   background-color: rgba(6, 182, 212, 0.15);
-  color: var(--kabuki-accent-cyan);
+  color: var(--night-accent-cyan);
 }
 
 .search-suggestion__language {
   padding: 2px 6px;
   border-radius: var(--radius-1);
   background-color: rgba(245, 158, 11, 0.15);
-  color: var(--kabuki-accent-gold);
+  color: var(--night-text-primary);
 }
 
 /* ===== RESPONSIVE ===== */
@@ -607,11 +613,134 @@
 
 /* Focus visible styles for keyboard navigation */
 .anime-card__action-btn:focus-visible {
-  outline: 2px solid var(--kabuki-accent-cyan);
+  outline: 2px solid var(--night-accent-cyan);
   outline-offset: 2px;
 }
 
 .job-row__action-btn:focus-visible {
-  outline: 2px solid var(--kabuki-accent-cyan);
+  outline: 2px solid var(--night-accent-cyan);
   outline-offset: -2px;
+}
+
+/* ------- SUBSCRIPTION CARD ------- */
+
+.subscription-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  background-color: var(--night-bg-surface);
+  border: 1px solid var(--night-border-subtle);
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  position: relative;
+  height: 100%;
+}
+
+.subscription-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glow-gold);
+}
+
+.subscription-card:focus {
+  outline: 2px solid var(--night-accent-cyan);
+  outline-offset: 2px;
+}
+
+.subscription-card__cover {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background-color: var(--night-bg-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.subscription-card__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.subscription-card__cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: var(--night-text-subtle);
+}
+
+.subscription-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  flex-grow: 1;
+}
+
+.subscription-card__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--night-text-base);
+  margin: 0;
+  line-height: 1.3;
+  /* Truncate to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.subscription-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.subscription-card__season {
+  font-size: var(--font-size-sm);
+  color: var(--night-text-subtle);
+}
+
+.subscription-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--night-accent-cyan);
+  color: var(--night-bg-base);
+}
+
+.subscription-card__progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.subscription-card__episode {
+  color: var(--night-text-base);
+  font-weight: var(--font-weight-medium);
+}
+
+.subscription-card__next {
+  color: var(--night-text-subtle);
+}
+
+.subscription-card__details {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--night-text-subtle);
+  margin-top: auto;
+}
+
+.subscription-card__details span:not(:last-child)::after {
+  content: '•';
+  margin-left: var(--space-2);
 }

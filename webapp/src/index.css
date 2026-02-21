@@ -7,17 +7,12 @@
 @import './styles/animations.css';
 @import './styles/components.css';
 @import './styles/components-anime.css';
+@import './styles/dashboard.css';
 
 /* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 @keyframes fadeIn {
   from { opacity: 0; }

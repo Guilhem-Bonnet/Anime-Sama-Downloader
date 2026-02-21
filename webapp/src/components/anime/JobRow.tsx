@@ -28,11 +28,11 @@ const JobRow: React.FC<JobRowProps> = ({
   onRetry,
 }) => {
   const statusColors: Record<string, string> = {
-    queued: 'var(--kabuki-text-secondary)',
-    downloading: 'var(--kabuki-bg-warning)',
-    paused: 'var(--kabuki-bg-info)',
-    completed: 'var(--kabuki-bg-success)',
-    failed: 'var(--kabuki-bg-error)',
+    queued: 'var(--night-text-secondary)',
+    downloading: 'var(--night-bg-warning)',
+    paused: 'var(--night-bg-info)',
+    completed: 'var(--night-bg-success)',
+    failed: 'var(--night-bg-error)',
   };
 
   const statusLabels: Record<string, string> = {

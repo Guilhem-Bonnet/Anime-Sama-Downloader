@@ -1,33 +1,45 @@
-import React, { useEffect, useState } from 'react';
-import { useJobsStore } from '../stores/jobs.store';
+import React, { useEffect } from 'react';
+import { useJobsStore, progressPercent } from '../stores/jobs.store';
+import type { Job } from '../api';
 import { useSSE } from '../hooks/useSSE';
 import { StatusBadge } from './custom/StatusBadge';
 import { DownloadProgress } from './custom/DownloadProgress';
-import { EmptyDownloadsIllustration } from './illustrations/SakuraIllustrations';
+import { EmptyDownloadsIllustration } from './illustrations/NocturneIllustrations';
+
+/** Map backend job state to display status */
+function displayStatus(state: Job['state']): string {
+  switch (state) {
+    case 'queued': return 'pending';
+    case 'running':
+    case 'muxing': return 'running';
+    case 'completed': return 'completed';
+    case 'failed':
+    case 'canceled': return 'failed';
+    default: return 'pending';
+  }
+}
+
+function jobLabel(job: Job): string {
+  const params = job.params as Record<string, any> | undefined;
+  const title = params?.label || params?.animeTitle || params?.animeId || 'Téléchargement';
+  const ep = params?.episodeNumber;
+  return ep ? `${title} • Épisode ${ep}` : title;
+}
 
 export const DownloadMonitor: React.FC = () => {
-  const { jobs, updateJobProgress, updateJobStatus } = useJobsStore();
-  const [sseLogs, setSSELogs] = useState<string[]>([]);
+  const { jobs, loadJobs, updateJobFromSSE, cancelJob } = useJobsStore();
 
-  // Subscribe to SSE updates for first active job
-  const activeJob = jobs.find((j) => j.status === 'running');
+  // Load jobs on mount
+  useEffect(() => {
+    loadJobs();
+  }, []);
 
-  const { close } = useSSE(
-    activeJob ? `/api/jobs/${activeJob.id}/progress` : '',
-    activeJob
-      ? (data) => {
-          updateJobProgress(activeJob.id, data.progress || 0);
-          setSSELogs((prev) => [
-            ...prev,
-            `[${new Date().toLocaleTimeString()}] Job ${activeJob.id}: ${data.progress}% complete`,
-          ]);
-
-          if (data.progress >= 100) {
-            updateJobStatus(activeJob.id, 'completed');
-          }
-        }
-      : undefined
-  );
+  // Single SSE connection for all job events
+  useSSE('/api/v1/events', (data: any) => {
+    if (data && data.id) {
+      updateJobFromSSE(data);
+    }
+  });
 
   if (jobs.length === 0) {
     return (
@@ -40,23 +52,25 @@ export const DownloadMonitor: React.FC = () => {
     );
   }
 
+  const activeJobs = jobs.filter((j) => j.state === 'running' || j.state === 'queued' || j.state === 'muxing');
+  const completedJobs = jobs.filter((j) => j.state === 'completed');
+  const failedJobs = jobs.filter((j) => j.state === 'failed' || j.state === 'canceled');
+
   return (
     <div className="space-y-8">
       {/* Active Downloads */}
-      {jobs.filter((j) => j.status === 'running' || j.status === 'pending').length > 0 && (
+      {activeJobs.length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--sakura-text-primary)' }}>
-              Téléchargements Actifs ({jobs.filter((j) => j.status === 'running').length})
+            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--night-text-primary)' }}>
+              Téléchargements Actifs ({activeJobs.length})
             </h3>
-            <span style={{ fontSize: '12px', padding: '4px 12px', background: 'var(--sakura-accent-brown-500)', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
+            <span style={{ fontSize: '12px', padding: '4px 12px', background: 'var(--night-accent-brown-500)', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
               En cours
             </span>
           </div>
           <div className="space-y-3">
-            {jobs
-              .filter((j) => j.status === 'running' || j.status === 'pending')
-              .map((job) => (
+            {activeJobs.map((job) => (
                 <div
                   key={job.id}
                   className="frame-ornate"
@@ -67,16 +81,16 @@ export const DownloadMonitor: React.FC = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                     <div>
-                      <h4 style={{ fontWeight: 600, color: 'var(--sakura-text-primary)', margin: 0, marginBottom: '4px' }}>
-                        {job.animeId} • Épisode {job.episodeNumber}
+                      <h4 style={{ fontWeight: 600, color: 'var(--night-text-primary)', margin: 0, marginBottom: '4px' }}>
+                        {jobLabel(job)}
                       </h4>
-                      <p style={{ fontSize: '12px', color: 'var(--sakura-text-secondary)', margin: 0 }}>
-                        ID: {job.id.substring(0, 12)}...
+                      <p style={{ fontSize: '12px', color: 'var(--night-text-secondary)', margin: 0 }}>
+                        ID: {job.id.substring(0, 12)}... · {job.state}
                       </p>
                     </div>
-                    <StatusBadge status={job.status} size="sm" />
+                    <StatusBadge status={displayStatus(job.state)} size="sm" />
                   </div>
-                  <DownloadProgress progress={job.progress} />
+                  <DownloadProgress progress={progressPercent(job)} />
                 </div>
               ))}
           </div>
@@ -84,20 +98,18 @@ export const DownloadMonitor: React.FC = () => {
       )}
 
       {/* Completed Downloads */}
-      {jobs.filter((j) => j.status === 'completed').length > 0 && (
+      {completedJobs.length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--sakura-text-primary)' }}>
-              Téléchargements Terminés ({jobs.filter((j) => j.status === 'completed').length})
+            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--night-text-primary)' }}>
+              Téléchargements Terminés ({completedJobs.length})
             </h3>
             <span style={{ fontSize: '12px', padding: '4px 12px', background: '#059669', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
               Complété
             </span>
           </div>
           <div className="space-y-2">
-            {jobs
-              .filter((j) => j.status === 'completed')
-              .map((job) => (
+            {completedJobs.map((job) => (
                 <div
                   key={job.id}
                   className="frame-ornate"
@@ -109,8 +121,8 @@ export const DownloadMonitor: React.FC = () => {
                     alignItems: 'center',
                   }}
                 >
-                  <span style={{ fontSize: '14px', color: 'var(--sakura-text-primary)', fontWeight: 500 }}>
-                    {job.animeId} • Ep {job.episodeNumber}
+                  <span style={{ fontSize: '14px', color: 'var(--night-text-primary)', fontWeight: 500 }}>
+                    {jobLabel(job)}
                   </span>
                   <StatusBadge status="completed" size="sm" />
                 </div>
@@ -120,20 +132,18 @@ export const DownloadMonitor: React.FC = () => {
       )}
 
       {/* Failed Downloads */}
-      {jobs.some((j) => j.status === 'failed') && (
+      {failedJobs.length > 0 && (
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--sakura-text-primary)' }}>
-              Erreurs ({jobs.filter((j) => j.status === 'failed').length})
+            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--night-text-primary)' }}>
+              Erreurs ({failedJobs.length})
             </h3>
             <span style={{ fontSize: '12px', padding: '4px 12px', background: '#dc2626', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
               Échoué
             </span>
           </div>
           <div className="space-y-2">
-            {jobs
-              .filter((j) => j.status === 'failed')
-              .map((job) => (
+            {failedJobs.map((job) => (
                 <div
                   key={job.id}
                   className="frame-ornate"
@@ -144,12 +154,12 @@ export const DownloadMonitor: React.FC = () => {
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div>
-                      <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--sakura-text-primary)', margin: 0, marginBottom: '4px' }}>
-                        {job.animeId} • Ep {job.episodeNumber}
+                      <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--night-text-primary)', margin: 0, marginBottom: '4px' }}>
+                        {jobLabel(job)}
                       </p>
-                      {job.errorMessage && (
+                      {job.error && (
                         <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>
-                          {job.errorMessage}
+                          {job.error}
                         </p>
                       )}
                     </div>

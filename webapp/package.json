@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "lint": "tsc --noEmit",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^0.563.0",

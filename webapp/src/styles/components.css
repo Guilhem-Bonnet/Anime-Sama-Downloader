@@ -1,5 +1,6 @@
 /* ========================================
-   🌸 SAKURA NIGHT — Component Styles
+   � NOCTURNE CORE v3 — Component Styles
+   Direction: élégance moderne, glassmorphism
    ======================================== */
 
 /* -------- BUTTON -------- */
@@ -21,15 +22,6 @@
   overflow: hidden;
 }
 
-.btn::after {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 999px;
-  border: 1px dashed rgba(180, 160, 130, 0.35);
-  pointer-events: none;
-}
-
 .btn:active {
   transform: scale(0.98);
 }
@@ -43,43 +35,46 @@
 .btn-primary {
   background: linear-gradient(
     135deg,
-    var(--sakura-accent-magenta-500),
-    var(--sakura-accent-magenta-600)
+    var(--night-secondary-500),
+    var(--night-secondary-600)
   );
   color: white;
-  border-color: var(--sakura-accent-magenta-600);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  border-color: var(--night-secondary-600);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.35),
+    0 0 18px rgba(245, 158, 11, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.4),
+    0 0 26px rgba(245, 158, 11, 0.35);
 }
 
 /* Secondary Button */
 .btn-secondary {
-  background: var(--sakura-bg-elevated);
-  color: var(--sakura-text-primary);
-  border-color: var(--sakura-border-default);
+  background: var(--night-bg-elevated);
+  color: var(--night-text-primary);
+  border-color: var(--night-border-default);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  border-color: var(--sakura-border-strong);
+  border-color: var(--night-border-strong);
   background: rgba(255, 255, 255, 0.05);
 }
 
 /* Ghost Button */
 .btn-ghost {
   background: transparent;
-  color: var(--sakura-text-secondary);
-  border-color: transparent;
-  border-style: dashed;
+  color: var(--night-text-secondary);
+  border: none;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  color: var(--sakura-text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--night-text-primary);
+  background: var(--night-bg-surface);
 }
 
 /* Danger Button */
@@ -117,7 +112,7 @@
     linear-gradient(180deg, rgba(255, 248, 236, 0.04), transparent 60%),
     radial-gradient(2px 2px at 12% 18%, rgba(255,255,255,0.08) 0 50%, transparent 60%),
     radial-gradient(2px 2px at 78% 24%, rgba(255,255,255,0.06) 0 50%, transparent 60%);
-  border: 1px solid rgba(180, 160, 130, 0.25);
+  border: 1px solid var(--night-border-default);
   border-radius: 24px;
   padding: var(--space-6);
   backdrop-filter: blur(12px);
@@ -126,17 +121,8 @@
   overflow: hidden;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 10px;
-  border-radius: 18px;
-  border: 1px dashed rgba(180, 160, 130, 0.25);
-  pointer-events: none;
-}
-
 .card:hover {
-  border-color: rgba(180, 160, 130, 0.5);
+  border-color: var(--night-secondary);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
   transform: translateY(-4px);
 }
@@ -154,7 +140,7 @@
 
 .card-subtitle {
   font-size: var(--text-body-sm);
-  color: var(--sakura-text-secondary);
+  color: var(--night-text-secondary);
   margin-top: var(--space-2);
 }
 
@@ -167,7 +153,7 @@
   gap: var(--space-2);
   justify-content: flex-end;
   padding-top: var(--space-4);
-  border-top: 1px solid var(--sakura-border-subtle);
+  border-top: 1px solid var(--night-border-subtle);
 }
 
 /* -------- INPUT -------- */
@@ -176,10 +162,10 @@
   display: block;
   width: 100%;
   background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--sakura-border-default);
+  border: 1px solid var(--night-border-default);
   border-radius: 16px;
   padding: 12px 16px;
-  color: var(--sakura-text-primary);
+  color: var(--night-text-primary);
   font-size: var(--text-body);
   transition: all var(--transition-fast);
   font-family: var(--font-sans);
@@ -188,22 +174,22 @@
 }
 
 .input::placeholder {
-  color: var(--sakura-text-muted);
+  color: var(--night-text-muted);
 }
 
 .input:hover {
-  border-color: var(--sakura-border-strong);
+  border-color: var(--night-border-strong);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--sakura-accent-magenta-500);
-  box-shadow: 0 0 0 4px rgba(217, 70, 239, 0.15);
+  border-color: var(--night-secondary);
+  box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.15);
 }
 
 .input:disabled {
   background: rgba(0, 0, 0, 0.15);
-  color: var(--sakura-text-muted);
+  color: var(--night-text-muted);
   cursor: not-allowed;
 }
 
@@ -218,12 +204,12 @@
   font-size: var(--text-label);
   font-weight: var(--text-label-weight);
   margin-bottom: var(--space-2);
-  color: var(--sakura-text-primary);
+  color: var(--night-text-primary);
 }
 
 .input-hint {
   font-size: var(--text-caption);
-  color: var(--sakura-text-muted);
+  color: var(--night-text-muted);
   margin-top: var(--space-1);
 }
 
@@ -242,57 +228,57 @@
 }
 
 .badge-primary {
-  background: var(--sakura-accent-magenta-500);
-  border-color: var(--sakura-accent-magenta-600);
+  background: var(--night-accent-magenta-500);
+  border-color: var(--night-accent-magenta-600);
   color: white;
 }
 
 .badge-secondary {
-  background: var(--sakura-accent-cyan-500);
-  border-color: var(--sakura-accent-cyan-600);
+  background: var(--night-accent-cyan-500);
+  border-color: var(--night-accent-cyan-600);
   color: white;
 }
 
 .badge-success {
-  background: var(--sakura-success-bg);
-  border-color: var(--sakura-success-border);
-  color: var(--sakura-success-text);
+  background: var(--night-success-bg);
+  border-color: var(--night-success-border);
+  color: var(--night-success-text);
 }
 
 .badge-warning {
-  background: var(--sakura-warning-bg);
-  border-color: var(--sakura-warning-border);
-  color: var(--sakura-warning-text);
+  background: var(--night-warning-bg);
+  border-color: var(--night-warning-border);
+  color: var(--night-warning-text);
 }
 
 .badge-error {
-  background: var(--sakura-error-bg);
-  border-color: var(--sakura-error-border);
-  color: var(--sakura-error-text);
+  background: var(--night-error-bg);
+  border-color: var(--night-error-border);
+  color: var(--night-error-text);
 }
 
 .badge-info {
-  background: var(--sakura-info-bg);
-  border-color: var(--sakura-info-border);
-  color: var(--sakura-info-text);
+  background: var(--night-info-bg);
+  border-color: var(--night-info-border);
+  color: var(--night-info-text);
 }
 
 /* -------- PROGRESS BAR -------- */
 
 .progress-bar {
   height: 8px;
-  background: var(--sakura-bg-surface);
+  background: var(--night-bg-surface);
   border-radius: var(--radius-full);
   overflow: hidden;
-  border: 1px solid var(--sakura-border-subtle);
+  border: 1px solid var(--night-border-subtle);
 }
 
 .progress-fill {
   height: 100%;
   background: linear-gradient(
     90deg,
-    var(--sakura-accent-magenta-500),
-    var(--sakura-accent-cyan-500)
+    var(--night-accent-magenta-500),
+    var(--night-accent-cyan-500)
   );
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
@@ -303,14 +289,14 @@
 
 .divider {
   height: 1px;
-  background: var(--sakura-border-default);
+  background: var(--night-border-default);
   margin: var(--space-4) 0;
 }
 
 .divider-vertical {
   width: 1px;
   height: 100%;
-  background: var(--sakura-border-default);
+  background: var(--night-border-default);
 }
 
 /* -------- GRID RESPONSIVE -------- */

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const MAX_RECENT_SEARCHES = 10;
 const STORAGE_KEY = 'recent-searches';
@@ -25,26 +25,18 @@ export const useRecentSearches = () => {
     }
   }, []);
 
-  // Add a search to recent history
-  const addRecentSearch = (query: string) => {
+  // Stable reference — won't cause re-render loops in effect deps
+  const addRecentSearch = useCallback((query: string) => {
     if (!query.trim()) return;
 
     setRecentSearches((prev) => {
-      // Remove existing entry if present (deduplication)
       const filtered = prev.filter((s) => s.query !== query);
-
-      // Add new entry at the beginning
       const updated = [{ query, timestamp: Date.now() }, ...filtered];
-
-      // Limit to MAX_RECENT_SEARCHES
       const limited = updated.slice(0, MAX_RECENT_SEARCHES);
-
-      // Save to localStorage
       localStorage.setItem(STORAGE_KEY, JSON.stringify(limited));
-
       return limited;
     });
-  };
+  }, []);
 
   // Clear all recent searches
   const clearRecentSearches = () => {

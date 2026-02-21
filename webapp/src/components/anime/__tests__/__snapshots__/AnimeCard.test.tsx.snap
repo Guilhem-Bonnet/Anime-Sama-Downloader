@@ -1,0 +1,63 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AnimeCard > snapshot test 1`] = `
+<article
+  aria-label="Demon Slayer - S1"
+  class="anime-card anime-card--grid  "
+  data-testid="anime-card-anime-1"
+  role="article"
+>
+  <div
+    class="anime-card__cover-wrapper"
+  >
+    <img
+      alt="Couverture de Demon Slayer"
+      class="anime-card__cover"
+      loading="lazy"
+      src="https://example.com/cover.jpg"
+    />
+    <div
+      aria-label="Statut: En cours"
+      class="anime-card__status-badge"
+      style="background-color: var(--night-bg-info);"
+    >
+      En cours
+    </div>
+  </div>
+  <h3
+    class="anime-card__title"
+  >
+    Demon Slayer
+  </h3>
+  <div
+    class="anime-card__badges"
+  >
+    <span
+      class="anime-card__badge anime-card__badge--season"
+    >
+      S1
+    </span>
+    <span
+      class="anime-card__badge anime-card__badge--language"
+    >
+      VOSTFR
+    </span>
+  </div>
+  <div
+    class="anime-card__actions"
+  >
+    <button
+      aria-label="Voir détails de Demon Slayer"
+      class="anime-card__action-btn anime-card__action-btn--details"
+    >
+      Détails
+    </button>
+    <button
+      aria-label="Télécharger Demon Slayer"
+      class="anime-card__action-btn anime-card__action-btn--download"
+    >
+      Télécharger
+    </button>
+  </div>
+</article>
+`;

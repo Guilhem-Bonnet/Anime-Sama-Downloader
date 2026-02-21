@@ -26,20 +26,18 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch suggestions on query change
+  // Fetch suggestions on query change (receives debounced query from parent)
   useEffect(() => {
     if (!query.trim()) {
-      // Fetch trending if empty query
-      fetchSuggestions('');
+      setSuggestions([]);
+      setSelectedIndex(-1);
       return;
     }
 
-    // Debounce suggestion fetching
-    const timer = setTimeout(() => {
-      fetchSuggestions(query);
-    }, 300);
+    const controller = new AbortController();
+    fetchSuggestions(query, controller.signal);
 
-    return () => clearTimeout(timer);
+    return () => controller.abort();
   }, [query]);
 
   // Close dropdown when clicking outside
@@ -95,7 +93,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
     };
   }, [isOpen, suggestions, selectedIndex, onOpenChange]);
 
-  const fetchSuggestions = async (q: string) => {
+  const fetchSuggestions = async (q: string, signal?: AbortSignal) => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -104,8 +102,7 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       }
       params.append('limit', '8');
 
-      // Fallback to search endpoint (works with mock server)
-      const response = await fetch(`/api/search?${params.toString()}`);
+      const response = await fetch(`/api/v1/search?${params.toString()}`, { signal });
       if (!response.ok) {
         setSuggestions([]);
         setSelectedIndex(-1);
@@ -113,19 +110,20 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       }
 
       const data = await response.json();
-      const results = data.results || [];
+      const results = Array.isArray(data) ? data : data.results || [];
       const mapped: Suggestion[] = results.map((item: any) => ({
-        query: item.title || item.anime_id || 'Unknown',
+        query: item.title || item.id || 'Unknown',
         category: q ? 'popular' : 'trending',
         score: 1,
         metadata: {
-          episodes: item.episodes,
+          episodes: item.episode_count ?? item.episodes,
         },
       }));
 
       setSuggestions(mapped);
       setSelectedIndex(-1);
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Failed to fetch suggestions:', err);
       setSuggestions([]);
     } finally {

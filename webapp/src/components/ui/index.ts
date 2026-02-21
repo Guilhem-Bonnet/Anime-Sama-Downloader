@@ -1,4 +1,4 @@
-// 🌸 Sakura Night UI Components
+// 🌸 Nocturne Core UI Components
 // Export tous les composants du design system
 
 export { Button } from './Button';
@@ -8,4 +8,5 @@ export { Badge } from './Badge';
 export { Modal } from './Modal';
 export { ProgressBar } from './ProgressBar';
 export { Skeleton, SkeletonCard, SkeletonList } from './Skeleton';
-export { Toast, ToastProvider, useToast } from './Toast';
+export type { Toast } from './Toast';
+export { ToastProvider, useToast } from './Toast';

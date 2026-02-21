@@ -14,7 +14,10 @@ async function parseError(r: Response): Promise<string> {
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(`${API}${path}`, init);
   if (!r.ok) throw new Error(await parseError(r));
-  return (await r.json()) as T;
+  // Handle empty responses (204 No Content, etc.)
+  const text = await r.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export type Settings = {

@@ -17,7 +17,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {hint && !error && <p className="input-hint">{hint}</p>}
-        {error && <p className="input-hint" style={{ color: 'var(--sakura-error-text)' }}>{error}</p>}
+        {error && <p className="input-hint" style={{ color: 'var(--night-error-text)' }}>{error}</p>}
       </div>
     );
   }
@@ -44,7 +44,7 @@ export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
           {...props}
         />
         {hint && !error && <p className="input-hint">{hint}</p>}
-        {error && <p className="input-hint" style={{ color: 'var(--sakura-error-text)' }}>{error}</p>}
+        {error && <p className="input-hint" style={{ color: 'var(--night-error-text)' }}>{error}</p>}
       </div>
     );
   }
@@ -76,7 +76,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           ))}
         </select>
         {hint && !error && <p className="input-hint">{hint}</p>}
-        {error && <p className="input-hint" style={{ color: 'var(--sakura-error-text)' }}>{error}</p>}
+        {error && <p className="input-hint" style={{ color: 'var(--night-error-text)' }}>{error}</p>}
       </div>
     );
   }

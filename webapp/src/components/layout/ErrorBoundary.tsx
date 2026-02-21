@@ -29,7 +29,7 @@ export class ErrorBoundary extends React.Component<
             alignItems: 'center',
             justifyContent: 'center',
             padding: '24px',
-            background: 'var(--sakura-bg-base)',
+            background: 'var(--night-bg-base)',
           }}
         >
           <Card style={{ maxWidth: '520px', width: '100%' }}>
@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component<
               <CardTitle level="h2">Something went wrong</CardTitle>
             </CardHeader>
             <CardBody>
-              <p style={{ color: 'var(--sakura-error-text)' }}>{this.state.errorMessage}</p>
+              <p style={{ color: 'var(--night-error-text)' }}>{this.state.errorMessage}</p>
             </CardBody>
             <CardFooter>
               <Button variant="danger" onClick={() => window.location.reload()}>

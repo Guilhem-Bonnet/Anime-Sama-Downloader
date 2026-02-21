@@ -8,7 +8,7 @@ export function Header() {
         position: 'sticky',
         top: 0,
         zIndex: 40,
-        borderBottom: '1px solid var(--sakura-border-default)',
+        borderBottom: '1px solid var(--night-border-default)',
         background: 'linear-gradient(180deg, rgba(10,14,26,0.96), rgba(26,31,46,0.92))',
         backdropFilter: 'blur(12px)',
       }}
@@ -36,9 +36,9 @@ export function Header() {
           </h1>
           <div className="easter-ink">墨の道</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-            <span className="sakura-stamp">Sakura Night</span>
-            <span className="sakura-divider" style={{ width: '80px' }}></span>
-            <span style={{ color: 'var(--sakura-text-secondary)', fontSize: '12px' }}>MVP v1.0</span>
+            <span className="night-stamp">Nocturne Core</span>
+            <span className="night-divider" style={{ width: '80px' }}></span>
+            <span style={{ color: 'var(--night-text-secondary)', fontSize: '12px' }}>MVP v1.0</span>
           </div>
         </div>
         <ModeToggle />

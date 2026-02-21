@@ -74,9 +74,9 @@ export function Modal({
         ref={modalRef}
         className="modal-content frame-ornate"
         style={{
-          background: 'var(--sakura-bg-surface)',
+          background: 'var(--night-bg-surface)',
           borderRadius: 'var(--radius-lg)',
-          border: '1px solid var(--sakura-border-default)',
+          border: '1px solid var(--night-border-default)',
           maxWidth: sizeMap[size],
           width: '100%',
           maxHeight: 'calc(100vh - var(--space-8))',
@@ -92,7 +92,7 @@ export function Modal({
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: 'var(--space-5) var(--space-6)',
-              borderBottom: '1px solid var(--sakura-border-default)',
+              borderBottom: '1px solid var(--night-border-default)',
             }}
           >
             {title && (
@@ -100,7 +100,7 @@ export function Modal({
                 style={{
                   fontSize: 'var(--text-h2)',
                   fontWeight: 600,
-                  color: 'var(--sakura-text-primary)',
+                  color: 'var(--night-text-primary)',
                 }}
               >
                 {title}
@@ -112,7 +112,7 @@ export function Modal({
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'var(--sakura-text-secondary)',
+                  color: 'var(--night-text-secondary)',
                   cursor: 'pointer',
                   fontSize: '24px',
                   padding: 'var(--space-2)',
@@ -120,10 +120,10 @@ export function Modal({
                   transition: 'color var(--transition-fast)',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--sakura-text-primary)';
+                  e.currentTarget.style.color = 'var(--night-text-primary)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--sakura-text-secondary)';
+                  e.currentTarget.style.color = 'var(--night-text-secondary)';
                 }}
                 aria-label="Close modal"
               >

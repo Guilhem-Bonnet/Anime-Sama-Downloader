@@ -1,7 +1,7 @@
 import React from 'react';
 import { DownloadMonitor } from '../components/DownloadMonitor';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
-import { EmptyDownloadsIllustration } from '../components/illustrations/SakuraIllustrations';
+import { EmptyDownloadsIllustration } from '../components/illustrations/NocturneIllustrations';
 
 export const DownloadsPage = React.memo(function DownloadsPage() {
   return (

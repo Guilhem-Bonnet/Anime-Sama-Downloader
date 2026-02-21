@@ -1,5 +1,6 @@
 /* ========================================
-   🌸 SAKURA NIGHT — Animations
+  🎭 KABUKI ADAPTATIF — Animations
+  Direction: immersion visuelle, clarté textuelle
    ======================================== */
 
 /* -------- FADE IN -------- */
@@ -16,7 +17,7 @@
 }
 
 .fade-in {
-  animation: fadeIn var(--transition-normal) ease-out;
+  animation: fadeIn var(--transition-base) ease-out;
 }
 
 /* -------- SLIDE IN -------- */
@@ -33,7 +34,7 @@
 }
 
 .slide-in-left {
-  animation: slideInLeft var(--transition-normal) ease-out;
+  animation: slideInLeft var(--transition-base) ease-out;
 }
 
 @keyframes slideInRight {
@@ -48,7 +49,7 @@
 }
 
 .slide-in-right {
-  animation: slideInRight var(--transition-normal) ease-out;
+  animation: slideInRight var(--transition-base) ease-out;
 }
 
 /* -------- PULSE -------- */
@@ -125,10 +126,10 @@
 @keyframes glow {
   0%,
   100% {
-    box-shadow: 0 0 12px rgba(217, 70, 239, 0.4);
+    box-shadow: 0 0 12px rgba(230, 57, 70, 0.4);
   }
   50% {
-    box-shadow: 0 0 24px rgba(217, 70, 239, 0.6);
+    box-shadow: 0 0 24px rgba(230, 57, 70, 0.6);
   }
 }
 
@@ -150,34 +151,7 @@
 }
 
 .scale-in {
-  animation: scaleIn var(--transition-normal) ease-out;
-}
-
-/* -------- SAKURA PETALS (subtle) -------- */
-
-@keyframes sakuraDrift {
-  0% {
-    transform: translateY(-10px) translateX(0) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(100vh) translateX(100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-.sakura-petal {
-  animation: sakuraDrift 5s linear infinite;
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  pointer-events: none;
+  animation: scaleIn var(--transition-base) ease-out;
 }
 
 /* -------- SKELETON PULSE -------- */

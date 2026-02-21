@@ -28,9 +28,9 @@ const AnimeCard: React.FC<AnimeCardProps> = ({
   selected = false,
 }) => {
   const statusColors: Record<string, string> = {
-    ongoing: 'var(--kabuki-bg-info)',
-    completed: 'var(--kabuki-bg-success)',
-    upcoming: 'var(--kabuki-bg-warning)',
+    ongoing: 'var(--night-bg-info)',
+    completed: 'var(--night-bg-success)',
+    upcoming: 'var(--night-bg-warning)',
   };
 
   const statusLabels: Record<string, string> = {

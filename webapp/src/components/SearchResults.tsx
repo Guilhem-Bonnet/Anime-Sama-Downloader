@@ -1,42 +1,18 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useSearchStore } from '../stores/search.store';
-import { useJobsStore } from '../stores/jobs.store';
-import { apiClient } from '../utils/api';
 import { Download } from 'lucide-react';
-import { EmptySearchIllustration } from './illustrations/SakuraIllustrations';
+import { EmptySearchIllustration } from './illustrations/NocturneIllustrations';
+import { useNavigate } from 'react-router-dom';
 
 export const SearchResultsGrid: React.FC = () => {
   const { results, isSearching } = useSearchStore();
-  const { addJob } = useJobsStore();
+  const navigate = useNavigate();
   const [showStamp, setShowStamp] = React.useState(false);
 
-  // TEMPORARY: Show mock data if no results
-  const mockResults = [
-    {anime_id: 'mushishi', title: 'Mushishi', episodes: 26, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
-    {anime_id: 'mononoke', title: 'Mononoke', episodes: 12, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
-    {anime_id: 'natsume-yuujinchou', title: 'Natsume Yuujinchou', episodes: 13, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
-    {anime_id: 'samurai-champloo', title: 'Samurai Champloo', episodes: 26, source: 'AnimeSama', image_url: '/assets/cover-placeholder.svg'},
-  ];
-  const displayResults = results.length > 0 ? results : mockResults;
+  const displayResults = results;
 
-  const handleDownload = async (animeId: string, title: string) => {
-    try {
-      setShowStamp(true);
-      setTimeout(() => setShowStamp(false), 1400);
-      const download = await apiClient.createDownload(animeId, 1);
-      if (download && download.downloadId) {
-        addJob({
-          id: download.downloadId,
-          status: 'pending',
-          progress: 0,
-          downloadId: download.downloadId,
-          animeId,
-          episodeNumber: 1,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to create download:', error);
-    }
+  const handleViewDetail = (animeId: string) => {
+    navigate(`/anime/${animeId}`);
   };
 
   if (isSearching) {
@@ -73,23 +49,23 @@ export const SearchResultsGrid: React.FC = () => {
         <div className={`ink-stamp ${showStamp ? 'is-visible' : ''}`} aria-hidden="true" />
         {displayResults.map((result, index) => (
           <div
-            key={result.anime_id}
+            key={result.id}
             className="group relative frame-ornate overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] animate-fadeInUp"
             style={{ 
-              animationDelay: `${index * 100}ms`,
+              animationDelay: `${Math.min(index * 100, 500)}ms`,
               background: 'linear-gradient(135deg, rgba(143,106,61,0.1), rgba(125,114,103,0.05))',
             }}
           >
             {/* Image avec overlay gradient */}
-            {result.image_url && (
+            {result.thumbnail_url && (
               <div className="relative h-64 overflow-hidden">
                 <img
-                  src={result.image_url}
+                  src={result.thumbnail_url}
                   alt={result.title}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                {/* Badge épisodes avec encre brune */}
+                {/* Badge épisodes */}
                 <div style={{
                   position: 'absolute',
                   top: '12px',
@@ -100,10 +76,10 @@ export const SearchResultsGrid: React.FC = () => {
                   borderRadius: '999px',
                   fontSize: '12px',
                   fontWeight: 600,
-                  color: 'var(--sakura-text-light)',
+                  color: 'var(--night-text-light)',
                   border: '1px solid rgba(255,255,255,0.15)',
                 }}>
-                  {result.episodes} épisodes
+                  {result.episode_count || '?'} épisodes
                 </div>
               </div>
             )}
@@ -113,7 +89,7 @@ export const SearchResultsGrid: React.FC = () => {
               <h3 style={{
                 fontWeight: 700,
                 fontSize: '16px',
-                color: 'var(--sakura-text-primary)',
+                color: 'var(--night-text-primary)',
                 marginBottom: '12px',
                 lineHeight: '1.3',
                 display: '-webkit-box',
@@ -125,7 +101,7 @@ export const SearchResultsGrid: React.FC = () => {
               </h3>
               <p style={{
                 fontSize: '13px',
-                color: 'var(--sakura-text-secondary)',
+                color: 'var(--night-text-secondary)',
                 marginBottom: '16px',
                 display: 'flex',
                 alignItems: 'center',
@@ -136,20 +112,20 @@ export const SearchResultsGrid: React.FC = () => {
                   width: '6px',
                   height: '6px',
                   borderRadius: '50%',
-                  background: 'var(--sakura-accent-brown-500)',
+                  background: 'var(--night-accent-brown-500)',
                 }}></span>
-                {result.source}
+                {result.year || ''} · {result.status || ''}
               </p>
               
-              {/* Bouton Download avec encre brune */}
+              {/* Bouton Voir détails */}
               <button
-                onClick={() => handleDownload(result.anime_id, result.title)}
+                onClick={() => handleViewDetail(result.id)}
                 style={{
                   width: '100%',
                   padding: '10px 12px',
                   borderRadius: '12px',
-                  border: '1.5px solid var(--sakura-accent-brown-500)',
-                  background: 'var(--sakura-accent-brown-500)',
+                  border: '1.5px solid var(--night-accent-brown-500)',
+                  background: 'var(--night-accent-brown-500)',
                   color: 'white',
                   fontWeight: 600,
                   fontSize: '13px',
@@ -161,16 +137,16 @@ export const SearchResultsGrid: React.FC = () => {
                   transition: 'all 200ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--sakura-accent-brown-600)';
+                  e.currentTarget.style.background = 'var(--night-accent-brown-600)';
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(143, 106, 61, 0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'var(--sakura-accent-brown-500)';
+                  e.currentTarget.style.background = 'var(--night-accent-brown-500)';
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 <Download className="w-4 h-4" />
-                <span>Télécharger</span>
+                <span>Voir détails</span>
               </button>
             </div>
           </div>

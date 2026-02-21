@@ -1,10 +1,15 @@
 import { useEffect, useRef, useCallback } from 'react';
 
-export type EventListener = (data: any) => void;
+export type SSEMessageHandler = (data: any) => void;
 
-export function useSSE(url: string, onMessage?: EventListener) {
+const MAX_RETRY_DELAY = 30_000;
+const INITIAL_RETRY_DELAY = 1_000;
+
+export function useSSE(url: string, onMessage?: SSEMessageHandler, eventName = 'message') {
   const eventSourceRef = useRef<EventSource | null>(null);
   const callbackRef = useRef(onMessage);
+  const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     callbackRef.current = onMessage;
@@ -15,27 +20,60 @@ export function useSSE(url: string, onMessage?: EventListener) {
       return;
     }
 
-    const eventSource = new EventSource(url);
+    let cancelled = false;
 
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      callbackRef.current?.(data);
-    };
+    function connect() {
+      if (cancelled) return;
 
-    eventSource.onerror = (error) => {
-      console.error('SSE connection error:', error);
-      eventSource.close();
-    };
+      const eventSource = new EventSource(url);
 
-    eventSourceRef.current = eventSource;
+      const handleMessage = (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          callbackRef.current?.(data);
+        } catch {
+          // Ignore non-JSON messages (heartbeats, etc.)
+        }
+      };
+
+      eventSource.onopen = () => {
+        // Reset retry delay on successful connection
+        retryDelayRef.current = INITIAL_RETRY_DELAY;
+      };
+
+      if (eventName === 'message') {
+        eventSource.onmessage = handleMessage;
+      } else {
+        eventSource.addEventListener(eventName, handleMessage as EventListener);
+      }
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        if (!cancelled) {
+          // Exponential backoff reconnection
+          const delay = retryDelayRef.current;
+          retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_DELAY);
+          retryTimerRef.current = setTimeout(connect, delay);
+        }
+      };
+
+      eventSourceRef.current = eventSource;
+    }
+
+    connect();
 
     return () => {
-      eventSource.close();
+      cancelled = true;
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
     };
-  }, [url]);
+  }, [url, eventName]);
 
   return {
     close: useCallback(() => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       eventSourceRef.current?.close();
     }, []),
   };

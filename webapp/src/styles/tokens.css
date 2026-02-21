@@ -1,103 +1,119 @@
 /* ========================================
-   🌸 SAKURA NIGHT — Design System Tokens
+   NOCTURNE CORE v3 — Design System Tokens
+   Direction: elegance, clarity, accessible
    ======================================== */
 
 :root {
   /* -------- COULEURS DE BASE -------- */
 
-  /* Backgrounds (parchemin sombre) */
-  --sakura-bg-base: #141116;
-  --sakura-bg-surface: #1b1820;
-  --sakura-bg-elevated: #22202a;
+  /* Backgrounds */
+  --night-bg-base: #0A0E1A;
+  --night-bg-surface: #1A1F2E;
+  --night-bg-elevated: #252A3B;
 
-  /* Texte */
-  --sakura-text-primary: #efe6d6;
-  --sakura-text-secondary: #c9bca6;
-  --sakura-text-muted: #988c7a;
+  /* Text */
+  --night-text-primary: #F5F7FF;
+  --night-text-secondary: #A8B3D1;
+  --night-text-muted: #6B7694;
 
-  /* Bordures & Dividers */
-  --sakura-border-subtle: rgba(255, 255, 255, 0.08);
-  --sakura-border-default: rgba(255, 255, 255, 0.12);
-  --sakura-border-strong: rgba(255, 255, 255, 0.2);
+  /* Borders */
+  --night-border-subtle: rgba(255, 255, 255, 0.08);
+  --night-border-default: rgba(255, 255, 255, 0.12);
+  --night-border-strong: rgba(255, 255, 255, 0.20);
 
   /* -------- COULEURS D'ACCENT -------- */
 
-  /* Accent primaire — encre brune */
-  --sakura-accent-magenta-50: #f2e8d5;
-  --sakura-accent-magenta-100: #e1d2b6;
-  --sakura-accent-magenta-400: #b7905d;
-  --sakura-accent-magenta-500: #8f6a3d;
-  --sakura-accent-magenta-600: #6e4f2e;
-  --sakura-accent-magenta-900: #3a2a1b;
+  /* Cyan primary (CTA principal, PRIMARY) */
+  --night-primary: #06B6D4;
+  --night-primary-400: #22D3EE;
+  --night-primary-500: #06B6D4;
+  --night-primary-600: #0891B2;
 
-  /* Accent secondaire — encre froide */
-  --sakura-accent-cyan-50: #efeae2;
-  --sakura-accent-cyan-400: #a59b8e;
-  --sakura-accent-cyan-500: #7d7267;
-  --sakura-accent-cyan-600: #5a5249;
+  /* Amber secondary (secondary links) */
+  --night-secondary: #F59E0B;
+  --night-secondary-400: #FBBF24;
+  --night-secondary-500: #F59E0B;
+  --night-secondary-600: #D97706;
 
-  /* Highlights neutres */
-  --sakura-pink-400: #b8a99a;
-  --sakura-pink-500: #8b7f73;
+  /* Accent blue (soft accents) */
+  --night-accent-pink: #3B82F6;
+  --night-accent-pink-400: #60A5FA;
+  --night-accent-pink-500: #3B82F6;
 
-  /* Or doux (status, badges) */
-  --sakura-gold-400: #fbbf24;
-  --sakura-gold-500: #f59e0b;
+  /* Amber warm (highlights) */
+  --night-accent-brown-400: #FBBF24;
+  --night-accent-brown-500: #F59E0B;
+  --night-accent-brown-600: #D97706;
 
-  /* -------- COULEURS SÉMANTIQUES -------- */
+  /* Legacy accent aliases */
+  --night-accent-cyan: var(--night-primary);
+  --night-accent-cyan-400: var(--night-primary-400);
+  --night-accent-cyan-500: var(--night-primary-500);
+  --night-accent-cyan-600: var(--night-primary-600);
+
+  --night-accent-gold: var(--night-secondary);
+  --night-accent-gold-400: var(--night-secondary-400);
+  --night-accent-gold-500: var(--night-secondary-500);
+  --night-accent-gold-600: var(--night-secondary-600);
+
+  --night-accent-red: var(--night-secondary);
+  --night-accent-red-500: var(--night-secondary-500);
+  --night-accent-red-600: var(--night-secondary-600);
+
+  --night-accent-magenta-500: var(--night-primary-500);
+  --night-accent-magenta-600: var(--night-primary-600);
+
+  /* -------- SEMANTIC COLORS -------- */
 
   /* Success */
-  --sakura-success-bg: rgba(34, 197, 94, 0.1);
-  --sakura-success-border: rgba(34, 197, 94, 0.3);
-  --sakura-success-text: #4ade80;
+  --night-success-bg: rgba(34, 197, 94, 0.10);
+  --night-success-border: rgba(34, 197, 94, 0.30);
+  --night-success-text: #4ADE80;
 
   /* Warning */
-  --sakura-warning-bg: rgba(251, 191, 36, 0.1);
-  --sakura-warning-border: rgba(251, 191, 36, 0.3);
-  --sakura-warning-text: #fbbf24;
+  --night-warning-bg: rgba(251, 191, 36, 0.10);
+  --night-warning-border: rgba(251, 191, 36, 0.30);
+  --night-warning-text: #FBBF24;
 
   /* Error */
-  --sakura-error-bg: rgba(239, 68, 68, 0.1);
-  --sakura-error-border: rgba(239, 68, 68, 0.3);
-  --sakura-error-text: #f87171;
+  --night-error-bg: rgba(239, 68, 68, 0.10);
+  --night-error-border: rgba(239, 68, 68, 0.30);
+  --night-error-text: #F87171;
 
   /* Info */
-  --sakura-info-bg: rgba(6, 182, 212, 0.1);
-  --sakura-info-border: rgba(6, 182, 212, 0.3);
-  --sakura-info-text: #22d3ee;
+  --night-info-bg: rgba(6, 182, 212, 0.10);
+  --night-info-border: rgba(6, 182, 212, 0.30);
+  --night-info-text: #22D3EE;
 
-  /* -------- TYPOGRAPHIE -------- */
+  /* -------- TYPOGRAPHY -------- */
 
-  /* Polices (parchemin) */
-  --font-sans: 'Source Serif 4', 'Noto Serif', 'Georgia', serif;
-  --font-display: 'Cinzel', 'Cormorant Garamond', 'Noto Serif JP', serif;
-  --font-kanji: 'Yuji Syuku', 'Noto Serif JP', serif;
-  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo,
-    Monaco, Consolas, monospace;
+  /* Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Noto Serif JP', serif;
+  --font-mono: ui-monospace, 'SF Mono', monospace;
 
-  /* Échelle typographique */
+  /* Sizes */
   --text-display-lg: 32px;
-  --text-display-lg-lh: 1.2;
-  --text-display-lg-weight: 700;
-
   --text-display: 28px;
-  --text-display-lh: 1.25;
-  --text-display-weight: 700;
-
   --text-h1: 24px;
-  --text-h1-lh: 1.3;
-  --text-h1-weight: 600;
-
   --text-h2: 20px;
-  --text-h2-lh: 1.35;
-  --text-h2-weight: 600;
-
   --text-h3: 16px;
-  --text-h3-lh: 1.4;
-  --text-h3-weight: 600;
-
   --text-body-lg: 16px;
-  --text-body-lg-lh: 1.5;
+  --text-body: 14px;
+  --text-body-sm: 13px;
+  --text-label: 13px;
+  --text-caption: 12px;
+
+  /* Weights */
+  --font-regular: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Line heights */
+  --leading-tight: 1.2;
+  --leading-snug: 1.35;
+  --leading-normal: 1.5;
   --text-body-lg-weight: 400;
 
   --text-body: 14px;
@@ -108,19 +124,7 @@
   --text-body-sm-lh: 1.5;
   --text-body-sm-weight: 400;
 
-  --text-label: 13px;
-  --text-label-lh: 1.4;
-  --text-label-weight: 500;
-
-  --text-caption: 12px;
-  --text-caption-lh: 1.4;
-  --text-caption-weight: 400;
-
-  --text-overline: 11px;
-  --text-overline-lh: 1.3;
-  --text-overline-weight: 600;
-
-  /* -------- SPACING (multiple de 4) -------- */
+  /* -------- SPACING -------- */
 
   --space-1: 4px;
   --space-2: 8px;
@@ -142,16 +146,16 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* -------- OMBRES -------- */
+  /* -------- SHADOWS -------- */
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.20);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.30);
+  --shadow-xl: 0 16px 64px rgba(0, 0, 0, 0.40);
 
-  /* Glow effects (désactivés) */
-  --glow-magenta: 0 0 0 rgba(0, 0, 0, 0);
-  --glow-cyan: 0 0 0 rgba(0, 0, 0, 0);
+  /* Glow effects */
+  --glow-primary: 0 0 24px rgba(6, 182, 212, 0.40);
+  --glow-secondary: 0 0 24px rgba(245, 158, 11, 0.40);
 
   /* -------- Z-INDEX -------- */
 
@@ -164,20 +168,15 @@
 
   /* -------- TRANSITIONS -------- */
 
-  --transition-fast: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
-}
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slowest: 500ms cubic-bezier(0.4, 0, 0.2, 1);
 
-:root[data-theme='light'] {
-  --sakura-bg-base: #f4f1ea;
-  --sakura-bg-surface: #fbf9f4;
-  --sakura-bg-elevated: #ffffff;
+  /* -------- BREAKPOINTS -------- */
 
-  --sakura-text-primary: #1f2933;
-  --sakura-text-secondary: #4b5563;
-  --sakura-text-muted: #6b7280;
-
-  --sakura-border-subtle: rgba(31, 41, 51, 0.08);
-  --sakura-border-default: rgba(31, 41, 51, 0.12);
-  --sakura-border-strong: rgba(31, 41, 51, 0.2);
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
 }

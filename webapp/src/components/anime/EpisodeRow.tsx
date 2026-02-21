@@ -20,9 +20,9 @@ const EpisodeRow: React.FC<EpisodeRowProps> = ({
   onChange,
 }) => {
   const statusColors: Record<string, string> = {
-    available: 'var(--kabuki-text-secondary)',
-    downloading: 'var(--kabuki-bg-warning)',
-    downloaded: 'var(--kabuki-bg-success)',
+    available: 'var(--night-text-secondary)',
+    downloading: 'var(--night-bg-warning)',
+    downloaded: 'var(--night-bg-success)',
   };
 
   const statusLabels: Record<string, string> = {

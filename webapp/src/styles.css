@@ -1,23 +1,23 @@
 /*
-  Thème: Aurora Noir (voir webapp/DIRECTION_ARTISTIQUE.md)
+  Theme: Nocturne Core (voir webapp/DIRECTION_ARTISTIQUE.md)
 */
 :root{
   color-scheme: dark;
 
-  --bg0: #070b18;
-  --bg1: #0b1020;
+  --bg0: var(--night-bg-base);
+  --bg1: var(--night-bg-surface);
 
-  --panel: rgba(16, 24, 54, .66);
-  --panel2: rgba(12, 18, 40, .55);
+  --panel: rgba(10, 14, 26, .66);
+  --panel2: rgba(26, 31, 46, .55);
 
-  --text: rgba(245, 247, 255, .92);
-  --muted: rgba(170, 186, 214, .78);
+  --text: var(--night-text-primary);
+  --muted: var(--night-text-secondary);
 
-  --border: rgba(255,255,255,.10);
-  --borderStrong: rgba(255,255,255,.18);
+  --border: var(--night-border-subtle);
+  --borderStrong: var(--night-border-strong);
 
-  --accent: #7c5cff;
-  --accent2: #36d1dc;
+  --accent: var(--night-primary);
+  --accent2: var(--night-secondary);
 
   --ok: #2ecc71;
   --warn: #f1c40f;
@@ -26,7 +26,7 @@
   --shadow1: 0 10px 30px rgba(0,0,0,.35);
   --shadow2: 0 18px 60px rgba(0,0,0,.42);
 
-  --ring: 0 0 0 4px rgba(124,92,255,.20);
+  --ring: 0 0 0 4px rgba(6, 182, 212, .20);
 }
 
 *{box-sizing:border-box}
@@ -40,9 +40,9 @@ body{
   position:relative;
   background-color: var(--bg1);
   background-image:
-    radial-gradient(1000px 700px at 14% 8%, rgba(124,92,255,.35), transparent 58%),
-    radial-gradient(900px 650px at 86% 12%, rgba(54,209,220,.14), transparent 60%),
-    radial-gradient(800px 700px at 55% 110%, rgba(124,92,255,.12), transparent 60%);
+    radial-gradient(1000px 700px at 14% 8%, rgba(6, 182, 212, .20), transparent 58%),
+    radial-gradient(900px 650px at 86% 12%, rgba(245, 158, 11, .10), transparent 60%),
+    radial-gradient(800px 700px at 55% 110%, rgba(6, 182, 212, .08), transparent 60%);
   background-repeat:no-repeat;
   color: var(--text);
 }
@@ -92,11 +92,13 @@ body::before{
 }
 .toast.ok{border-color: rgba(46,204,113,.55); background: rgba(46,204,113,.10)}
 .toast.err{border-color: rgba(231,76,60,.55); background: rgba(231,76,60,.10)}
-.toast.info{border-color: rgba(124,92,255,.55); background: rgba(124,92,255,.12)}
+.toast.info{border-color: rgba(6,182,212,.55); background: rgba(6,182,212,.12)}
 
-details > summary{list-style:none}
+details > summary{list-style:none; cursor:pointer; font-weight:600; color:var(--night-text-primary); padding:var(--space-2); transition:color 0.2s ease}
+details > summary:hover{color:var(--night-primary)}
 details > summary::-webkit-details-marker{display:none}
-details{border:1px dashed rgba(255,255,255,.14); padding:10px; border-radius:14px; background: rgba(0,0,0,.14)}
+details{border:1px solid var(--night-border-default); padding:var(--space-4); border-radius:var(--radius-md); background:var(--night-bg-surface); transition:all 0.2s ease}
+details[open]{border-color:var(--night-primary)}
 
 .grid{display:grid;grid-template-columns: 1.2fr .8fr; gap:16px}
 

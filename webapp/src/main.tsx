@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { AppRouter } from './AppRouter';
 import { Demo } from './Demo';
-// Import Tailwind + Sakura Night design system
+// Import Tailwind + Nocturne Core design system
 import './index.css';
 import './styles/tokens.css';
 import './styles/globals.css';

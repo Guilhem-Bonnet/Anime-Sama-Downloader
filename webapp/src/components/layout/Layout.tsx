@@ -9,11 +9,11 @@ export function Layout() {
   return (
     <ErrorBoundary>
       <div
-        className="sakura-ink-bg"
+        className="night-ink-bg"
         style={{
           minHeight: '100vh',
-          background: 'var(--sakura-bg-base)',
-          color: 'var(--sakura-text-primary)',
+          background: 'var(--night-bg-base)',
+          color: 'var(--night-text-primary)',
         }}
       >
         <div className="ink-silhouette" aria-hidden="true" />
@@ -26,7 +26,7 @@ export function Layout() {
                 <div className="spin" style={{ fontSize: '20px', marginRight: '12px' }}>
                   ⌛
                 </div>
-                <p style={{ color: 'var(--sakura-text-secondary)' }}>Loading...</p>
+                <p style={{ color: 'var(--night-text-secondary)' }}>Loading...</p>
               </div>
             }
           >

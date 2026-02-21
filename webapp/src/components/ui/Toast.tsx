@@ -79,8 +79,8 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
     <div
       className="frame-ornate"
       style={{
-        background: 'var(--sakura-bg-surface)',
-        border: '1px solid var(--sakura-border-default)',
+        background: 'var(--night-bg-surface)',
+        border: '1px solid var(--night-border-default)',
         borderRadius: 'var(--radius-lg)',
         padding: 'var(--space-4)',
         boxShadow: 'var(--shadow-lg)',
@@ -91,12 +91,12 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
             <Badge variant={toast.variant}>{toast.variant.toUpperCase()}</Badge>
-            <h4 style={{ fontSize: 'var(--text-body)', fontWeight: 600, color: 'var(--sakura-text-primary)' }}>
+            <h4 style={{ fontSize: 'var(--text-body)', fontWeight: 600, color: 'var(--night-text-primary)' }}>
               {toast.title}
             </h4>
           </div>
           {toast.message && (
-            <p style={{ fontSize: 'var(--text-body-sm)', color: 'var(--sakura-text-secondary)', marginTop: 'var(--space-1)' }}>
+            <p style={{ fontSize: 'var(--text-body-sm)', color: 'var(--night-text-secondary)', marginTop: 'var(--space-1)' }}>
               {toast.message}
             </p>
           )}
@@ -106,7 +106,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
           style={{
             background: 'transparent',
             border: 'none',
-            color: 'var(--sakura-text-secondary)',
+            color: 'var(--night-text-secondary)',
             cursor: 'pointer',
             fontSize: '20px',
             padding: 0,

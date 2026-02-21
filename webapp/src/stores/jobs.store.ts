@@ -1,83 +1,70 @@
 import { create } from 'zustand';
+import { apiListJobs, apiCancelJob, type Job, type JobState } from '../api';
 
-export interface Job {
-  id: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: number;
-  downloadId: string;
-  animeId: string;
-  episodeNumber: number;
-  errorMessage?: string;
-  startedAt?: string;
-  completedAt?: string;
-}
+// Re-export the canonical types from api.ts
+export type { Job, JobState } from '../api';
 
 export interface JobsState {
   jobs: Job[];
-  activeJobIds: Set<string>;
-  jobProgress: Map<string, number>;
+  isLoading: boolean;
+  error?: string;
 }
 
 export interface JobsActions {
-  addJob: (job: Job) => void;
-  updateJobProgress: (jobId: string, progress: number) => void;
-  updateJobStatus: (jobId: string, status: Job['status'], error?: string) => void;
-  removeJob: (jobId: string) => void;
-  getJob: (jobId: string) => Job | undefined;
-  subscribeToProgress: (callback: (jobId: string, progress: number) => void) => () => void;
+  loadJobs: (limit?: number) => Promise<void>;
+  cancelJob: (id: string) => Promise<void>;
+  updateJobFromSSE: (data: Partial<Job> & { id: string }) => void;
+  setError: (error?: string) => void;
 }
 
-export const useJobsStore = create<JobsState & JobsActions>((set, get) => {
-  const progressSubscribers: Array<(jobId: string, progress: number) => void> = [];
+/** Map backend progress (0.0-1.0) to display percentage (0-100) */
+export function progressPercent(job: Job): number {
+  return Math.round((job.progress ?? 0) * 100);
+}
 
-  return {
-    // State
-    jobs: [],
-    activeJobIds: new Set(),
-    jobProgress: new Map(),
+export const useJobsStore = create<JobsState & JobsActions>((set, get) => ({
+  // State
+  jobs: [],
+  isLoading: false,
 
-    // Actions
-    addJob: (job) => {
+  // Actions
+  loadJobs: async (limit = 200) => {
+    set({ isLoading: true, error: undefined });
+    try {
+      const jobs = await apiListJobs(limit);
+      set({ jobs });
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Échec du chargement des jobs' });
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  cancelJob: async (id) => {
+    try {
+      const updated = await apiCancelJob(id);
       set((state) => ({
-        jobs: [job, ...state.jobs],
-        activeJobIds: new Set([...state.activeJobIds, job.id]),
+        jobs: state.jobs.map((j) => (j.id === id ? updated : j)),
       }));
-    },
+    } catch (error) {
+      set({ error: error instanceof Error ? error.message : 'Échec de l\'annulation' });
+    }
+  },
 
-    updateJobProgress: (jobId, progress) => {
-      set((state) => ({
-        jobProgress: new Map(state.jobProgress).set(jobId, progress),
-      }));
-      progressSubscribers.forEach((cb) => cb(jobId, progress));
-    },
-
-    updateJobStatus: (jobId, status, error) => {
-      set((state) => ({
-        jobs: state.jobs.map((job) =>
-          job.id === jobId ? { ...job, status, errorMessage: error } : job
+  updateJobFromSSE: (data) => {
+    set((state) => {
+      const exists = state.jobs.some((j) => j.id === data.id);
+      if (!exists) {
+        // New job from SSE — insert at top
+        return { jobs: [data as Job, ...state.jobs] };
+      }
+      return {
+        jobs: state.jobs.map((j) =>
+          j.id === data.id ? { ...j, ...data } : j
         ),
-        activeJobIds: status === 'completed' || status === 'failed' 
-          ? new Set([...state.activeJobIds].filter((id) => id !== jobId))
-          : state.activeJobIds,
-      }));
-    },
-
-    removeJob: (jobId) => {
-      set((state) => ({
-        jobs: state.jobs.filter((j) => j.id !== jobId),
-        activeJobIds: new Set([...state.activeJobIds].filter((id) => id !== jobId)),
-      }));
-    },
-
-    getJob: (jobId) => {
-      return get().jobs.find((j) => j.id === jobId);
-    },
-
-    subscribeToProgress: (callback) => {
-      progressSubscribers.push(callback);
-      return () => {
-        progressSubscribers.splice(progressSubscribers.indexOf(callback), 1);
       };
-    },
-  };
-});
+    });
+  },
+
+  setError: (error) => set({ error }),
+}));

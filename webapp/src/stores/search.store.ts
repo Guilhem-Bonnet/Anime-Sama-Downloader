@@ -1,16 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+const API = '/api/v1';
+
+// Shared AbortController — cancels previous in-flight search
+let searchAbortController: AbortController | null = null;
+
 export interface SearchResult {
-  anime_id: string;   // from API
+  id: string;
   title: string;
-  episodes: number;
-  source: string;
-  image_url?: string; // from API
-  description?: string;
-  genres?: string[];
+  thumbnail_url?: string;
   year?: number;
   status?: string;
+  episode_count?: number;
+  genres?: string[];
 }
 
 export interface SearchFilters {
@@ -68,37 +71,54 @@ export const useSearchStore = create<SearchState & SearchActions>()(
         }),
 
       performSearch: async (queryArg?: string, filtersArg?: SearchFilters) => {
-        const { setIsSearching, setResults, setError, query, filters } = get();
+        const { query, filters } = get();
 
         const searchQuery = queryArg !== undefined ? queryArg : query;
         const searchFilters = filtersArg !== undefined ? filtersArg : filters;
 
         if (!searchQuery.trim()) {
-          setResults([]);
+          set({ results: [] });
           return;
         }
 
-        setIsSearching(true);
-        setError(undefined);
+        // Abort previous in-flight request
+        if (searchAbortController) {
+          searchAbortController.abort();
+        }
+        const controller = new AbortController();
+        searchAbortController = controller;
+
+        set({ isSearching: true, error: undefined });
 
         try {
-          const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-          if (!response.ok) throw new Error('Search failed');
+          const params = new URLSearchParams({ q: searchQuery });
+          if (searchFilters.genres.length > 0) params.set('genres', searchFilters.genres.join(','));
+          if (searchFilters.status) params.set('status', searchFilters.status);
+          if (searchFilters.yearMin > 0) params.set('year_min', String(searchFilters.yearMin));
+          if (searchFilters.yearMax > 0) params.set('year_max', String(searchFilters.yearMax));
 
+          const response = await fetch(`${API}/search?${params.toString()}`, {
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error(`Recherche échouée: ${response.statusText}`);
           const data = await response.json();
-          setResults(data.results || []);
-          set({ lastSearchTime: Date.now() });
+          const results: SearchResult[] = Array.isArray(data) ? data : [];
+          set({ results, lastSearchTime: Date.now() });
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Search error');
-          setResults([]);
+          // Don't treat abort as an error
+          if (err instanceof DOMException && err.name === 'AbortError') return;
+          set({ error: err instanceof Error ? err.message : 'Erreur de recherche', results: [] });
         } finally {
-          setIsSearching(false);
+          // Only clear isSearching if this is still the current request
+          if (searchAbortController === controller) {
+            set({ isSearching: false });
+          }
         }
       },
     }),
     {
       name: 'search-filters-storage',
-      partialize: (state) => ({ filters: state.filters }), // Only persist filters
+      partialize: (state) => ({ filters: state.filters }),
     }
   )
 );

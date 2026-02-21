@@ -5,6 +5,7 @@ export interface SkeletonProps {
   height?: string | number;
   variant?: 'text' | 'circular' | 'rectangular';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function Skeleton({
@@ -12,6 +13,7 @@ export function Skeleton({
   height = '20px',
   variant = 'rectangular',
   className = '',
+  style,
 }: SkeletonProps) {
   const variantStyles = {
     text: { borderRadius: 'var(--radius-sm)' },
@@ -25,9 +27,10 @@ export function Skeleton({
       style={{
         width,
         height,
-        background: 'var(--sakura-bg-elevated)',
+        background: 'var(--night-bg-elevated)',
         ...variantStyles[variant],
         animation: 'skeleton-pulse 1.5s ease-in-out infinite',
+        ...style,
       }}
     />
   );
@@ -38,8 +41,8 @@ export function SkeletonCard() {
     <div
       style={{
         padding: 'var(--space-4)',
-        background: 'var(--sakura-bg-surface)',
-        border: '1px solid var(--sakura-border-default)',
+        background: 'var(--night-bg-surface)',
+        border: '1px solid var(--night-border-default)',
         borderRadius: 'var(--radius-lg)',
       }}
     >
@@ -62,8 +65,8 @@ export function SkeletonList({ count = 3 }: { count?: number }) {
           key={i}
           style={{
             padding: 'var(--space-4)',
-            background: 'var(--sakura-bg-surface)',
-            border: '1px solid var(--sakura-border-default)',
+            background: 'var(--night-bg-surface)',
+            border: '1px solid var(--night-border-default)',
             borderRadius: 'var(--radius-md)',
             display: 'flex',
             gap: 'var(--space-3)',

@@ -2,7 +2,7 @@ import React from 'react';
 import { SearchBar } from '../components/SearchBar';
 import { SearchResultsGrid } from '../components/SearchResults';
 import { Card, CardBody, CardHeader, CardTitle } from '../components/ui/Card';
-import { HeroLandscapeIllustration } from '../components/illustrations/SakuraIllustrations';
+import { HeroLandscapeIllustration } from '../components/illustrations/NocturneIllustrations';
 
 export const SearchPage = React.memo(function SearchPage() {
   return (
@@ -15,7 +15,7 @@ export const SearchPage = React.memo(function SearchPage() {
           </div>
         </CardHeader>
         <CardBody>
-          <p style={{ color: 'var(--sakura-text-secondary)', marginBottom: '16px' }}>
+          <p style={{ color: 'var(--night-text-secondary)', marginBottom: '16px' }}>
             Trouvez vos animes préférés et téléchargez-les facilement
           </p>
           <div style={{ marginBottom: '18px', maxHeight: '160px', overflow: 'hidden', opacity: 0.9 }}>

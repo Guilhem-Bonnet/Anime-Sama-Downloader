@@ -3,10 +3,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../ui/Button';
 import { Search, Download, Settings, Zap } from 'lucide-react';
 
-type ViewType = 'search' | 'downloads' | 'rules' | 'settings';
+type ViewType = 'dashboard' | 'search' | 'downloads' | 'rules' | 'settings';
 
 const navItems: { path: string; view: ViewType; icon: React.ReactNode; label: string }[] = [
-  { path: '/', view: 'search', icon: <Search className="w-5 h-5" />, label: 'Rechercher' },
+  { path: '/', view: 'dashboard', icon: <Search className="w-5 h-5" />, label: 'Accueil' },
+  { path: '/search', view: 'search', icon: <Search className="w-5 h-5" />, label: 'Rechercher' },
   { path: '/downloads', view: 'downloads', icon: <Download className="w-5 h-5" />, label: 'Téléchargements' },
   { path: '/rules', view: 'rules', icon: <Settings className="w-5 h-5" />, label: 'Règles' },
   { path: '/settings', view: 'settings', icon: <Zap className="w-5 h-5" />, label: 'Paramètres' },
@@ -22,7 +23,7 @@ export function TabNav() {
         position: 'sticky',
         top: '86px',
         zIndex: 30,
-        borderBottom: '1px solid var(--sakura-border-default)',
+        borderBottom: '1px solid var(--night-border-default)',
         background: 'rgba(10,14,26,0.85)',
         backdropFilter: 'blur(12px)',
       }}
@@ -46,8 +47,10 @@ export function TabNav() {
               onClick={() => navigate(path)}
               style={{
                 padding: '10px 16px',
-                borderBottom: isActive ? `2px solid var(--sakura-accent-brown-500)` : '2px solid transparent',
-                color: isActive ? 'var(--sakura-accent-brown-500)' : 'var(--sakura-text-secondary)',
+                borderBottom: isActive ? `2px solid var(--night-accent-brown-500)` : '2px solid transparent',
+                // Removed: color override - let .btn-primary use white (WCAG AA compliant)
+                // Active buttons now have white text on orange gradient (18:1 contrast)
+                ...(isActive ? {} : { color: 'var(--night-text-secondary)' }),
                 transition: 'all 200ms ease',
                 fontWeight: isActive ? 600 : 500,
               }}

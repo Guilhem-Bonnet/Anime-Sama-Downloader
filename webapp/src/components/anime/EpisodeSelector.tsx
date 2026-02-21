@@ -90,7 +90,7 @@ export function EpisodeSelector({
                 marginBottom: 'var(--space-2)',
                 fontSize: 'var(--text-label)',
                 fontWeight: 600,
-                color: 'var(--sakura-text-secondary)',
+                color: 'var(--night-text-secondary)',
               }}
             >
               Raccourcis de sélection
@@ -119,7 +119,7 @@ export function EpisodeSelector({
                 marginBottom: 'var(--space-2)',
                 fontSize: 'var(--text-label)',
                 fontWeight: 600,
-                color: 'var(--sakura-text-secondary)',
+                color: 'var(--night-text-secondary)',
               }}
             >
               Plage personnalisée
@@ -138,14 +138,14 @@ export function EpisodeSelector({
                 style={{
                   padding: '8px 12px',
                   borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${rangeError ? 'var(--sakura-error-border)' : 'var(--sakura-border-default)'}`,
-                  background: 'var(--sakura-bg-surface)',
-                  color: 'var(--sakura-text-primary)',
+                  border: `1px solid ${rangeError ? 'var(--night-error-border)' : 'var(--night-border-default)'}`,
+                  background: 'var(--night-bg-surface)',
+                  color: 'var(--night-text-primary)',
                   fontSize: 'var(--text-body)',
                   width: '100px',
                 }}
               />
-              <span style={{ color: 'var(--sakura-text-secondary)', lineHeight: '36px' }}>à</span>
+              <span style={{ color: 'var(--night-text-secondary)', lineHeight: '36px' }}>à</span>
               <input
                 type="number"
                 placeholder="Fin"
@@ -159,9 +159,9 @@ export function EpisodeSelector({
                 style={{
                   padding: '8px 12px',
                   borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${rangeError ? 'var(--sakura-error-border)' : 'var(--sakura-border-default)'}`,
-                  background: 'var(--sakura-bg-surface)',
-                  color: 'var(--sakura-text-primary)',
+                  border: `1px solid ${rangeError ? 'var(--night-error-border)' : 'var(--night-border-default)'}`,
+                  background: 'var(--night-bg-surface)',
+                  color: 'var(--night-text-primary)',
                   fontSize: 'var(--text-body)',
                   width: '100px',
                 }}
@@ -175,7 +175,7 @@ export function EpisodeSelector({
                 style={{
                   marginTop: 'var(--space-2)',
                   fontSize: 'var(--text-body-sm)',
-                  color: 'var(--sakura-error-text)',
+                  color: 'var(--night-error-text)',
                 }}
               >
                 {rangeError}
@@ -197,7 +197,7 @@ export function EpisodeSelector({
                 style={{
                   fontSize: 'var(--text-label)',
                   fontWeight: 600,
-                  color: 'var(--sakura-text-secondary)',
+                  color: 'var(--night-text-secondary)',
                 }}
               >
                 Sélection manuelle ({tempSelection.length} sélectionné{tempSelection.length > 1 ? 's' : ''})
@@ -210,10 +210,10 @@ export function EpisodeSelector({
               style={{
                 maxHeight: '320px',
                 overflowY: 'auto',
-                border: '1px solid var(--sakura-border-default)',
+                border: '1px solid var(--night-border-default)',
                 borderRadius: 'var(--radius-md)',
                 padding: 'var(--space-3)',
-                background: 'var(--sakura-bg-elevated)',
+                background: 'var(--night-bg-elevated)',
               }}
             >
               <div
@@ -236,18 +236,18 @@ export function EpisodeSelector({
                         borderRadius: 'var(--radius-sm)',
                         cursor: 'pointer',
                         background: isSelected
-                          ? 'var(--sakura-accent-magenta-900)'
+                          ? 'var(--night-accent-magenta-900)'
                           : 'transparent',
                         border: `1px solid ${
                           isSelected
-                            ? 'var(--sakura-accent-magenta-500)'
-                            : 'var(--sakura-border-subtle)'
+                            ? 'var(--night-accent-magenta-500)'
+                            : 'var(--night-border-subtle)'
                         }`,
                         transition: 'all var(--transition-fast)',
                       }}
                       onMouseEnter={(e) => {
                         if (!isSelected) {
-                          e.currentTarget.style.background = 'var(--sakura-bg-surface)';
+                          e.currentTarget.style.background = 'var(--night-bg-surface)';
                         }
                       }}
                       onMouseLeave={(e) => {
@@ -264,15 +264,15 @@ export function EpisodeSelector({
                           width: '16px',
                           height: '16px',
                           cursor: 'pointer',
-                          accentColor: 'var(--sakura-accent-magenta-500)',
+                          accentColor: 'var(--night-accent-magenta-500)',
                         }}
                       />
                       <span
                         style={{
                           fontSize: 'var(--text-body-sm)',
                           color: isSelected
-                            ? 'var(--sakura-text-primary)'
-                            : 'var(--sakura-text-secondary)',
+                            ? 'var(--night-text-primary)'
+                            : 'var(--night-text-secondary)',
                           fontWeight: isSelected ? 600 : 400,
                         }}
                       >
@@ -294,7 +294,7 @@ export function EpisodeSelector({
                   marginBottom: 'var(--space-2)',
                   fontSize: 'var(--text-label)',
                   fontWeight: 600,
-                  color: 'var(--sakura-text-secondary)',
+                  color: 'var(--night-text-secondary)',
                 }}
               >
                 Aperçu
@@ -302,10 +302,10 @@ export function EpisodeSelector({
               <div
                 style={{
                   aspectRatio: '16/9',
-                  background: 'var(--sakura-bg-base)',
+                  background: 'var(--night-bg-base)',
                   borderRadius: 'var(--radius-md)',
                   overflow: 'hidden',
-                  border: '1px solid var(--sakura-border-default)',
+                  border: '1px solid var(--night-border-default)',
                 }}
               >
                 <img

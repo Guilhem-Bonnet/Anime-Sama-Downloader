@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchStore } from '../stores/search.store';
 import { useDebounce } from '../hooks/useDebounce';
 import { useRecentSearches } from '../hooks/useRecentSearches';
@@ -15,33 +15,37 @@ export const SearchBar: React.FC = () => {
   const [isFocused, setIsFocused] = useState(false);
   const debouncedQuery = useDebounce(localQuery, 500);
   const { addRecentSearch } = useRecentSearches();
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
 
+  // Fire search only when debouncedQuery changes — no unstable deps
   useEffect(() => {
-    if (debouncedQuery) {
-      performSearch(debouncedQuery, filters);
-      addRecentSearch(debouncedQuery); // Save to recent searches
+    if (debouncedQuery.trim()) {
+      performSearch(debouncedQuery, filtersRef.current);
+      addRecentSearch(debouncedQuery);
     }
-  }, [debouncedQuery, performSearch, filters, addRecentSearch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedQuery]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalQuery(value);
-    setQuery(value);
-    setSuggestionsOpen(true); // Open suggestions on input change
+    setSuggestionsOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (localQuery.trim()) {
+      setQuery(localQuery);
       performSearch(localQuery, filters);
-      addRecentSearch(localQuery); // Save to recent searches
+      addRecentSearch(localQuery);
       setSuggestionsOpen(false);
     }
   };
 
   const handleFiltersChange = (newFilters: typeof filters) => {
     setFilters(newFilters);
-    // Re-trigger search with new filters if we have a query
+    // Re-trigger search with new filters (no double search — effect only watches debouncedQuery)
     if (localQuery.trim()) {
       performSearch(localQuery, newFilters);
     }
@@ -51,7 +55,7 @@ export const SearchBar: React.FC = () => {
     setLocalQuery(recentQuery);
     setQuery(recentQuery);
     performSearch(recentQuery, filters);
-    addRecentSearch(recentQuery); // Update recent searches timestamp
+    addRecentSearch(recentQuery);
     setSuggestionsOpen(false);
   };
 
@@ -82,8 +86,7 @@ export const SearchBar: React.FC = () => {
             }}
             onBlur={() => setIsFocused(false)}
             placeholder="Rechercher un anime... (ex: Attack on Titan)"
-            className="w-full pl-14 pr-14 py-4 rounded-2xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 border-2 border-gray-200 dark:border-gray-700 focus:outline-none focus:border-transparent focus:ring-4 focus:ring-gray-500/20 shadow-lg hover:shadow-xl transition-all duration-300 text-lg"
-            disabled={isSearching}
+            className="input w-full pl-14 pr-14 py-4 rounded-2xl text-lg shadow-lg hover:shadow-xl transition-all duration-300"
             autoComplete="off"
           />
           
@@ -109,7 +112,7 @@ export const SearchBar: React.FC = () => {
           )}
 
           <SuggestionsDropdown
-            query={localQuery}
+            query={debouncedQuery}
             onSelectSuggestion={handleSelectSuggestion}
             isOpen={suggestionsOpen}
             onOpenChange={setSuggestionsOpen}

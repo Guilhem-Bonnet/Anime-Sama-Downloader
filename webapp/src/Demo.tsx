@@ -19,7 +19,7 @@ export const Demo: React.FC = () => {
           font-weight: var(--text-h1-weight);
           margin-bottom: 24px;
           padding-bottom: 12px;
-          border-bottom: 1px solid var(--sakura-border-default);
+          border-bottom: 1px solid var(--night-border-default);
         }
         .demo-grid {
           display: grid;
@@ -40,9 +40,9 @@ export const Demo: React.FC = () => {
       {/* HEADER */}
       <div className="fade-in" style={{ marginBottom: '48px' }}>
         <h1 style={{ fontSize: 'var(--text-display)', marginBottom: '8px' }}>
-          🌸 Sakura Night Design System
+          🌸 Nocturne Core Design System
         </h1>
-        <p style={{ color: 'var(--sakura-text-secondary)', fontSize: 'var(--text-body)' }}>
+        <p style={{ color: 'var(--night-text-secondary)', fontSize: 'var(--text-body)' }}>
           Prototype complet du design system Anime-Sama Downloader
         </p>
       </div>
@@ -150,7 +150,7 @@ export const Demo: React.FC = () => {
               <CardTitle>Empty Card</CardTitle>
             </CardHeader>
             <CardBody>
-              <p style={{ color: 'var(--sakura-text-muted)' }}>
+              <p style={{ color: 'var(--night-text-muted)' }}>
                 Une card vide avec du contenu minimal.
               </p>
             </CardBody>
@@ -223,47 +223,47 @@ export const Demo: React.FC = () => {
           {/* Backgrounds */}
           <div
             style={{
-              background: 'var(--sakura-bg-base)',
+              background: 'var(--night-bg-base)',
               padding: '16px',
               borderRadius: '8px',
-              border: '1px solid var(--sakura-border-default)',
+              border: '1px solid var(--night-border-default)',
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: 'var(--text-caption)' }}>--sakura-bg-base</p>
-            <p style={{ fontSize: '12px', color: 'var(--sakura-text-muted)' }}>#0A0E1A</p>
+            <p style={{ fontSize: 'var(--text-caption)' }}>--night-bg-base</p>
+            <p style={{ fontSize: '12px', color: 'var(--night-text-muted)' }}>#0A0E1A</p>
           </div>
 
           <div
             style={{
-              background: 'var(--sakura-bg-surface)',
+              background: 'var(--night-bg-surface)',
               padding: '16px',
               borderRadius: '8px',
-              border: '1px solid var(--sakura-border-default)',
+              border: '1px solid var(--night-border-default)',
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: 'var(--text-caption)' }}>--sakura-bg-surface</p>
-            <p style={{ fontSize: '12px', color: 'var(--sakura-text-muted)' }}>#1A1F2E</p>
+            <p style={{ fontSize: 'var(--text-caption)' }}>--night-bg-surface</p>
+            <p style={{ fontSize: '12px', color: 'var(--night-text-muted)' }}>#1A1F2E</p>
           </div>
 
           <div
             style={{
-              background: 'var(--sakura-bg-elevated)',
+              background: 'var(--night-bg-elevated)',
               padding: '16px',
               borderRadius: '8px',
-              border: '1px solid var(--sakura-border-default)',
+              border: '1px solid var(--night-border-default)',
               textAlign: 'center',
             }}
           >
-            <p style={{ fontSize: 'var(--text-caption)' }}>--sakura-bg-elevated</p>
-            <p style={{ fontSize: '12px', color: 'var(--sakura-text-muted)' }}>#252A3B</p>
+            <p style={{ fontSize: 'var(--text-caption)' }}>--night-bg-elevated</p>
+            <p style={{ fontSize: '12px', color: 'var(--night-text-muted)' }}>#252A3B</p>
           </div>
 
           {/* Accents */}
           <div
             style={{
-              background: 'var(--sakura-accent-magenta-500)',
+              background: 'var(--night-accent-magenta-500)',
               padding: '16px',
               borderRadius: '8px',
               textAlign: 'center',
@@ -276,7 +276,7 @@ export const Demo: React.FC = () => {
 
           <div
             style={{
-              background: 'var(--sakura-accent-cyan-500)',
+              background: 'var(--night-accent-cyan-500)',
               padding: '16px',
               borderRadius: '8px',
               textAlign: 'center',
@@ -289,14 +289,14 @@ export const Demo: React.FC = () => {
 
           <div
             style={{
-              background: 'var(--sakura-pink-500)',
+              background: 'var(--night-pink-500)',
               padding: '16px',
               borderRadius: '8px',
               textAlign: 'center',
               color: 'white',
             }}
           >
-            <p style={{ fontSize: 'var(--text-caption)' }}>Sakura Pink</p>
+            <p style={{ fontSize: 'var(--text-caption)' }}>Nocturne Pink</p>
             <p style={{ fontSize: '12px' }}>#FB6F8A</p>
           </div>
         </div>

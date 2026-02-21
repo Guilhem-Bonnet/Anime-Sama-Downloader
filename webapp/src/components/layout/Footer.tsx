@@ -4,9 +4,9 @@ export function Footer() {
   return (
     <footer
       style={{
-        borderTop: '1px solid var(--sakura-border-default)',
+        borderTop: '1px solid var(--night-border-default)',
         marginTop: '48px',
-        background: 'var(--sakura-bg-surface)',
+        background: 'var(--night-bg-surface)',
       }}
     >
       <div
@@ -16,7 +16,7 @@ export function Footer() {
           padding: '24px',
           textAlign: 'center',
           fontSize: '12px',
-          color: 'var(--sakura-text-secondary)',
+          color: 'var(--night-text-secondary)',
         }}
       >
         <p>Anime-Sama Downloader MVP • Built with ❤️ using Go + React</p>
