@@ -220,12 +220,12 @@ func TestCanonicalizeAnimeSamaBaseURL_Success(t *testing.T) {
 		input    string
 		expected string
 	}{
-		{"https://anime-sama.si/", "https://anime-sama.si/"},
-		{"https://anime-sama.si", "https://anime-sama.si/"},
-		{"https://www.anime-sama.si/", "https://anime-sama.si/"},
-		{"https://anime-sama.tv/", "https://anime-sama.si/"},
-		{"https://anime-sama.fr/", "https://anime-sama.si/"},
-		{"https://anime-sama.org/", "https://anime-sama.si/"},
+		{"https://anime-sama.tv/", "https://anime-sama.tv/"},
+		{"https://anime-sama.tv", "https://anime-sama.tv/"},
+		{"https://www.anime-sama.tv/", "https://anime-sama.tv/"},
+		{"https://anime-sama.si/", "https://anime-sama.tv/"},
+		{"https://anime-sama.fr/", "https://anime-sama.tv/"},
+		{"https://anime-sama.org/", "https://anime-sama.tv/"},
 	}
 
 	for _, tt := range tests {
@@ -243,7 +243,7 @@ func TestCanonicalizeAnimeSamaBaseURL_Success(t *testing.T) {
 
 // TestCanonicalizeAnimeSamaBaseURL_AddTrailingSlash tests trailing slash is added
 func TestCanonicalizeAnimeSamaBaseURL_AddTrailingSlash(t *testing.T) {
-	result, err := CanonicalizeAnimeSamaBaseURL("https://anime-sama.si/anime/test")
+	result, err := CanonicalizeAnimeSamaBaseURL("https://anime-sama.tv/anime/test")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -274,7 +274,7 @@ func TestCanonicalizeAnimeSamaBaseURL_InvalidURL(t *testing.T) {
 
 // TestCanonicalizeAnimeSamaBaseURL_PreservesPath tests path is preserved
 func TestCanonicalizeAnimeSamaBaseURL_PreservesPath(t *testing.T) {
-	result, err := CanonicalizeAnimeSamaBaseURL("https://anime-sama.si/path/to/anime")
+	result, err := CanonicalizeAnimeSamaBaseURL("https://anime-sama.tv/path/to/anime")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -286,7 +286,7 @@ func TestCanonicalizeAnimeSamaBaseURL_PreservesPath(t *testing.T) {
 
 // TestCanonicalizeAnimeSamaBaseURL_WithPort tests URL with port
 func TestCanonicalizeAnimeSamaBaseURL_WithPort(t *testing.T) {
-	result, err := CanonicalizeAnimeSamaBaseURL("https://anime-sama.si:8443/")
+	result, err := CanonicalizeAnimeSamaBaseURL("https://anime-sama.tv:8443/")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -298,12 +298,12 @@ func TestCanonicalizeAnimeSamaBaseURL_WithPort(t *testing.T) {
 
 // TestCanonicalizeAnimeSamaBaseURL_WithWhitespace tests whitespace is trimmed
 func TestCanonicalizeAnimeSamaBaseURL_WithWhitespace(t *testing.T) {
-	result, err := CanonicalizeAnimeSamaBaseURL("  https://anime-sama.si/  ")
+	result, err := CanonicalizeAnimeSamaBaseURL("  https://anime-sama.tv/  ")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !strings.Contains(result, "anime-sama.si") {
+	if !strings.Contains(result, "anime-sama.tv") {
 		t.Fatalf("expected valid URL after trim, got %q", result)
 	}
 }
@@ -315,8 +315,8 @@ func TestCanonicalizeAnimeSamaBaseURL_CaseInsensitive(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	if !strings.Contains(result, "anime-sama.si") {
-		t.Fatalf("expected lowercase anime-sama.si, got %q", result)
+	if !strings.Contains(result, "anime-sama.tv") {
+		t.Fatalf("expected lowercase anime-sama.tv, got %q", result)
 	}
 }
 

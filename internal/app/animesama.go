@@ -23,11 +23,11 @@ func CanonicalizeAnimeSamaBaseURL(raw string) (string, error) {
 	if err != nil || u.Scheme == "" || u.Host == "" {
 		return "", fmt.Errorf("invalid baseUrl")
 	}
-	// normalize known domains to anime-sama.si
+	// normalize known domains to anime-sama.tv (current active domain)
 	host := strings.ToLower(u.Host)
 	host = strings.TrimPrefix(host, "www.")
 	if host == "anime-sama.tv" || host == "anime-sama.fr" || host == "anime-sama.org" || host == "anime-sama.si" {
-		u.Host = "anime-sama.si"
+		u.Host = "anime-sama.tv"
 	}
 	// ensure trailing slash
 	if !strings.HasSuffix(u.Path, "/") {

@@ -85,11 +85,11 @@ func main() {
 	anilistService := app.NewAniListService(settingsService.Get)
 	importer := app.NewAniListImportService(anilistService, resolver, subscriptionsService)
 
-	searchCatalogue, animeCatalogue := devCatalogue()
-	searchService := app.NewAnimeSamaSearchService(searchCatalogue)
+	_, animeCatalogue := devCatalogue()
+	searchService := app.NewAniListSearchService() // Real AniList-backed search
 	fileListService := app.NewFileListService(animeCatalogue)
 	detailService := app.NewMockAnimeDetailService()
-	recommendationsService := app.NewRecommendationsService(searchCatalogue)
+	recommendationsService := app.NewRecommendationsService(nil) // TODO: feed from AniList
 
 	server := httpapi.NewServer(
 		logger,
