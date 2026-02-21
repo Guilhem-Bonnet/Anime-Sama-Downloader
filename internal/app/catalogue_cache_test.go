@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -42,9 +43,9 @@ func TestCatalogueCache_GetCatalogue_InitialLoad(t *testing.T) {
 }
 
 func TestCatalogueCache_GetCatalogue_CacheHit(t *testing.T) {
-	fetchCount := 0
+	var fetchCount atomic.Int32
 	countingFetcher := func(ctx context.Context) ([]domain.AnimeSearchResult, error) {
-		fetchCount++
+		fetchCount.Add(1)
 		return mockFetcher(ctx)
 	}
 
@@ -59,8 +60,8 @@ func TestCatalogueCache_GetCatalogue_CacheHit(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if fetchCount != 1 {
-		t.Errorf("expected 1 fetch, got %d", fetchCount)
+	if fetchCount.Load() != 1 {
+		t.Errorf("expected 1 fetch, got %d", fetchCount.Load())
 	}
 
 	// Second call: cache hit (no fetch)
@@ -69,15 +70,15 @@ func TestCatalogueCache_GetCatalogue_CacheHit(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if fetchCount != 1 {
-		t.Errorf("expected still 1 fetch (cache hit), got %d", fetchCount)
+	if fetchCount.Load() != 1 {
+		t.Errorf("expected still 1 fetch (cache hit), got %d", fetchCount.Load())
 	}
 }
 
 func TestCatalogueCache_GetCatalogue_CacheMiss_Expired(t *testing.T) {
-	fetchCount := 0
+	var fetchCount atomic.Int32
 	countingFetcher := func(ctx context.Context) ([]domain.AnimeSearchResult, error) {
-		fetchCount++
+		fetchCount.Add(1)
 		return mockFetcher(ctx)
 	}
 
@@ -93,8 +94,8 @@ func TestCatalogueCache_GetCatalogue_CacheMiss_Expired(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if fetchCount != 1 {
-		t.Errorf("expected 1 fetch, got %d", fetchCount)
+	if fetchCount.Load() != 1 {
+		t.Errorf("expected 1 fetch, got %d", fetchCount.Load())
 	}
 
 	// Wait for cache to expire
@@ -106,8 +107,8 @@ func TestCatalogueCache_GetCatalogue_CacheMiss_Expired(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if fetchCount != 2 {
-		t.Errorf("expected 2 fetches (cache expired), got %d", fetchCount)
+	if fetchCount.Load() != 2 {
+		t.Errorf("expected 2 fetches (cache expired), got %d", fetchCount.Load())
 	}
 }
 
@@ -198,14 +199,14 @@ func TestCatalogueCache_Stats(t *testing.T) {
 }
 
 func TestCatalogueCache_AutoRefresh(t *testing.T) {
-	fetchCount := 0
+	var fetchCount atomic.Int32
 	countingFetcher := func(ctx context.Context) ([]domain.AnimeSearchResult, error) {
-		fetchCount++
+		fetchCount.Add(1)
 		return mockFetcher(ctx)
 	}
 
-	// Set auto-refresh to 200ms
-	cache := NewCatalogueCache(6*time.Hour, 200*time.Millisecond, countingFetcher)
+	// Set TTL shorter than refresh interval so auto-refresh finds stale cache
+	cache := NewCatalogueCache(100*time.Millisecond, 200*time.Millisecond, countingFetcher)
 	defer cache.Stop()
 
 	ctx := context.Background()
@@ -216,15 +217,59 @@ func TestCatalogueCache_AutoRefresh(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if fetchCount != 1 {
-		t.Errorf("expected 1 fetch initially, got %d", fetchCount)
+	if fetchCount.Load() != 1 {
+		t.Errorf("expected 1 fetch initially, got %d", fetchCount.Load())
 	}
 
-	// Wait for auto-refresh to trigger
-	time.Sleep(300 * time.Millisecond)
+	// Wait for TTL to expire + auto-refresh to trigger
+	time.Sleep(400 * time.Millisecond)
 
 	// Fetch count should have increased due to auto-refresh
-	if fetchCount < 2 {
-		t.Errorf("expected at least 2 fetches (auto-refresh), got %d", fetchCount)
+	if fetchCount.Load() < 2 {
+		t.Errorf("expected at least 2 fetches (auto-refresh), got %d", fetchCount.Load())
+	}
+}
+
+func TestCatalogueCache_Stop_DoubleCallDoesNotPanic(t *testing.T) {
+	cache := NewCatalogueCache(6*time.Hour, 6*time.Hour, mockFetcher)
+
+	// First stop should work
+	cache.Stop()
+
+	// Second stop should NOT panic (was a known bug before sync.Once fix)
+	defer func() {
+		if r := recover(); r != nil {
+			t.Fatalf("double Stop() panicked: %v", r)
+		}
+	}()
+	cache.Stop()
+}
+
+func TestCatalogueCache_Refresh_DoubleCheckPreventsRedundantFetch(t *testing.T) {
+	var fetchCount atomic.Int32
+	countingFetcher := func(ctx context.Context) ([]domain.AnimeSearchResult, error) {
+		fetchCount.Add(1)
+		return mockFetcher(ctx)
+	}
+
+	cache := NewCatalogueCache(6*time.Hour, 24*time.Hour, countingFetcher)
+	defer cache.Stop()
+
+	ctx := context.Background()
+
+	// Load cache
+	_, err := cache.GetCatalogue(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Manually call Refresh — should NOT fetch again because cache is fresh
+	_, err = cache.Refresh(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if fetchCount.Load() != 1 {
+		t.Errorf("expected 1 fetch (double-check should prevent redundant), got %d", fetchCount.Load())
 	}
 }

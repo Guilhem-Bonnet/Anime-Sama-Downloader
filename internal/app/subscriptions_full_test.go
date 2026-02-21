@@ -277,6 +277,52 @@ func TestSubscriptionService_Update_ManualEpisodeAdjustment(t *testing.T) {
 	}
 }
 
+func TestSubscriptionService_Update_PartialPutDoesNotResetProgress(t *testing.T) {
+	existing := domain.Subscription{
+		ID:                    "sub-1",
+		BaseURL:               "https://anime-sama.fr/catalogue/naruto",
+		Label:                 "Naruto",
+		LastDownloadedEpisode: 42,
+		LastScheduledEpisode:  50,
+	}
+
+	var updatedSub domain.Subscription
+	repo := &mockSubscriptionRepository{
+		getFn: func(ctx context.Context, id string) (domain.Subscription, error) {
+			return existing, nil
+		},
+		updateFn: func(ctx context.Context, sub domain.Subscription) (domain.Subscription, error) {
+			updatedSub = sub
+			return sub, nil
+		},
+	}
+
+	service := NewSubscriptionService(repo, nil, nil, nil)
+	ctx := context.Background()
+
+	// Partial PUT: only update label, omit episodes (zero-value).
+	// Bug before fix: zero-value (0 >= 0 is true) would reset progress.
+	updateDTO := SubscriptionDTO{
+		ID:    "sub-1",
+		Label: "Naruto Shippuden",
+	}
+
+	result, err := service.Update(ctx, updateDTO)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if result.Label != "Naruto Shippuden" {
+		t.Errorf("expected label 'Naruto Shippuden', got %q", result.Label)
+	}
+	if updatedSub.LastDownloadedEpisode != 42 {
+		t.Errorf("partial update should preserve LastDownloadedEpisode=42, got %d", updatedSub.LastDownloadedEpisode)
+	}
+	if updatedSub.LastScheduledEpisode != 50 {
+		t.Errorf("partial update should preserve LastScheduledEpisode=50, got %d", updatedSub.LastScheduledEpisode)
+	}
+}
+
 // Test cases for SubscriptionService.Delete()
 func TestSubscriptionService_Delete_Success(t *testing.T) {
 	deleteCalled := false
