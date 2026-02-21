@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, TrendingUp, History, Tag } from 'lucide-react';
+import { useSearchStore } from '../../stores/search.store';
 
 export interface Suggestion {
   query: string;
@@ -21,24 +22,29 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
   isOpen,
   onOpenChange,
 }) => {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch suggestions on query change (receives debounced query from parent)
+  // Reuse results from the Zustand search store instead of making a duplicate fetch.
+  const storeResults = useSearchStore((s) => s.results);
+  const isSearching = useSearchStore((s) => s.isSearching);
+
+  const suggestions: Suggestion[] = React.useMemo(() => {
+    if (!query.trim()) return [];
+    return storeResults.slice(0, 8).map((item) => ({
+      query: item.title || item.id || 'Unknown',
+      category: 'popular' as const,
+      score: 1,
+      metadata: { episodes: item.episode_count },
+    }));
+  }, [storeResults, query]);
+
+  const loading = isSearching;
+
+  // Reset selection when suggestions change
   useEffect(() => {
-    if (!query.trim()) {
-      setSuggestions([]);
-      setSelectedIndex(-1);
-      return;
-    }
-
-    const controller = new AbortController();
-    fetchSuggestions(query, controller.signal);
-
-    return () => controller.abort();
-  }, [query]);
+    setSelectedIndex(-1);
+  }, [suggestions]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -92,44 +98,6 @@ export const SuggestionsDropdown: React.FC<SuggestionsDropdownProps> = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, suggestions, selectedIndex, onOpenChange]);
-
-  const fetchSuggestions = async (q: string, signal?: AbortSignal) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (q) {
-        params.append('q', q);
-      }
-      params.append('limit', '8');
-
-      const response = await fetch(`/api/v1/search?${params.toString()}`, { signal });
-      if (!response.ok) {
-        setSuggestions([]);
-        setSelectedIndex(-1);
-        return;
-      }
-
-      const data = await response.json();
-      const results = Array.isArray(data) ? data : data.results || [];
-      const mapped: Suggestion[] = results.map((item: any) => ({
-        query: item.title || item.id || 'Unknown',
-        category: q ? 'popular' : 'trending',
-        score: 1,
-        metadata: {
-          episodes: item.episode_count ?? item.episodes,
-        },
-      }));
-
-      setSuggestions(mapped);
-      setSelectedIndex(-1);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      console.error('Failed to fetch suggestions:', err);
-      setSuggestions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSelect = (suggestion: Suggestion) => {
     onSelectSuggestion(suggestion.query);

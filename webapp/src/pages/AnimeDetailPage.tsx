@@ -149,6 +149,12 @@ export function AnimeDetailPage() {
           <img
             src={anime.thumbnail_url}
             alt={anime.title}
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.src !== '/assets/cover-placeholder.svg') {
+                target.src = '/assets/cover-placeholder.svg';
+              }
+            }}
             style={{
               width: '200px',
               height: '280px',
