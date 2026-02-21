@@ -109,8 +109,8 @@ func printResponse(status int, body []byte) {
 		return
 	}
 
-	os.Stdout.Write(body)
-	os.Stdout.Write([]byte("\n"))
+	_, _ = os.Stdout.Write(body)
+	_, _ = os.Stdout.Write([]byte("\n"))
 	if status >= 400 {
 		os.Exit(1)
 	}

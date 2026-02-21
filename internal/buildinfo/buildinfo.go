@@ -1,7 +1,7 @@
 package buildinfo
 
 // Ces variables sont typiquement injectées à la compilation via -ldflags.
-// Exemple :
+// Example :
 //
 //	-X github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/buildinfo.Version=v0.0.0
 //	-X github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/buildinfo.Commit=abcdef

@@ -1,7 +1,0 @@
-tqdm
-requests
-beautifulsoup4
-moviepy
-textual
-fastapi
-uvicorn

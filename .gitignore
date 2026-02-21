@@ -1,16 +1,12 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Virtual environments
-venv/
-.venv/
-env/
-
 # Logs / local artifacts
 *.log
 "$LOG_FILE"
+
+# Dev env artifacts
+venv/
+.venv/
+__pycache__/
+**/__pycache__/
 
 # Docker compose / local env
 .env
@@ -21,17 +17,16 @@ videos/
 *.mkv
 *.part
 
+# Local server data
+data/
+*.db
+
 # Jellyfin local (docker profile)
 jellyfin-config/
 jellyfin-cache/
 
 # Local user folder accidentally committed
 ~/
-
-# Test / tooling caches
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
 
 # Webapp build artefacts
 webapp/tsconfig.tsbuildinfo

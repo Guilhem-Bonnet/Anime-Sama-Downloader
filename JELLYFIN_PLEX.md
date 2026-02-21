@@ -11,17 +11,14 @@ Ce projet peut s’intégrer à un serveur média (Jellyfin/Plex) de deux façon
 
 ### Activer le mode “media”
 
-- Via variables d’environnement :
+Le mode s’active via les **settings** du serveur Go :
+
+- UI : onglet **settings**
+- API : `PUT /api/v1/settings`
+- CLI (optionnel) :
 
 ```bash
-ASD_OUTPUT_NAMING_MODE=media
-```
-
-- Ou via `config.ini` :
-
-```ini
-[OUTPUT]
-naming_mode = media
+go run ./cmd/asd settings set --output-naming media-server
 ```
 
 ### Layout généré (mode `media`)
@@ -40,19 +37,10 @@ naming_mode = media
 
 ### Option : séparer VF/VOSTFR dans des dossiers distincts
 
-Si tu télécharges plusieurs langues et veux éviter de mélanger :
-
-- Env :
+Si tu télécharges plusieurs langues et veux éviter de mélanger, active `separateLang` :
 
 ```bash
-ASD_MEDIA_SEPARATE_LANG=1
-```
-
-- Ou `config.ini` :
-
-```ini
-[OUTPUT]
-media_separate_lang = true
+go run ./cmd/asd settings set --separate-lang true
 ```
 
 Résultat :
@@ -68,21 +56,19 @@ Résultat :
 
 ### Variables nécessaires
 
-```bash
-ASD_JELLYFIN_URL=http://jellyfin:8096
-ASD_JELLYFIN_API_KEY=xxxxxxxxxxxxxxxx
-```
+Le refresh se configure via les **settings** :
 
-Optionnel (debounce) :
+- `jellyfinUrl` (ex: `http://jellyfin:8096` en Docker)
+- `jellyfinApiKey`
+
+CLI (optionnel) :
 
 ```bash
-ASD_MEDIA_REFRESH_DEBOUNCE_SECONDS=20
+go run ./cmd/asd settings set --destination /data/videos
 ```
 
 Notes :
 - Le refresh est **best-effort** (si l’API est KO, ça ne casse pas les downloads).
-- Par défaut, le refresh s’auto-active si Jellyfin/Plex est configuré.
-- Tu peux forcer : `ASD_MEDIA_REFRESH_ENABLED=1` (ou `0` pour désactiver).
 
 ### Tester Jellyfin (URL + clé) avec `curl`
 
@@ -125,11 +111,11 @@ Si tu ne vois pas les fichiers :
 
 ### Variables nécessaires
 
-```bash
-ASD_PLEX_URL=http://plex:32400
-ASD_PLEX_TOKEN=xxxxxxxxxxxx
-ASD_PLEX_SECTION_ID=1
-```
+Configurer via les **settings** :
+
+- `plexUrl` (ex: `http://plex:32400` en Docker)
+- `plexToken`
+- `plexSectionId`
 
 - `ASD_PLEX_SECTION_ID` = l’ID de la section “Library” (Films/Séries) que tu veux rafraîchir.
 

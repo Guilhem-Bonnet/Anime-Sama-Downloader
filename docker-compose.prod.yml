@@ -5,26 +5,14 @@ services:
       dockerfile: Dockerfile
     container_name: asd-app
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
-      ASD_WEB_HOST: 0.0.0.0
-      ASD_WEB_PORT: "8000"
-      ASD_DOWNLOAD_ROOT: /data/videos
-      # En Docker, on refuse par défaut toute destination en dehors de /data/videos
-      ASD_ALLOWED_DEST_PREFIXES: /data/videos
-      # Nommage / intégration media-server (optionnel)
-      ASD_OUTPUT_NAMING_MODE: ${ASD_OUTPUT_NAMING_MODE:-legacy}
-      ASD_MEDIA_SEPARATE_LANG: ${ASD_MEDIA_SEPARATE_LANG:-0}
-      ASD_MEDIA_REFRESH_ENABLED: ${ASD_MEDIA_REFRESH_ENABLED:-1}
-      ASD_MEDIA_REFRESH_DEBOUNCE_SECONDS: ${ASD_MEDIA_REFRESH_DEBOUNCE_SECONDS:-20}
-      ASD_JELLYFIN_URL: ${ASD_JELLYFIN_URL:-http://jellyfin:8096}
-      ASD_JELLYFIN_API_KEY: ${ASD_JELLYFIN_API_KEY:-}
-      # Optionnel (si tu montes un config.ini):
-      # ASD_CONFIG: /config/config.ini
+      ASD_ADDR: 0.0.0.0:8080
+      ASD_DB_PATH: /data/asd.db
+      ASD_WEB_DIST: /app/webapp/dist
     volumes:
       - ${ASD_HOST_DOWNLOAD_ROOT:-./videos}:/data/videos
-      # Optionnel: monter un config.ini local
-      # - ./config.ini:/config/config.ini:ro
+      - ${ASD_HOST_DATA_ROOT:-./data}:/data
 
   jellyfin:
     image: jellyfin/jellyfin:latest

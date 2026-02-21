@@ -6,6 +6,7 @@ require (
 	github.com/go-chi/chi/v5 v5.0.12
 	github.com/rs/xid v1.5.0
 	github.com/rs/zerolog v1.33.0
+	golang.org/x/text v0.20.0
 	modernc.org/sqlite v1.29.10
 )
 

@@ -4,9 +4,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/zerolog/hlog"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/buildinfo"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/httpjson"
-	"github.com/rs/zerolog/hlog"
 )
 
 const defaultRequestTimeout = 30 * time.Second

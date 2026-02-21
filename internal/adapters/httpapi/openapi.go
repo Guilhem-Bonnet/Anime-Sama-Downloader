@@ -41,6 +41,441 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"type":                 "object",
 					"additionalProperties": true,
 				},
+				"JobType": map[string]any{
+					"type":        "string",
+					"description": "Type de job (extensible).",
+					"enum":        []any{"noop", "sleep", "download", "spawn", "wait"},
+				},
+				"Subscription": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":                    map[string]any{"type": "string"},
+						"baseUrl":               map[string]any{"type": "string"},
+						"label":                 map[string]any{"type": "string"},
+						"player":                map[string]any{"type": "string", "description": "auto ou Player N"},
+						"lastScheduledEpisode":  map[string]any{"type": "integer", "minimum": 0},
+						"lastDownloadedEpisode": map[string]any{"type": "integer", "minimum": 0},
+						"lastAvailableEpisode":  map[string]any{"type": "integer", "minimum": 0},
+						"nextCheckAt":           map[string]any{"type": "string", "format": "date-time"},
+						"lastCheckedAt":         map[string]any{"type": "string", "format": "date-time"},
+						"createdAt":             map[string]any{"type": "string", "format": "date-time"},
+						"updatedAt":             map[string]any{"type": "string", "format": "date-time"},
+					},
+					"required":             []any{"id", "baseUrl", "label", "player", "lastScheduledEpisode", "lastDownloadedEpisode", "lastAvailableEpisode", "nextCheckAt", "createdAt", "updatedAt"},
+					"additionalProperties": false,
+				},
+				"SubscriptionList": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"$ref": "#/components/schemas/Subscription"},
+				},
+				"CreateSubscriptionRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl": map[string]any{"type": "string", "example": "https://anime-sama.si/catalogue/xxx/saison1/vostfr/"},
+						"label":   map[string]any{"type": "string", "example": "Solo Leveling"},
+						"player":  map[string]any{"type": "string", "example": "auto"},
+					},
+					"required":             []any{"baseUrl"},
+					"additionalProperties": false,
+				},
+				"SyncSubscriptionResult": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"subscription":        map[string]any{"$ref": "#/components/schemas/Subscription"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+						"enqueuedEpisodes":    map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+						"enqueuedJobIds":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"message":             map[string]any{"type": "string"},
+					},
+					"required":             []any{"subscription", "selectedPlayer", "maxAvailableEpisode", "enqueuedEpisodes", "enqueuedJobIds"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEpisodeStatus": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode":    map[string]any{"type": "integer", "minimum": 1},
+						"available":  map[string]any{"type": "boolean"},
+						"scheduled":  map[string]any{"type": "boolean"},
+						"downloaded": map[string]any{"type": "boolean"},
+					},
+					"required":             []any{"episode", "available", "scheduled", "downloaded"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEpisodesResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"subscription":        map[string]any{"$ref": "#/components/schemas/Subscription"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+						"episodes":            map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/SubscriptionEpisodeStatus"}},
+					},
+					"required":             []any{"subscription", "selectedPlayer", "maxAvailableEpisode", "episodes"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEnqueueEpisodesRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer", "minimum": 1}},
+					},
+					"required":             []any{"episodes"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEnqueueSkippedEpisode": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode": map[string]any{"type": "integer", "minimum": 1},
+						"reason":  map[string]any{"type": "string"},
+					},
+					"required":             []any{"episode", "reason"},
+					"additionalProperties": false,
+				},
+				"SubscriptionEnqueueEpisodesResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"subscription":     map[string]any{"$ref": "#/components/schemas/Subscription"},
+						"selectedPlayer":   map[string]any{"type": "string"},
+						"enqueuedEpisodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+						"enqueuedJobIds":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"skipped":          map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/SubscriptionEnqueueSkippedEpisode"}},
+					},
+					"required":             []any{"subscription", "selectedPlayer", "enqueuedEpisodes", "enqueuedJobIds", "skipped"},
+					"additionalProperties": false,
+				},
+				"SyncAllSubscriptionsResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"results": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/SyncSubscriptionResult"}},
+						"errors": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"id":    map[string]any{"type": "string"},
+									"error": map[string]any{"type": "string"},
+								},
+								"required":             []any{"id", "error"},
+								"additionalProperties": false,
+							},
+						},
+					},
+					"required":             []any{"results", "errors"},
+					"additionalProperties": false,
+				},
+				"AniListViewer": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":   map[string]any{"type": "integer"},
+						"name": map[string]any{"type": "string"},
+					},
+					"required":             []any{"id", "name"},
+					"additionalProperties": false,
+				},
+				"AniListAiringScheduleEntry": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":       map[string]any{"type": "integer"},
+						"airingAt": map[string]any{"type": "integer", "description": "Unix timestamp (seconds)"},
+						"episode":  map[string]any{"type": "integer"},
+						"media": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"id": map[string]any{"type": "integer"},
+								"title": map[string]any{
+									"type": "object",
+									"properties": map[string]any{
+										"romaji":  map[string]any{"type": "string"},
+										"english": map[string]any{"type": "string"},
+										"native":  map[string]any{"type": "string"},
+									},
+									"additionalProperties": false,
+								},
+							},
+							"required":             []any{"id", "title"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"id", "airingAt", "episode", "media"},
+					"additionalProperties": false,
+				},
+				"AniListAiringScheduleList": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"$ref": "#/components/schemas/AniListAiringScheduleEntry"},
+				},
+				"AniListWatchlistEntry": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"status":   map[string]any{"type": "string"},
+						"progress": map[string]any{"type": "integer"},
+						"media": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"id":       map[string]any{"type": "integer"},
+								"synonyms": map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+								"title": map[string]any{
+									"type": "object",
+									"properties": map[string]any{
+										"romaji":  map[string]any{"type": "string"},
+										"english": map[string]any{"type": "string"},
+										"native":  map[string]any{"type": "string"},
+									},
+									"additionalProperties": false,
+								},
+							},
+							"required":             []any{"id", "title"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"status", "progress", "media"},
+					"additionalProperties": false,
+				},
+				"AniListWatchlist": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"$ref": "#/components/schemas/AniListWatchlistEntry"},
+				},
+				"AniListImportPreviewRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"statuses":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"CURRENT", "PLANNING"}},
+						"season":        map[string]any{"type": "integer", "minimum": 1, "example": 1},
+						"lang":          map[string]any{"type": "string", "example": "vostfr"},
+						"maxCandidates": map[string]any{"type": "integer", "minimum": 1, "maximum": 10, "example": 3},
+					},
+					"additionalProperties": false,
+				},
+				"AniListImportPreviewResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"items": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"anilistMediaId": map[string]any{"type": "integer"},
+									"title":          map[string]any{"type": "string"},
+									"titles":         map[string]any{"type": "object", "additionalProperties": map[string]any{"type": "string"}},
+									"synonyms":       map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+									"candidates": map[string]any{
+										"type": "array",
+										"items": map[string]any{
+											"type": "object",
+											"properties": map[string]any{
+												"catalogueUrl": map[string]any{"type": "string"},
+												"baseUrl":      map[string]any{"type": "string"},
+												"slug":         map[string]any{"type": "string"},
+												"matchedTitle": map[string]any{"type": "string"},
+												"score":        map[string]any{"type": "number", "format": "double"},
+											},
+											"additionalProperties": false,
+										},
+									},
+								},
+								"additionalProperties": false,
+							},
+						},
+					},
+					"required":             []any{"items"},
+					"additionalProperties": false,
+				},
+				"AniListImportConfirmRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"items": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"baseUrl": map[string]any{"type": "string"},
+									"label":   map[string]any{"type": "string"},
+									"player":  map[string]any{"type": "string"},
+								},
+								"required":             []any{"baseUrl"},
+								"additionalProperties": false,
+							},
+						},
+					},
+					"required":             []any{"items"},
+					"additionalProperties": false,
+				},
+				"AniListImportConfirmResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"created": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/Subscription"}},
+						"errors": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"baseUrl": map[string]any{"type": "string"},
+									"error":   map[string]any{"type": "string"},
+								},
+								"additionalProperties": false,
+							},
+						},
+					},
+					"required":             []any{"created", "errors"},
+					"additionalProperties": false,
+				},
+				"AniListImportAutoRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"statuses":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"CURRENT", "PLANNING"}},
+						"season":        map[string]any{"type": "integer", "minimum": 1, "example": 1},
+						"lang":          map[string]any{"type": "string", "example": "vostfr"},
+						"maxCandidates": map[string]any{"type": "integer", "minimum": 1, "maximum": 10, "example": 3},
+						"minScore":      map[string]any{"type": "number", "format": "double", "minimum": 0, "maximum": 1, "example": 0.95},
+					},
+					"additionalProperties": false,
+				},
+				"AniListImportAutoResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"created": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/Subscription"}},
+						"skipped": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"anilistMediaId": map[string]any{"type": "integer"},
+									"title":          map[string]any{"type": "string"},
+									"reason":         map[string]any{"type": "string"},
+									"baseUrl":        map[string]any{"type": "string"},
+									"topScore":       map[string]any{"type": "number", "format": "double"},
+								},
+								"additionalProperties": false,
+							},
+						},
+						"errors": map[string]any{
+							"type": "array",
+							"items": map[string]any{
+								"type": "object",
+								"properties": map[string]any{
+									"baseUrl": map[string]any{"type": "string"},
+									"error":   map[string]any{"type": "string"},
+								},
+								"additionalProperties": false,
+							},
+						},
+					},
+					"required":             []any{"created", "skipped", "errors"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaResolveRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"titles":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"Sousou no Frieren", "Frieren: Beyond Journey's End"}},
+						"season":        map[string]any{"type": "integer", "minimum": 1, "example": 1},
+						"lang":          map[string]any{"type": "string", "example": "vostfr"},
+						"maxCandidates": map[string]any{"type": "integer", "minimum": 1, "maximum": 10, "example": 5},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaResolvedCandidate": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"catalogueUrl": map[string]any{"type": "string"},
+						"baseUrl":      map[string]any{"type": "string"},
+						"slug":         map[string]any{"type": "string"},
+						"matchedTitle": map[string]any{"type": "string"},
+						"score":        map[string]any{"type": "number", "format": "double"},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaResolveResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"candidates": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaResolvedCandidate"}},
+					},
+					"required":             []any{"candidates"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaScanRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"catalogueUrl": map[string]any{"type": "string", "example": "https://anime-sama.si/catalogue/solo-leveling/"},
+						"maxSeason":    map[string]any{"type": "integer", "minimum": 1, "maximum": 20, "example": 5},
+						"langs":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "example": []any{"vostfr", "vf"}},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaScanOption": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":             map[string]any{"type": "string"},
+						"season":              map[string]any{"type": "integer"},
+						"lang":                map[string]any{"type": "string"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+					},
+					"required":             []any{"baseUrl", "season", "lang", "selectedPlayer", "maxAvailableEpisode"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaScanResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"options": map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaScanOption"}},
+					},
+					"required":             []any{"options"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEpisodesRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl": map[string]any{"type": "string", "example": "https://anime-sama.si/catalogue/solo-leveling/saison1/vostfr/"},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEpisodeStatus": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode":   map[string]any{"type": "integer", "minimum": 1},
+						"available": map[string]any{"type": "boolean"},
+					},
+					"required":             []any{"episode", "available"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEpisodesResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":             map[string]any{"type": "string"},
+						"selectedPlayer":      map[string]any{"type": "string"},
+						"maxAvailableEpisode": map[string]any{"type": "integer"},
+						"episodes":            map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaEpisodeStatus"}},
+					},
+					"required":             []any{"baseUrl", "selectedPlayer", "maxAvailableEpisode", "episodes"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEnqueueRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":  map[string]any{"type": "string"},
+						"label":    map[string]any{"type": "string"},
+						"episodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer", "minimum": 1}},
+					},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEnqueueSkippedEpisode": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"episode": map[string]any{"type": "integer"},
+						"reason":  map[string]any{"type": "string"},
+					},
+					"required":             []any{"episode", "reason"},
+					"additionalProperties": false,
+				},
+				"AnimeSamaEnqueueResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"baseUrl":          map[string]any{"type": "string"},
+						"label":            map[string]any{"type": "string"},
+						"selectedPlayer":   map[string]any{"type": "string"},
+						"enqueuedEpisodes": map[string]any{"type": "array", "items": map[string]any{"type": "integer"}},
+						"enqueuedJobIds":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"skipped":          map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/AnimeSamaEnqueueSkippedEpisode"}},
+					},
+					"required":             []any{"baseUrl", "label", "selectedPlayer", "enqueuedEpisodes", "enqueuedJobIds", "skipped"},
+					"additionalProperties": false,
+				},
 				"Error": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
@@ -61,19 +496,50 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						"plexUrl":                map[string]any{"type": "string"},
 						"plexToken":              map[string]any{"type": "string"},
 						"plexSectionId":          map[string]any{"type": "string"},
+						"anilistToken":           map[string]any{"type": "string"},
 					},
+					"additionalProperties": false,
+				},
+				"DownloadJobResult": map[string]any{
+					"type":        "object",
+					"description": "Résultat d'un job download.",
+					"properties": map[string]any{
+						"url":         map[string]any{"type": "string", "description": "URL réellement utilisée pour télécharger (après résolution)."},
+						"sourceUrl":   map[string]any{"type": "string", "description": "URL initiale (avant résolution), utilisée comme Referer quand pertinent."},
+						"resolvedUrl": map[string]any{"type": "string", "description": "Alias de url (pour debug)."},
+						"mode":        map[string]any{"type": "string", "enum": []any{"http", "ffmpeg"}, "description": "Méthode utilisée pour le téléchargement."},
+						"usedReferer": map[string]any{"type": "boolean", "description": "Indique si un header Referer a été envoyé."},
+						"usedOrigin":  map[string]any{"type": "boolean", "description": "Indique si un header Origin a été envoyé."},
+						"path":        map[string]any{"type": "string", "description": "Chemin final du fichier sur disque."},
+						"bytes":       map[string]any{"type": "integer", "minimum": 0, "description": "Nombre d'octets écrits (peut être 0 en mode ffmpeg)."},
+						"contentType": map[string]any{"type": "string"},
+					},
+					"required":             []any{"url", "path", "bytes"},
 					"additionalProperties": false,
 				},
 				"Job": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
 						"id":        map[string]any{"type": "string"},
-						"type":      map[string]any{"type": "string"},
+						"type":      map[string]any{"$ref": "#/components/schemas/JobType"},
 						"state":     map[string]any{"type": "string", "enum": []any{"queued", "running", "muxing", "completed", "failed", "canceled"}},
 						"progress":  map[string]any{"type": "number", "format": "double"},
 						"createdAt": map[string]any{"type": "string", "format": "date-time"},
 						"updatedAt": map[string]any{"type": "string", "format": "date-time"},
-						"params":    map[string]any{"type": "object", "additionalProperties": true},
+						"params": map[string]any{
+							"type":                 "object",
+							"description":          "Paramètres du job (dépend du type).",
+							"additionalProperties": true,
+						},
+						"result": map[string]any{
+							"description": "Résultat du job (si applicable).",
+							"anyOf": []any{
+								map[string]any{"$ref": "#/components/schemas/DownloadJobResult"},
+								map[string]any{"type": "object", "additionalProperties": true},
+							},
+						},
+						"errorCode": map[string]any{"type": "string"},
+						"error":     map[string]any{"type": "string"},
 					},
 					"required":             []any{"id", "type", "state", "progress", "createdAt", "updatedAt"},
 					"additionalProperties": false,
@@ -83,12 +549,182 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 					"items": map[string]any{"$ref": "#/components/schemas/Job"},
 				},
 				"CreateJobRequest": map[string]any{
+					"oneOf": []any{
+						map[string]any{"$ref": "#/components/schemas/CreateNoopJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateSleepJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateDownloadJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateSpawnJobRequest"},
+						map[string]any{"$ref": "#/components/schemas/CreateWaitJobRequest"},
+					},
+					"description": "Requête de création d'un job. Les params dépendent du type.",
+				},
+				"CreateNoopJobRequest": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
-						"type":   map[string]any{"type": "string"},
-						"params": map[string]any{"type": "object", "additionalProperties": true},
+						"type": map[string]any{"type": "string", "enum": []any{"noop"}},
+						"params": map[string]any{
+							"type":                 "object",
+							"additionalProperties": true,
+							"example":              map[string]any{},
+						},
 					},
 					"required":             []any{"type"},
+					"additionalProperties": false,
+				},
+				"CreateSleepJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"sleep"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"duration":   map[string]any{"type": "string", "description": "Durée Go (ex: 250ms, 2s, 1m)", "example": "2s"},
+								"durationMs": map[string]any{"type": "integer", "description": "Durée en ms", "example": 2000},
+								"seconds":    map[string]any{"type": "integer", "description": "Durée en secondes", "example": 2},
+							},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type"},
+					"additionalProperties": false,
+				},
+				"CreateDownloadJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"download"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"url":      map[string]any{"type": "string", "description": "URL source (http/https)", "example": "https://example.com/video.bin"},
+								"filename": map[string]any{"type": "string", "description": "Nom de fichier de sortie (dans settings.destination)", "example": "episode-01.mp4"},
+								"path":     map[string]any{"type": "string", "description": "Chemin relatif de sortie (dans settings.destination)", "example": "series/season-1/episode-01.mp4"},
+							},
+							"required":             []any{"url"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type", "params"},
+					"additionalProperties": false,
+				},
+				"CreateSpawnJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"spawn"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"jobs": map[string]any{
+									"type":        "array",
+									"description": "Liste de jobs enfants à créer.",
+									"items": map[string]any{
+										"type": "object",
+										"properties": map[string]any{
+											"type":   map[string]any{"$ref": "#/components/schemas/JobType"},
+											"params": map[string]any{"type": "object", "additionalProperties": true},
+										},
+										"required":             []any{"type"},
+										"additionalProperties": false,
+									},
+								},
+							},
+							"required":             []any{"jobs"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type", "params"},
+					"additionalProperties": false,
+				},
+				"CreateWaitJobRequest": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"type": map[string]any{"type": "string", "enum": []any{"wait"}},
+						"params": map[string]any{
+							"type": "object",
+							"properties": map[string]any{
+								"jobIds": map[string]any{
+									"type":        "array",
+									"description": "Liste de jobs à attendre.",
+									"items":       map[string]any{"type": "string"},
+								},
+								"failOnFailed": map[string]any{"type": "boolean", "description": "Si true, échoue dès qu'un enfant est failed/canceled.", "example": true},
+								"timeoutMs":    map[string]any{"type": "integer", "description": "Timeout côté executor en ms.", "example": 600000},
+								"pollMs":       map[string]any{"type": "integer", "description": "Intervalle de polling en ms.", "example": 250},
+							},
+							"required":             []any{"jobIds"},
+							"additionalProperties": false,
+						},
+					},
+					"required":             []any{"type", "params"},
+					"additionalProperties": false,
+				},
+				// Search schemas
+				"SearchResult": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":            map[string]any{"type": "string"},
+						"title":         map[string]any{"type": "string"},
+						"thumbnail_url": map[string]any{"type": "string"},
+						"year":          map[string]any{"type": "integer"},
+						"status":        map[string]any{"type": "string"},
+						"episode_count": map[string]any{"type": "integer"},
+					},
+					"required":             []any{"id", "title"},
+					"additionalProperties": false,
+				},
+				"SearchResultList": map[string]any{
+					"type":  "array",
+					"items": map[string]any{"$ref": "#/components/schemas/SearchResult"},
+				},
+				"AutocompleteResult": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"suggestions": map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+					},
+					"required":             []any{"suggestions"},
+					"additionalProperties": false,
+				},
+				// FileList schemas
+				"FileMetadata": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"file_name":      map[string]any{"type": "string"},
+						"file_size":      map[string]any{"type": "integer", "format": "int64"},
+						"file_type":      map[string]any{"type": "string"},
+						"duration":       map[string]any{"type": "integer"},
+						"resolution":     map[string]any{"type": "string"},
+						"download_url":   map[string]any{"type": "string"},
+						"episode_number": map[string]any{"type": "integer"},
+					},
+					"required":             []any{"file_name", "file_size", "file_type"},
+					"additionalProperties": false,
+				},
+				"FileListResponse": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"anime_id":    map[string]any{"type": "string"},
+						"anime_title": map[string]any{"type": "string"},
+						"total_files": map[string]any{"type": "integer"},
+						"total_size":  map[string]any{"type": "integer", "format": "int64"},
+						"files":       map[string]any{"type": "array", "items": map[string]any{"$ref": "#/components/schemas/FileMetadata"}},
+					},
+					"required":             []any{"anime_id", "anime_title", "total_files", "total_size", "files"},
+					"additionalProperties": false,
+				},
+				// AnimeDetail schema
+				"AnimeDetail": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id":            map[string]any{"type": "string"},
+						"title":         map[string]any{"type": "string"},
+						"thumbnail_url": map[string]any{"type": "string"},
+						"description":   map[string]any{"type": "string"},
+						"year":          map[string]any{"type": "integer"},
+						"status":        map[string]any{"type": "string"},
+						"episode_count": map[string]any{"type": "integer"},
+						"genres":        map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+						"synonyms":      map[string]any{"type": "array", "items": map[string]any{"type": "string"}},
+					},
+					"required":             []any{"id", "title"},
 					"additionalProperties": false,
 				},
 			},
@@ -105,6 +741,68 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 			},
 			"/api/v1/events": map[string]any{
 				"get": map[string]any{"responses": map[string]any{"200": map[string]any{"description": "SSE"}}},
+			},
+			// Search endpoints
+			"/api/v1/search": map[string]any{
+				"get": map[string]any{
+					"summary":     "Search anime by query and filters",
+					"description": "Search for anime with optional filters (genres, status, year range).",
+					"parameters": []any{
+						map[string]any{"name": "q", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Search query"},
+						map[string]any{"name": "genres", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Comma-separated genres"},
+						map[string]any{"name": "status", "in": "query", "schema": map[string]any{"type": "string", "enum": []any{"ongoing", "completed", "planning"}}, "description": "Filter by status"},
+						map[string]any{"name": "year_min", "in": "query", "schema": map[string]any{"type": "integer"}, "description": "Minimum year"},
+						map[string]any{"name": "year_max", "in": "query", "schema": map[string]any{"type": "integer"}, "description": "Maximum year"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SearchResultList"),
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/search/autocomplete": map[string]any{
+				"get": map[string]any{
+					"summary":     "Get search autocomplete suggestions",
+					"description": "Returns autocomplete suggestions for partial search queries.",
+					"parameters": []any{
+						map[string]any{"name": "q", "in": "query", "required": true, "schema": map[string]any{"type": "string"}, "description": "Partial search query"},
+						map[string]any{"name": "limit", "in": "query", "schema": map[string]any{"type": "integer", "default": 10}, "description": "Max suggestions"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AutocompleteResult"),
+						"400": jsonErr,
+					},
+				},
+			},
+			// Anime detail endpoint
+			"/api/v1/anime/{id}": map[string]any{
+				"get": map[string]any{
+					"summary":     "Get anime details",
+					"description": "Returns detailed information about a specific anime.",
+					"parameters": []any{
+						map[string]any{"name": "id", "in": "path", "required": true, "schema": map[string]any{"type": "string"}, "description": "Anime ID"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeDetail"),
+						"404": jsonErr,
+					},
+				},
+			},
+			// File list endpoint
+			"/api/v1/anime/{animeId}/files": map[string]any{
+				"get": map[string]any{
+					"summary":     "Get files for an anime",
+					"description": "Returns a list of downloadable files for a specific anime.",
+					"parameters": []any{
+						map[string]any{"name": "animeId", "in": "path", "required": true, "schema": map[string]any{"type": "string"}, "description": "Anime ID"},
+						map[string]any{"name": "offset", "in": "query", "schema": map[string]any{"type": "integer", "default": 0}, "description": "Pagination offset"},
+						map[string]any{"name": "limit", "in": "query", "schema": map[string]any{"type": "integer", "default": 20}, "description": "Pagination limit"},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/FileListResponse"),
+						"404": jsonErr,
+					},
+				},
 			},
 			"/api/v1/jobs": map[string]any{
 				"get": map[string]any{
@@ -167,6 +865,254 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 						"200": jsonOK("#/components/schemas/Settings"),
 						"400": jsonErr,
 						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SubscriptionList"),
+						"500": jsonErr,
+					},
+				},
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/CreateSubscriptionRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"201": jsonOK("#/components/schemas/Subscription"),
+						"400": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions/{id}": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/Subscription"),
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+				"put": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"409":    jsonErr,
+								"schema": map[string]any{"$ref": "#/components/schemas/Subscription"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/Subscription"),
+						"400": jsonErr,
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+				"delete": map[string]any{
+					"responses": map[string]any{
+						"204": map[string]any{"description": "No Content"},
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions/{id}/sync": map[string]any{
+				"post": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SyncSubscriptionResult"),
+						"400": jsonErr,
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions/{id}/episodes": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SubscriptionEpisodesResponse"),
+						"400": jsonErr,
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions/{id}/enqueue": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/SubscriptionEnqueueEpisodesRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SubscriptionEnqueueEpisodesResponse"),
+						"400": jsonErr,
+						"404": jsonErr,
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/subscriptions/sync-all": map[string]any{
+				"post": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/SyncAllSubscriptionsResponse"),
+						"500": jsonErr,
+					},
+				},
+			},
+			"/api/v1/anilist/viewer": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AniListViewer"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/anilist/airing": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AniListAiringScheduleList"),
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/anilist/watchlist": map[string]any{
+				"get": map[string]any{
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AniListWatchlist"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/resolve": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaResolveRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaResolveResponse"),
+						"400": jsonErr,
+						"501": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/scan": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaScanRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaScanResponse"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/episodes": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaEpisodesRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaEpisodesResponse"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/animesama/enqueue": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AnimeSamaEnqueueRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AnimeSamaEnqueueResponse"),
+						"400": jsonErr,
+						"501": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/import/anilist/preview": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AniListImportPreviewRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AniListImportPreviewResponse"),
+						"400": jsonErr,
+						"502": jsonErr,
+					},
+				},
+			},
+			"/api/v1/import/anilist/confirm": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AniListImportConfirmRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AniListImportConfirmResponse"),
+						"400": jsonErr,
+					},
+				},
+			},
+			"/api/v1/import/anilist/auto": map[string]any{
+				"post": map[string]any{
+					"requestBody": map[string]any{
+						"required": true,
+						"content": map[string]any{
+							"application/json": map[string]any{
+								"schema": map[string]any{"$ref": "#/components/schemas/AniListImportAutoRequest"},
+							},
+						},
+					},
+					"responses": map[string]any{
+						"200": jsonOK("#/components/schemas/AniListImportAutoResponse"),
+						"400": jsonErr,
+						"502": jsonErr,
 					},
 				},
 			},

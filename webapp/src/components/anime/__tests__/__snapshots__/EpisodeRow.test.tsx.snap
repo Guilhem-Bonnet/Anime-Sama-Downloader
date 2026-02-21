@@ -1,0 +1,61 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`EpisodeRow > snapshot test 1`] = `
+<div
+  class="episode-row  "
+  data-testid="episode-row-1"
+>
+  <div
+    class="episode-row__checkbox-wrapper"
+  >
+    <input
+      aria-label="Épisode 1"
+      class="episode-row__checkbox"
+      id="episode-1"
+      type="checkbox"
+    />
+  </div>
+  <div
+    class="episode-row__number"
+  >
+    <label
+      class="episode-row__label"
+      for="episode-1"
+    >
+      Ép. 
+      1
+    </label>
+  </div>
+  <div
+    class="episode-row__title"
+  >
+    <span>
+      Première attaque
+    </span>
+  </div>
+  <div
+    class="episode-row__duration"
+  >
+    <span>
+      24min
+    </span>
+  </div>
+  <div
+    class="episode-row__status"
+  >
+    <span
+      aria-describedby="status-1"
+      class="episode-row__badge"
+      style="background-color: var(--night-text-secondary);"
+    >
+      Disponible
+    </span>
+    <span
+      class="sr-only"
+      id="status-1"
+    >
+      Disponible
+    </span>
+  </div>
+</div>
+`;

@@ -1,0 +1,49 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SearchSuggestion > snapshot test 1`] = `
+<div
+  aria-selected="false"
+  class="search-suggestion"
+  data-testid="search-suggestion-Demon Slayer"
+  role="option"
+  tabindex="0"
+>
+  <span
+    aria-hidden="true"
+    class="search-suggestion__icon"
+  >
+    🔍
+  </span>
+  <div
+    class="search-suggestion__content"
+  >
+    <div
+      class="search-suggestion__title"
+    >
+      <span />
+      <mark
+        class="search-suggestion__highlight"
+      >
+        Demon
+      </mark>
+      <span>
+         Slayer
+      </span>
+    </div>
+    <div
+      class="search-suggestion__metadata"
+    >
+      <span
+        class="search-suggestion__season"
+      >
+        S1
+      </span>
+      <span
+        class="search-suggestion__language"
+      >
+        VOSTFR
+      </span>
+    </div>
+  </div>
+</div>
+`;
