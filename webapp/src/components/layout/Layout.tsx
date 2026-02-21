@@ -1,11 +1,22 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { TabNav } from './TabNav';
 import { Footer } from './Footer';
 import { ErrorBoundary } from './ErrorBoundary';
+import { useJobsStore } from '../../stores/jobs.store';
 
 export function Layout() {
+  const loadJobs = useJobsStore((s) => s.loadJobs);
+
+  // Charger les jobs dès le démarrage de l'app (Layout ne démonte jamais).
+  // Polling toutes les 15s pour rester à jour même sans SSE.
+  useEffect(() => {
+    loadJobs();
+    const interval = setInterval(loadJobs, 15_000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <ErrorBoundary>
       <div

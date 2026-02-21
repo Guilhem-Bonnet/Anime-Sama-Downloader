@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useJobsStore, progressPercent } from '../stores/jobs.store';
 import type { Job } from '../api';
 import { useSSE } from '../hooks/useSSE';
@@ -48,14 +48,9 @@ function friendlyError(job: Job): string {
 }
 
 export const DownloadMonitor: React.FC = () => {
-  const { jobs, isLoading, loadJobs, updateJobFromSSE, cancelJob } = useJobsStore();
+  const { jobs, isLoading, updateJobFromSSE, cancelJob } = useJobsStore();
 
-  // Load on mount + poll every 10s to stay fresh (SSE may miss events)
-  useEffect(() => {
-    loadJobs();
-    const interval = setInterval(() => loadJobs(), 10_000);
-    return () => clearInterval(interval);
-  }, []);
+  // Les jobs sont déjà chargés par Layout — ici on ne fait que les écouter via SSE.
 
   // Single SSE connection for all job events
   useSSE('/api/v1/events', (data: any) => {
