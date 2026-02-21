@@ -17,3 +17,11 @@ type IResolver interface {
 	// Name returns the resolver's display name.
 	Name() string
 }
+
+// ResolvedEpisodes represents the result of episode resolution.
+// It contains the selected player, available episode URLs, and max episode count.
+type ResolvedEpisodes struct {
+	SelectedPlayer string
+	URLs           []string
+	MaxEpisode     int
+}

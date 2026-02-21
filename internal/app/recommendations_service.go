@@ -38,8 +38,8 @@ func (s *RecommendationsServiceImpl) GetSimilarAnime(animeID string, limit int) 
 
 	// Score all other anime based on similarity
 	type scoredAnime struct {
-		anime domain.AnimeSearchResult
-		score float64
+		anime  domain.AnimeSearchResult
+		score  float64
 		reason string
 	}
 
@@ -98,7 +98,7 @@ func (s *RecommendationsServiceImpl) GetSimilarAnime(animeID string, limit int) 
 		if score > 0 {
 			reasonParts := []string{}
 			if genreMatches > 0 {
-				reasonParts = append(reasonParts, strings.TrimSpace(strings.Join([]string{string(rune('0'+rune(genreMatches))), "genre"}, " ")))
+				reasonParts = append(reasonParts, strings.TrimSpace(strings.Join([]string{string('0' + rune(genreMatches)), "genre"}, " ")))
 			}
 			if statusMatch {
 				reasonParts = append(reasonParts, "status")

@@ -3,17 +3,18 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"net/http"
-	"fmt"
 	"errors"
+	"fmt"
+	"net/http"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/httpjson"
-	"github.com/go-chi/chi/v5"
 )
 
 type AnimeSamaResolver interface {
@@ -67,9 +68,9 @@ type animeSamaEpisodeStatus struct {
 }
 
 type animeSamaEpisodesResponse struct {
-	BaseURL             string                 `json:"baseUrl"`
-	SelectedPlayer      string                 `json:"selectedPlayer"`
-	MaxAvailableEpisode int                    `json:"maxAvailableEpisode"`
+	BaseURL             string                   `json:"baseUrl"`
+	SelectedPlayer      string                   `json:"selectedPlayer"`
+	MaxAvailableEpisode int                      `json:"maxAvailableEpisode"`
 	Episodes            []animeSamaEpisodeStatus `json:"episodes"`
 }
 
@@ -134,9 +135,9 @@ func (h *AnimeSamaHandler) episodes(w http.ResponseWriter, r *http.Request) {
 }
 
 type animeSamaEnqueueRequest struct {
-	BaseURL   string `json:"baseUrl"`
-	Label     string `json:"label"`
-	Episodes  []int  `json:"episodes"`
+	BaseURL  string `json:"baseUrl"`
+	Label    string `json:"label"`
+	Episodes []int  `json:"episodes"`
 }
 
 type animeSamaEnqueueSkippedEpisode struct {
@@ -145,11 +146,11 @@ type animeSamaEnqueueSkippedEpisode struct {
 }
 
 type animeSamaEnqueueResponse struct {
-	BaseURL          string                         `json:"baseUrl"`
-	Label            string                         `json:"label"`
-	SelectedPlayer   string                         `json:"selectedPlayer"`
-	EnqueuedEpisodes []int                          `json:"enqueuedEpisodes"`
-	EnqueuedJobIDs   []string                       `json:"enqueuedJobIds"`
+	BaseURL          string                           `json:"baseUrl"`
+	Label            string                           `json:"label"`
+	SelectedPlayer   string                           `json:"selectedPlayer"`
+	EnqueuedEpisodes []int                            `json:"enqueuedEpisodes"`
+	EnqueuedJobIDs   []string                         `json:"enqueuedJobIds"`
 	Skipped          []animeSamaEnqueueSkippedEpisode `json:"skipped"`
 }
 
@@ -258,11 +259,7 @@ func (h *AnimeSamaHandler) enqueue(w http.ResponseWriter, r *http.Request) {
 		enqueuedJobIDs = append(enqueuedJobIDs, created.ID)
 	}
 
-	if len(enqueuedEpisodes) == 0 && len(skipped) > 0 {
-		// Rien de planifié: on renvoie quand même 200 avec détail, mais si tout est vide => erreur claire.
-		// Cas typique: saison vide.
-	}
-
+	// If nothing was enqueued but some were skipped, we still return 200 with details.
 	if len(enqueuedEpisodes) == 0 && len(skipped) == 0 {
 		httpjson.WriteError(w, http.StatusBadRequest, errors.New("nothing to enqueue").Error())
 		return

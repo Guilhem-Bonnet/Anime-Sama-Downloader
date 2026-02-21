@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 	"github.com/rs/zerolog"
+
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 type DownloadCompletionUpdater struct {

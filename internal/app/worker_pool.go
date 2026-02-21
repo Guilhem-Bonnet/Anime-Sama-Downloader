@@ -4,8 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 	"github.com/rs/zerolog"
+
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 // WorkerPool gère un pool de workers ajustable à chaud.

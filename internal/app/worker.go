@@ -5,10 +5,11 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog"
+
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
 type WorkerOptions struct {
@@ -222,11 +223,11 @@ func (w *Worker) execute(ctx context.Context, job domain.Job) {
 	}
 	PublishJobEvent(w.bus, "job.muxing", phase)
 
-	finished, err := w.repo.UpdateState(ctx, job.ID, domain.JobMuxing, domain.JobCompleted)
+	_, err = w.repo.UpdateState(ctx, job.ID, domain.JobMuxing, domain.JobCompleted)
 	if err != nil {
 		w.logger.Warn().Err(err).Str("job_id", job.ID).Msg("failed to mark job completed")
 		return
 	}
-	finished, _ = w.repo.UpdateProgress(ctx, job.ID, 1)
+	finished, _ := w.repo.UpdateProgress(ctx, job.ID, 1)
 	PublishJobEvent(w.bus, "job.completed", finished)
 }

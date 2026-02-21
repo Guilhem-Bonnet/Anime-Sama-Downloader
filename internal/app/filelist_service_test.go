@@ -260,8 +260,8 @@ func TestFileListService_Duration_Realistic(t *testing.T) {
 	}
 
 	// Verify durations are in realistic range (18-30 minutes)
-	const minDuration = 18 * 60  // 18 minutes in seconds
-	const maxDuration = 30 * 60  // 30 minutes in seconds
+	const minDuration = 18 * 60 // 18 minutes in seconds
+	const maxDuration = 30 * 60 // 30 minutes in seconds
 
 	for i, file := range fileList.Files {
 		if file.Duration < minDuration || file.Duration > maxDuration {
@@ -608,7 +608,7 @@ func TestFileListService_Sorting_ByFileName(t *testing.T) {
 	fileList2, _ := svc.GetFileList(context.Background(), "1")
 	for i := range fileList.Files {
 		if fileList.Files[i].Name != fileList2.Files[i].Name {
-			t.Errorf("file %d: name mismatch on repeated call: '%s' vs '%s'", 
+			t.Errorf("file %d: name mismatch on repeated call: '%s' vs '%s'",
 				i, fileList.Files[i].Name, fileList2.Files[i].Name)
 		}
 	}

@@ -110,7 +110,7 @@ func TestJobsRepository_FileListJSON_Optional(t *testing.T) {
 	}
 
 	// Verify file list is empty (not an error, just optional)
-	if created.FileListJSON != nil && len(created.FileListJSON) > 0 {
+	if len(created.FileListJSON) > 0 {
 		t.Error("expected empty file list for new job")
 	}
 }
@@ -234,7 +234,7 @@ func TestJobsRepository_FileListJSON_ClearOnUpdate(t *testing.T) {
 
 	// Verify it was cleared
 	retrieved2, _ := repo.Get(ctx, "job-update-list")
-	if retrieved2.FileListJSON != nil && len(retrieved2.FileListJSON) > 0 {
+	if len(retrieved2.FileListJSON) > 0 {
 		t.Error("file list should be cleared")
 	}
 }

@@ -15,8 +15,8 @@ const (
 // Suggestion represents a single search suggestion
 type Suggestion struct {
 	Query    string                 `json:"query"`
-	Category SuggestionCategory    `json:"category"`
-	Score    float64               `json:"score"`
+	Category SuggestionCategory     `json:"category"`
+	Score    float64                `json:"score"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"` // e.g., anime count, genre info
 }
 

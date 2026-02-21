@@ -9,9 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
-	"github.com/go-chi/chi/v5"
 )
 
 // Mock JobRepository for tests
@@ -342,40 +343,4 @@ func TestJobsHandler_Cancel_NotFound(t *testing.T) {
 	if w.Code != http.StatusNotFound {
 		t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
 	}
-}
-
-// Mock JobService for testing
-type mockJobService struct {
-	createFn func(ctx context.Context, req app.CreateJobRequest) (app.JobDTO, error)
-	getFn    func(ctx context.Context, id string) (app.JobDTO, error)
-	listFn   func(ctx context.Context, limit int) ([]app.JobDTO, error)
-	cancelFn func(ctx context.Context, id string) (app.JobDTO, error)
-}
-
-func (m *mockJobService) Create(ctx context.Context, req app.CreateJobRequest) (app.JobDTO, error) {
-	if m.createFn != nil {
-		return m.createFn(ctx, req)
-	}
-	return app.JobDTO{}, nil
-}
-
-func (m *mockJobService) Get(ctx context.Context, id string) (app.JobDTO, error) {
-	if m.getFn != nil {
-		return m.getFn(ctx, id)
-	}
-	return app.JobDTO{}, nil
-}
-
-func (m *mockJobService) List(ctx context.Context, limit int) ([]app.JobDTO, error) {
-	if m.listFn != nil {
-		return m.listFn(ctx, limit)
-	}
-	return []app.JobDTO{}, nil
-}
-
-func (m *mockJobService) Cancel(ctx context.Context, id string) (app.JobDTO, error) {
-	if m.cancelFn != nil {
-		return m.cancelFn(ctx, id)
-	}
-	return app.JobDTO{}, nil
 }

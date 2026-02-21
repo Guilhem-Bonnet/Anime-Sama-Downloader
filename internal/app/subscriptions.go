@@ -13,15 +13,16 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/rs/xid"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
-	"github.com/rs/xid"
 )
 
 type SubscriptionService struct {
 	repo            ports.SubscriptionRepository
-	jobCreator      ports.JobCreator        // Interface pour découplage
-	episodeResolver ports.IEpisodeResolver  // Interface abstraite pour testabilité
+	jobCreator      ports.JobCreator       // Interface pour découplage
+	episodeResolver ports.IEpisodeResolver // Interface abstraite pour testabilité
 	bus             ports.EventBus
 }
 

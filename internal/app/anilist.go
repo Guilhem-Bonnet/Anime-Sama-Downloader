@@ -279,9 +279,7 @@ func (s *AniListService) Watchlist(ctx context.Context, statuses []string) ([]An
 
 	flat := make([]AniListWatchlistEntry, 0)
 	for _, l := range out.Data.MediaListCollection.Lists {
-		for _, e := range l.Entries {
-			flat = append(flat, e)
-		}
+		flat = append(flat, l.Entries...)
 	}
 	return flat, nil
 }

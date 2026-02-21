@@ -7,9 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
-	"github.com/go-chi/chi/v5"
 )
 
 func TestAnimeDetailHandler_ValidID(t *testing.T) {

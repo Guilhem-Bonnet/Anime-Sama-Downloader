@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 )
 
 func TestAniListImportHandler_PreviewDisabled(t *testing.T) {

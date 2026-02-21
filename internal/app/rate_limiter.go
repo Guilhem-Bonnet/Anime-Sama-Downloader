@@ -12,11 +12,11 @@ import (
 // It limits requests per second to avoid getting banned by external services.
 type RateLimiter struct {
 	mu         sync.Mutex
-	rps        float64        // requests per second
-	tokens     float64        // current available tokens
-	maxTokens  float64        // maximum tokens (burst)
-	lastUpdate time.Time      // last token update time
-	waitCount  int            // number of requests waiting
+	rps        float64   // requests per second
+	tokens     float64   // current available tokens
+	maxTokens  float64   // maximum tokens (burst)
+	lastUpdate time.Time // last token update time
+	waitCount  int       // number of requests waiting
 }
 
 // NewRateLimiter creates a new rate limiter with the specified requests per second.

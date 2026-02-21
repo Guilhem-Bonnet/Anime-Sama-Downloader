@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/rs/zerolog"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
-	"github.com/rs/zerolog"
 )
 
 // ComputeNextCheck calculates when to check a subscription for new episodes.

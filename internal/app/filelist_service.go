@@ -70,8 +70,8 @@ func (s *FileListServiceImpl) generateFileList(anime *domain.Anime) *domain.File
 			Name:     fmt.Sprintf("%s - Episode %d", anime.Title, episodeNum),
 			Path:     fmt.Sprintf("/downloads/%s/Episode_%02d.mkv", anime.Title, episodeNum),
 			Size:     int64(350000000 + i*10000000), // ~350-400 MB per episode
-			Duration: 1400 + i*60,                    // ~23+ minutes per episode
-			Type:     "video/x-matroska",             // MKV is standard
+			Duration: 1400 + i*60,                   // ~23+ minutes per episode
+			Type:     "video/x-matroska",            // MKV is standard
 		}
 	}
 

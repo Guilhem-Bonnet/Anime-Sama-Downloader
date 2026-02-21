@@ -35,7 +35,7 @@ func (m *MockAnimeSearchService) SearchWithFilters(ctx context.Context, filters 
 	return m.results, nil
 }
 
-func testSearchHandler(t *testing.T, searchService ports.AnimeSearch) http.Handler {
+func testSearchHandler(_ *testing.T, searchService ports.AnimeSearch) http.Handler {
 	return http.HandlerFunc(NewSearchHandler(searchService).Search)
 }
 
@@ -361,7 +361,7 @@ func TestFileListHandler_GetFiles_NoAnimeId(t *testing.T) {
 // TestFileListHandler_GetFiles_ServiceError tests internal service errors
 func TestFileListHandler_GetFiles_ServiceError(t *testing.T) {
 	mockService := &MockFileListService{
-		shouldError: true,
+		shouldError:  true,
 		errorMessage: "internal service error",
 	}
 
@@ -540,7 +540,7 @@ func TestFileListHandler_GetFiles_SpecialCharactersInID(t *testing.T) {
 	}
 
 	handler := NewFileListHandler(mockService)
-	
+
 	// Test various ID formats
 	testIDs := []string{
 		"test-123",

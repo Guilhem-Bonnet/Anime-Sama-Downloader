@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
 )
 
@@ -17,6 +19,15 @@ type RecommendationsHandler struct {
 // NewRecommendationsHandler creates a new recommendations handler
 func NewRecommendationsHandler(recommendationsService ports.RecommendationsService) *RecommendationsHandler {
 	return &RecommendationsHandler{recommendationsService: recommendationsService}
+}
+
+// Routes registers recommendations endpoints.
+func (h *RecommendationsHandler) Routes(r chi.Router) {
+	r.Route("/recommendations", func(r chi.Router) {
+		r.Get("/similar", h.GetSimilarAnime)
+		r.Get("/query", h.GetRecommendationsByQuery)
+		r.Get("/genres", h.GetRecommendationsForGenres)
+	})
 }
 
 // GetSimilarAnime returns anime similar to the given anime

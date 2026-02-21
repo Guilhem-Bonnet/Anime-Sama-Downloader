@@ -3,6 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
+
+	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 )
 
 // EpisodeResolver handles fetching and parsing anime episodes from anime-sama.
@@ -17,13 +19,6 @@ func NewEpisodeResolver() *EpisodeResolver {
 	return &EpisodeResolver{}
 }
 
-// ResolvedEpisodes represents the result of episode resolution.
-type ResolvedEpisodes struct {
-	SelectedPlayer string
-	URLs           []string
-	MaxEpisode     int
-}
-
 // Resolve fetches episodes from anime-sama baseURL and resolves player selection.
 //
 // Flow:
@@ -31,17 +26,17 @@ type ResolvedEpisodes struct {
 // 2. Parse players map
 // 3. Select best player (fallback if preferred unavailable)
 // 4. Return URLs + max episode count
-func (r *EpisodeResolver) Resolve(ctx context.Context, baseURL, preferredPlayer string) (ResolvedEpisodes, error) {
+func (r *EpisodeResolver) Resolve(ctx context.Context, baseURL, preferredPlayer string) (domain.ResolvedEpisodes, error) {
 	// Step 1: Fetch episodes.js
 	jsText, err := FetchEpisodesJS(ctx, baseURL)
 	if err != nil {
-		return ResolvedEpisodes{}, fmt.Errorf("fetch episodes.js: %w", err)
+		return domain.ResolvedEpisodes{}, fmt.Errorf("fetch episodes.js: %w", err)
 	}
 
 	// Step 2: Parse episodes
 	eps, err := ParseEpisodesJS(jsText)
 	if err != nil {
-		return ResolvedEpisodes{}, fmt.Errorf("parse episodes.js: %w", err)
+		return domain.ResolvedEpisodes{}, fmt.Errorf("parse episodes.js: %w", err)
 	}
 
 	// Step 3: Select player using existing helper
@@ -53,7 +48,7 @@ func (r *EpisodeResolver) Resolve(ctx context.Context, baseURL, preferredPlayer 
 		maxAvail = 0
 	}
 
-	return ResolvedEpisodes{
+	return domain.ResolvedEpisodes{
 		SelectedPlayer: selected,
 		URLs:           urls,
 		MaxEpisode:     maxAvail,

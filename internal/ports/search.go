@@ -21,7 +21,7 @@ type AnimeSearch interface {
 	// Returns a sorted list of results (most relevant first), max 50 results.
 	// Empty query returns empty slice (no error).
 	Search(ctx context.Context, query string) ([]domain.AnimeSearchResult, error)
-	
+
 	// SearchWithFilters performs a filtered anime search.
 	// Applies genre, status, and year filters to the results.
 	// Returns filtered and sorted results, max 50 results.

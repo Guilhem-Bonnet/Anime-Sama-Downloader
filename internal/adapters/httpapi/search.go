@@ -25,11 +25,11 @@ func NewSearchHandler(searchService ports.AnimeSearch) *SearchHandler {
 
 // SearchRequest represents the search query parameters
 type SearchRequest struct {
-	Query  string   `json:"q"`
-	Genres []string `json:"genres"`      // Filter by genres (e.g., ["Action", "Adventure"])
-	Status string   `json:"status"`      // Filter by status: "ongoing", "completed", "planning", "" (all)
-	YearMin int     `json:"year_min"`    // Minimum year (e.g., 2020), 0 = no filter
-	YearMax int     `json:"year_max"`    // Maximum year (e.g., 2023), 0 = no filter
+	Query   string   `json:"q"`
+	Genres  []string `json:"genres"`   // Filter by genres (e.g., ["Action", "Adventure"])
+	Status  string   `json:"status"`   // Filter by status: "ongoing", "completed", "planning", "" (all)
+	YearMin int      `json:"year_min"` // Minimum year (e.g., 2020), 0 = no filter
+	YearMax int      `json:"year_max"` // Maximum year (e.g., 2023), 0 = no filter
 }
 
 // SearchResponse represents a single search result in the HTTP response
@@ -46,20 +46,20 @@ type SearchResponse struct {
 func (h *SearchHandler) Search(w http.ResponseWriter, r *http.Request) {
 	// Parse query parameters
 	query := r.URL.Query().Get("q")
-	
+
 	// Parse filters
 	filters := ports.SearchFilters{
 		Query: query,
 	}
-	
+
 	// Parse genres (comma-separated)
 	if genresParam := r.URL.Query().Get("genres"); genresParam != "" {
 		filters.Genres = parseCommaSeparated(genresParam)
 	}
-	
+
 	// Parse status
 	filters.Status = r.URL.Query().Get("status")
-	
+
 	// Parse year range
 	if yearMinStr := r.URL.Query().Get("year_min"); yearMinStr != "" {
 		if yearMin, err := strconv.Atoi(yearMinStr); err == nil {
@@ -140,9 +140,9 @@ type FileResponse struct {
 
 // FileListResponse represents the complete file list response
 type FileListResponse struct {
-	AnimeID string          `json:"anime_id"`
-	Files   []FileResponse  `json:"files"`
-	Count   int             `json:"count"`
+	AnimeID string         `json:"anime_id"`
+	Files   []FileResponse `json:"files"`
+	Count   int            `json:"count"`
 }
 
 // GetFiles handles GET /api/v1/anime/{animeId}/files

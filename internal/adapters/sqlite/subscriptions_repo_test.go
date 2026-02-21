@@ -190,7 +190,7 @@ func TestSubscriptionsRepository_Delete_Success(t *testing.T) {
 	}
 
 	// Verify deleted
-	result, err := repo.Get(ctx, "sub-delete")
+	result, _ := repo.Get(ctx, "sub-delete")
 	if result.ID != "" {
 		t.Errorf("expected empty subscription after delete, got %v", result)
 	}

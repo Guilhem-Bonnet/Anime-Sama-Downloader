@@ -687,12 +687,12 @@ func (s *Server) handleOpenAPI(w http.ResponseWriter, r *http.Request) {
 				"FileMetadata": map[string]any{
 					"type": "object",
 					"properties": map[string]any{
-						"file_name":     map[string]any{"type": "string"},
-						"file_size":     map[string]any{"type": "integer", "format": "int64"},
-						"file_type":     map[string]any{"type": "string"},
-						"duration":      map[string]any{"type": "integer"},
-						"resolution":    map[string]any{"type": "string"},
-						"download_url":  map[string]any{"type": "string"},
+						"file_name":      map[string]any{"type": "string"},
+						"file_size":      map[string]any{"type": "integer", "format": "int64"},
+						"file_type":      map[string]any{"type": "string"},
+						"duration":       map[string]any{"type": "integer"},
+						"resolution":     map[string]any{"type": "string"},
+						"download_url":   map[string]any{"type": "string"},
 						"episode_number": map[string]any{"type": "integer"},
 					},
 					"required":             []any{"file_name", "file_size", "file_type"},

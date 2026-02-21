@@ -7,10 +7,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/adapters/sqlite"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/app"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
-	"github.com/go-chi/chi/v5"
 )
 
 func TestSettingsHandler_PutUpdatesDownloadLimiter(t *testing.T) {
