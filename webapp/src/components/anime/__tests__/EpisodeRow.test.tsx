@@ -20,7 +20,8 @@ describe('EpisodeRow', () => {
     expect(screen.getByText('Ép. 1')).toBeInTheDocument();
     expect(screen.getByText('Première attaque')).toBeInTheDocument();
     expect(screen.getByText('24min')).toBeInTheDocument();
-    expect(screen.getByText('Disponible')).toBeInTheDocument();
+    // Badge text appears twice (visible + sr-only), use getAllByText
+    expect(screen.getAllByText('Disponible').length).toBeGreaterThan(0);
   });
 
   it('renders without optional title and duration', () => {
@@ -80,9 +81,9 @@ describe('EpisodeRow', () => {
         <EpisodeRow {...defaultProps} status={status} />
       );
       
-      // Verify badge is rendered
-      const badge = screen.getByText(/disponible|téléchargement|téléchargé/i);
-      expect(badge).toBeInTheDocument();
+      // Badge text appears twice (visible + sr-only), use getAllByText
+      const badges = screen.getAllByText(/disponible|téléchargement|téléchargé/i);
+      expect(badges.length).toBeGreaterThan(0);
       
       unmount();
     });

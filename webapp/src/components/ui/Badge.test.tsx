@@ -10,34 +10,34 @@ describe('Badge Component', () => {
 
   it('should apply default variant', () => {
     const { container } = render(<Badge>Tag</Badge>)
-    const badge = container.querySelector('div')
+    const badge = container.querySelector('span')
     
-    expect(badge).toHaveClass('badge')
+    expect(badge).toHaveClass('badge', 'badge-primary')
   })
 
-  it('should apply custom variant classes', () => {
+  it('should apply error variant classes', () => {
     const { container } = render(
-      <Badge variant="destructive">Error</Badge>
+      <Badge variant="error">Error</Badge>
     )
-    const badge = container.querySelector('div')
+    const badge = container.querySelector('span')
     
-    expect(badge).toHaveClass('destructive')
+    expect(badge).toHaveClass('badge-error')
   })
 
-  it('should apply outline variant', () => {
+  it('should apply warning variant', () => {
     const { container } = render(
-      <Badge variant="outline">Outline Badge</Badge>
+      <Badge variant="warning">Warning Badge</Badge>
     )
-    const badge = container.querySelector('div')
+    const badge = container.querySelector('span')
     
-    expect(badge).toHaveClass('outline')
+    expect(badge).toHaveClass('badge-warning')
   })
 
   it('should render with custom className', () => {
     const { container } = render(
       <Badge className="custom-class">Badge</Badge>
     )
-    const badge = container.querySelector('div')
+    const badge = container.querySelector('span')
     
     expect(badge).toHaveClass('custom-class')
   })
@@ -46,8 +46,8 @@ describe('Badge Component', () => {
     const { container } = render(
       <Badge variant="secondary">Secondary</Badge>
     )
-    const badge = container.querySelector('div')
+    const badge = container.querySelector('span')
     
-    expect(badge).toHaveClass('secondary')
+    expect(badge).toHaveClass('badge-secondary')
   })
 })

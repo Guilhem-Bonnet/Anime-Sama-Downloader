@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Button } from "./Button"
+import { Button } from './Button'
 
 describe('Button Component', () => {
   it('should render button with text', () => {
@@ -30,11 +30,11 @@ describe('Button Component', () => {
 
   it('should apply variant classes', () => {
     const { container } = render(
-      <Button variant="destructive">Delete</Button>
+      <Button variant="danger">Delete</Button>
     )
     const button = container.querySelector('button')
     
-    expect(button).toHaveClass('destructive')
+    expect(button).toHaveClass('btn-danger')
   })
 
   it('should apply size classes', () => {
@@ -43,17 +43,14 @@ describe('Button Component', () => {
     )
     const button = container.querySelector('button')
     
-    expect(button).toHaveClass('lg')
+    expect(button).toHaveClass('btn-lg')
   })
 
-  it('should render as child element with asChild prop', () => {
-    const { container } = render(
-      <Button asChild>
-        <a href="/test">Link Button</a>
-      </Button>
+  it('should render with loading state', () => {
+    render(
+      <Button isLoading>Loading</Button>
     )
-    const link = container.querySelector('a')
-    
-    expect(link).toHaveAttribute('href', '/test')
+    const button = screen.getByRole('button')
+    expect(button).toBeDisabled()
   })
 })

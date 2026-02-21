@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { Card } from './Card'
+import { Card, CardHeader, CardTitle, CardSubtitle, CardBody, CardFooter } from './Card'
 
 describe('Card Component', () => {
   it('should render card with children', () => {
@@ -26,7 +26,7 @@ describe('Card Component', () => {
   it('should render CardHeader', () => {
     render(
       <Card>
-        <Card.Header>Header</Card.Header>
+        <CardHeader>Header</CardHeader>
       </Card>
     )
     expect(screen.getByText('Header')).toBeInTheDocument()
@@ -35,29 +35,29 @@ describe('Card Component', () => {
   it('should render CardTitle', () => {
     render(
       <Card>
-        <Card.Header>
-          <Card.Title>Title</Card.Title>
-        </Card.Header>
+        <CardHeader>
+          <CardTitle>Title</CardTitle>
+        </CardHeader>
       </Card>
     )
     expect(screen.getByText('Title')).toBeInTheDocument()
   })
 
-  it('should render CardDescription', () => {
+  it('should render CardSubtitle', () => {
     render(
       <Card>
-        <Card.Header>
-          <Card.Description>Description</Card.Description>
-        </Card.Header>
+        <CardHeader>
+          <CardSubtitle>Description</CardSubtitle>
+        </CardHeader>
       </Card>
     )
     expect(screen.getByText('Description')).toBeInTheDocument()
   })
 
-  it('should render CardContent', () => {
+  it('should render CardBody', () => {
     render(
       <Card>
-        <Card.Content>Content</Card.Content>
+        <CardBody>Content</CardBody>
       </Card>
     )
     expect(screen.getByText('Content')).toBeInTheDocument()
@@ -66,21 +66,21 @@ describe('Card Component', () => {
   it('should render CardFooter', () => {
     render(
       <Card>
-        <Card.Footer>Footer</Card.Footer>
+        <CardFooter>Footer</CardFooter>
       </Card>
     )
     expect(screen.getByText('Footer')).toBeInTheDocument()
   })
 
   it('should render complete card structure', () => {
-    const { container } = render(
+    render(
       <Card>
-        <Card.Header>
-          <Card.Title>Card Title</Card.Title>
-          <Card.Description>Card Description</Card.Description>
-        </Card.Header>
-        <Card.Content>Body Content</Card.Content>
-        <Card.Footer>Footer Content</Card.Footer>
+        <CardHeader>
+          <CardTitle>Card Title</CardTitle>
+          <CardSubtitle>Card Description</CardSubtitle>
+        </CardHeader>
+        <CardBody>Body Content</CardBody>
+        <CardFooter>Footer Content</CardFooter>
       </Card>
     )
     

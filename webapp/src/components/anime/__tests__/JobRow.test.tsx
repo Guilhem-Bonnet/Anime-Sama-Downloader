@@ -122,7 +122,8 @@ describe('JobRow', () => {
         <JobRow {...defaultProps} status={status} />
       );
       
-      expect(screen.getByText(/en attente|téléchargement|mis en pause|terminé|erreur/i)).toBeInTheDocument();
+      const matches = screen.getAllByText(/en attente|téléchargement|mis en pause|terminé|erreur/i);
+      expect(matches.length).toBeGreaterThan(0);
       
       unmount();
     });

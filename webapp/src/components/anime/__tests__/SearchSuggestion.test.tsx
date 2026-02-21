@@ -14,9 +14,10 @@ describe('SearchSuggestion', () => {
   };
 
   it('renders with default props', () => {
-    render(<SearchSuggestion {...defaultProps} />);
+    const { container } = render(<SearchSuggestion {...defaultProps} />);
     
-    expect(screen.getByText(/demon slayer/i)).toBeInTheDocument();
+    const titleEl = container.querySelector('.search-suggestion__title');
+    expect(titleEl?.textContent).toMatch(/demon slayer/i);
     expect(screen.getByText('S1')).toBeInTheDocument();
     expect(screen.getByText('VOSTFR')).toBeInTheDocument();
   });
@@ -32,7 +33,7 @@ describe('SearchSuggestion', () => {
   });
 
   it('renders without season (optional)', () => {
-    render(
+    const { container } = render(
       <SearchSuggestion
         title="Jujutsu Kaisen"
         language="VOSTFR"
@@ -41,7 +42,8 @@ describe('SearchSuggestion', () => {
       />
     );
     
-    expect(screen.getByText(/jujutsu kaisen/i)).toBeInTheDocument();
+    const titleEl = container.querySelector('.search-suggestion__title');
+    expect(titleEl?.textContent).toMatch(/jujutsu kaisen/i);
     expect(screen.queryByText('S1')).not.toBeInTheDocument();
   });
 
