@@ -86,10 +86,11 @@ func main() {
 	importer := app.NewAniListImportService(anilistService, resolver, subscriptionsService)
 
 	_, animeCatalogue := devCatalogue()
-	searchService := app.NewAniListSearchService() // Real AniList-backed search
+	aniListHTTP := app.NewAniListHTTPClient("https://graphql.anilist.co")
+	searchService := app.NewAniListSearchService(aniListHTTP)
 	fileListService := app.NewFileListService(animeCatalogue)
 	mockDetail := app.NewMockAnimeDetailService()
-	detailService := app.NewAniListDetailService(mockDetail) // AniList for al-* IDs, fallback to mock
+	detailService := app.NewAniListDetailService(aniListHTTP, mockDetail)
 	recommendationsService := app.NewRecommendationsService(nil) // TODO: feed from AniList
 
 	server := httpapi.NewServer(

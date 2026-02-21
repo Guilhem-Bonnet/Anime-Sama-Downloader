@@ -1,14 +1,10 @@
 package app
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 )
@@ -17,23 +13,22 @@ import (
 // IDs with the "al-" prefix (e.g. "al-187901") are resolved via AniList.
 // Other IDs are delegated to a fallback service (if provided).
 type AniListDetailService struct {
-	endpoint string
-	client   *http.Client
+	http     *aniListHTTPClient
 	fallback interface {
 		GetDetail(ctx context.Context, id string) (domain.AnimeDetail, error)
 	}
 }
 
 // NewAniListDetailService creates a new detail service backed by AniList.
-// fallback may be nil; if so, non-AniList IDs will return "not found".
-func NewAniListDetailService(fallback interface {
+// httpClient may be nil (a default is created). fallback may be nil.
+func NewAniListDetailService(httpClient *aniListHTTPClient, fallback interface {
 	GetDetail(ctx context.Context, id string) (domain.AnimeDetail, error)
 }) *AniListDetailService {
+	if httpClient == nil {
+		httpClient = NewAniListHTTPClient("https://graphql.anilist.co")
+	}
 	return &AniListDetailService{
-		endpoint: "https://graphql.anilist.co",
-		client: &http.Client{
-			Timeout: 15 * time.Second,
-		},
+		http:     httpClient,
 		fallback: fallback,
 	}
 }
@@ -114,32 +109,9 @@ func (s *AniListDetailService) fetchFromAniList(ctx context.Context, originalID 
 		},
 	}
 
-	b, err := json.Marshal(reqBody)
-	if err != nil {
-		return domain.AnimeDetail{}, err
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, s.endpoint, bytes.NewReader(b))
-	if err != nil {
-		return domain.AnimeDetail{}, err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json")
-	httpReq.Header.Set("User-Agent", "asd-server")
-
-	resp, err := s.client.Do(httpReq)
-	if err != nil {
-		return domain.AnimeDetail{}, fmt.Errorf("anilist detail: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return domain.AnimeDetail{}, fmt.Errorf("anilist http error: %s", resp.Status)
-	}
-
 	var out aniListGraphQLResponse[aniListDetailData]
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return domain.AnimeDetail{}, err
+	if err := s.http.do(ctx, reqBody, &out); err != nil {
+		return domain.AnimeDetail{}, fmt.Errorf("anilist detail: %w", err)
 	}
 	if len(out.Errors) > 0 {
 		return domain.AnimeDetail{}, fmt.Errorf("anilist: %s", out.Errors[0].Message)

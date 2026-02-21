@@ -1,13 +1,9 @@
 package app
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/domain"
 	"github.com/Guilhem-Bonnet/Anime-Sama-Downloader/internal/ports"
@@ -16,18 +12,16 @@ import (
 // AniListSearchService implements ports.AnimeSearch using the AniList GraphQL API.
 // No authentication token is required for public search queries.
 type AniListSearchService struct {
-	endpoint string
-	client   *http.Client
+	http *aniListHTTPClient
 }
 
 // NewAniListSearchService creates a new search service backed by AniList.
-func NewAniListSearchService() *AniListSearchService {
-	return &AniListSearchService{
-		endpoint: "https://graphql.anilist.co",
-		client: &http.Client{
-			Timeout: 15 * time.Second,
-		},
+// If httpClient is nil, a default one is created.
+func NewAniListSearchService(httpClient *aniListHTTPClient) *AniListSearchService {
+	if httpClient == nil {
+		httpClient = NewAniListHTTPClient("https://graphql.anilist.co")
 	}
+	return &AniListSearchService{http: httpClient}
 }
 
 // aniListSearchMediaEntry represents a single media entry from AniList search.
@@ -81,7 +75,7 @@ func (s *AniListSearchService) SearchWithFilters(ctx context.Context, filters po
 	}
 
 	var out aniListGraphQLResponse[aniListSearchPageData]
-	if err := s.doRequest(ctx, reqBody, &out); err != nil {
+	if err := s.http.do(ctx, reqBody, &out); err != nil {
 		return nil, fmt.Errorf("anilist search: %w", err)
 	}
 	if len(out.Errors) > 0 {
@@ -240,30 +234,7 @@ func (s *AniListSearchService) toSearchResult(m aniListSearchMediaEntry) domain.
 	}
 }
 
-// doRequest executes a GraphQL request against AniList (no auth required for search).
+// doRequest is kept for backward compatibility (delegates to shared HTTP client).
 func (s *AniListSearchService) doRequest(ctx context.Context, req aniListGraphQLRequest, out any) error {
-	b, err := json.Marshal(req)
-	if err != nil {
-		return err
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, s.endpoint, bytes.NewReader(b))
-	if err != nil {
-		return err
-	}
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/json")
-	httpReq.Header.Set("User-Agent", "asd-server")
-
-	resp, err := s.client.Do(httpReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return fmt.Errorf("anilist http error: %s", resp.Status)
-	}
-
-	return json.NewDecoder(resp.Body).Decode(out)
+	return s.http.do(ctx, req, out)
 }
