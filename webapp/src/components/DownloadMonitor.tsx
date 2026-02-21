@@ -88,7 +88,25 @@ export const DownloadMonitor: React.FC = () => {
                         ID: {job.id.substring(0, 12)}... · {job.state}
                       </p>
                     </div>
-                    <StatusBadge status={displayStatus(job.state)} size="sm" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        onClick={() => cancelJob(job.id)}
+                        style={{
+                          background: 'rgba(220,38,38,0.15)',
+                          border: '1px solid rgba(220,38,38,0.3)',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          color: '#dc2626',
+                          cursor: 'pointer',
+                          fontWeight: 500,
+                        }}
+                        title="Annuler ce téléchargement"
+                      >
+                        ✕ Annuler
+                      </button>
+                      <StatusBadge status={displayStatus(job.state)} size="sm" />
+                    </div>
                   </div>
                   <DownloadProgress progress={progressPercent(job)} />
                 </div>

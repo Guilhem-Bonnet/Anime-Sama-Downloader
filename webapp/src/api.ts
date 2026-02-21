@@ -245,6 +245,14 @@ export async function apiEnqueueSubscriptionEpisodes(id: string, episodes: numbe
   });
 }
 
+export async function apiCreateJob(type: string, params: Record<string, unknown>): Promise<Job> {
+  return await fetchJson<Job>('/jobs/', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type, params }),
+  });
+}
+
 export async function apiListJobs(limit = 200): Promise<Job[]> {
   return await fetchJson<Job[]>(`/jobs?limit=${encodeURIComponent(String(limit))}`);
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { apiCreateJob } from '../api';
 
 interface Episode {
   number: number;
@@ -34,6 +35,7 @@ export function AnimeDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedEpisodes, setSelectedEpisodes] = useState<Set<string>>(new Set());
   const [activeSeason, setActiveSeason] = useState(1);
+  const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -94,11 +96,43 @@ export function AnimeDetailPage() {
     });
   };
 
-  const handleDownload = () => {
-    if (selectedEpisodes.size === 0) return;
-    
-    // TODO: Implement download job creation (Story 3.1)
-    alert(`Téléchargement de ${selectedEpisodes.size} épisodes (à implémenter dans Story 3.1)`);
+  const handleDownload = async () => {
+    if (selectedEpisodes.size === 0 || !anime) return;
+    setDownloading(true);
+
+    try {
+      const entries = Array.from(selectedEpisodes).map((key) => {
+        const [seasonStr, epStr] = key.split('-');
+        return { season: Number(seasonStr), episode: Number(epStr) };
+      });
+
+      // Find episode URLs from loaded anime data
+      const promises = entries.map(({ season, episode }) => {
+        const s = anime.seasons.find((ss) => ss.number === season);
+        const ep = s?.episodes.find((e) => e.number === episode);
+        const seasonPad = String(season).padStart(2, '0');
+        const epPad = String(episode).padStart(2, '0');
+        const label = `${anime.title} - S${seasonPad}E${epPad}`;
+
+        return apiCreateJob('download', {
+          url: ep?.url || '',
+          animeTitle: anime.title,
+          animeId: anime.id,
+          seasonNumber: season,
+          episodeNumber: episode,
+          label,
+          filename: `${label}.mp4`,
+        });
+      });
+
+      await Promise.all(promises);
+      setSelectedEpisodes(new Set());
+      navigate('/downloads');
+    } catch (err: any) {
+      alert(err.message || 'Échec de la création des téléchargements');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (loading) {
@@ -249,11 +283,13 @@ export function AnimeDetailPage() {
         {/* Download Button */}
         <button
           className="btn primary"
-          disabled={selectedEpisodes.size === 0}
+          disabled={selectedEpisodes.size === 0 || downloading}
           onClick={handleDownload}
           style={{ marginTop: '24px', width: '100%' }}
         >
-          {selectedEpisodes.size === 0
+          {downloading
+            ? 'Création des jobs…'
+            : selectedEpisodes.size === 0
             ? 'Sélectionnez des épisodes'
             : `Télécharger ${selectedEpisodes.size} épisode${selectedEpisodes.size > 1 ? 's' : ''}`}
         </button>
