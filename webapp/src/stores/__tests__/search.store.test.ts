@@ -14,7 +14,7 @@ describe('useSearchStore', () => {
       lastSearchTime: undefined,
     });
     fetchSpy = vi.fn();
-    globalThis.fetch = fetchSpy;
+    globalThis.fetch = fetchSpy as typeof fetch;
   });
 
   afterEach(() => {

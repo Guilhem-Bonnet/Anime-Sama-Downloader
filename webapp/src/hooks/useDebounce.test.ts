@@ -84,7 +84,7 @@ describe('useDebounce Hook', () => {
   it('should work with arrays', async () => {
     const { result, rerender } = renderHook(
       ({ value }) => useDebounce(value, 50),
-      { initialProps: { value: [] } }
+      { initialProps: { value: [] as number[] } }
     )
 
     const newArray = [1, 2, 3]
