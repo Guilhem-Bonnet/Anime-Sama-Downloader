@@ -20,14 +20,14 @@ import (
 
 type SubscriptionService struct {
 	repo            ports.SubscriptionRepository
-	jobCreator      ports.JobCreator   // Interface pour découplage
-	episodeResolver *EpisodeResolver   // Résolution d'épisodes déléguée
+	jobCreator      ports.JobCreator        // Interface pour découplage
+	episodeResolver ports.IEpisodeResolver  // Interface abstraite pour testabilité
 	bus             ports.EventBus
 }
 
 // NewSubscriptionService creates a new SubscriptionService.
 // If episodeResolver is nil, a default one will be created.
-func NewSubscriptionService(repo ports.SubscriptionRepository, jobCreator ports.JobCreator, episodeResolver *EpisodeResolver, bus ports.EventBus) *SubscriptionService {
+func NewSubscriptionService(repo ports.SubscriptionRepository, jobCreator ports.JobCreator, episodeResolver ports.IEpisodeResolver, bus ports.EventBus) *SubscriptionService {
 	if episodeResolver == nil {
 		episodeResolver = NewEpisodeResolver()
 	}
@@ -154,10 +154,11 @@ func (s *SubscriptionService) Update(ctx context.Context, dto SubscriptionDTO) (
 		existing.Player = strings.TrimSpace(dto.Player)
 	}
 	// Allow manually adjusting lastDownloadedEpisode (useful for initial bootstrap).
-	if dto.LastDownloadedEpisode >= 0 {
+	// Only update if the value is strictly positive to avoid zero-value reset on partial PUT.
+	if dto.LastDownloadedEpisode > 0 {
 		existing.LastDownloadedEpisode = dto.LastDownloadedEpisode
 	}
-	if dto.LastScheduledEpisode >= 0 {
+	if dto.LastScheduledEpisode > 0 {
 		existing.LastScheduledEpisode = dto.LastScheduledEpisode
 	}
 	existing.UpdatedAt = time.Now().UTC()

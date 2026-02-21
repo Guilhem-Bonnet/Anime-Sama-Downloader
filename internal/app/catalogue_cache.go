@@ -17,11 +17,15 @@ type CatalogueCache struct {
 	ttl             time.Duration
 	fetcher         func(ctx context.Context) ([]domain.AnimeSearchResult, error)
 	stopRefresh     chan struct{}
+	stopOnce        sync.Once
 	refreshInterval time.Duration
 }
 
 // NewCatalogueCache creates a new catalogue cache with the given TTL and fetcher function
 func NewCatalogueCache(ttl time.Duration, refreshInterval time.Duration, fetcher func(ctx context.Context) ([]domain.AnimeSearchResult, error)) *CatalogueCache {
+	if refreshInterval <= 0 {
+		refreshInterval = 30 * time.Minute
+	}
 	cache := &CatalogueCache{
 		catalogue:       []domain.AnimeSearchResult{},
 		ttl:             ttl,
@@ -53,6 +57,11 @@ func (c *CatalogueCache) GetCatalogue(ctx context.Context) ([]domain.AnimeSearch
 func (c *CatalogueCache) Refresh(ctx context.Context) ([]domain.AnimeSearchResult, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
+	// Double-check: another goroutine may have refreshed while we waited for the lock.
+	if c.isFresh() && len(c.catalogue) > 0 {
+		return c.catalogue, nil
+	}
 
 	// Fetch fresh data
 	catalogue, err := c.fetcher(ctx)
@@ -100,9 +109,9 @@ func (c *CatalogueCache) autoRefresh() {
 	}
 }
 
-// Stop stops the auto-refresh goroutine
+// Stop stops the auto-refresh goroutine. Safe to call multiple times.
 func (c *CatalogueCache) Stop() {
-	close(c.stopRefresh)
+	c.stopOnce.Do(func() { close(c.stopRefresh) })
 }
 
 // Stats returns cache statistics
