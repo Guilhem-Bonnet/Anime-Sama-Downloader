@@ -12,6 +12,7 @@ export interface JobsState {
 
 export interface JobsActions {
   loadJobs: (limit?: number) => Promise<void>;
+  addJobs: (jobs: Job[]) => void;
   cancelJob: (id: string) => Promise<void>;
   updateJobFromSSE: (data: Partial<Job> & { id: string }) => void;
   setError: (error?: string) => void;
@@ -51,6 +52,14 @@ export const useJobsStore = create<JobsState & JobsActions>((set, get) => ({
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Échec de l\'annulation' });
     }
+  },
+
+  addJobs: (newJobs) => {
+    set((state) => {
+      const existingIds = new Set(state.jobs.map((j) => j.id));
+      const fresh = newJobs.filter((j) => !existingIds.has(j.id));
+      return { jobs: [...fresh, ...state.jobs] };
+    });
   },
 
   updateJobFromSSE: (data) => {

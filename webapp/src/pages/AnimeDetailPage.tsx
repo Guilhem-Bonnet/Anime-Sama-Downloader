@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiCreateJob } from '../api';
+import { useJobsStore } from '../stores/jobs.store';
 
 interface Episode {
   number: number;
@@ -30,6 +31,8 @@ interface AnimeDetail {
 export function AnimeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const loadJobs = useJobsStore((s) => s.loadJobs);
+  const addJobs = useJobsStore((s) => s.addJobs);
   const [anime, setAnime] = useState<AnimeDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,7 +128,11 @@ export function AnimeDetailPage() {
         });
       });
 
-      await Promise.all(promises);
+      const createdJobs = await Promise.all(promises);
+      // 1. Ajoute les jobs au store immédiatement (visible avant même le refresh)
+      addJobs(createdJobs);
+      // 2. Force un rechargement pour avoir l'état final (peut déjà être failed)
+      await loadJobs();
       setSelectedEpisodes(new Set());
       navigate('/downloads');
     } catch (err: any) {

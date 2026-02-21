@@ -94,6 +94,11 @@ export const DownloadMonitor: React.FC = () => {
   const completedJobs = jobs.filter((j) => j.state === 'completed');
   const failedJobs = jobs.filter((j) => j.state === 'failed' || j.state === 'canceled');
 
+  // Unified list — all jobs sorted newest first so recent downloads always appear at top
+  const sortedJobs = [...jobs].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Summary bar */}
@@ -122,134 +127,81 @@ export const DownloadMonitor: React.FC = () => {
           <span style={{ color: '#dc2626' }}>✕ {failedJobs.length} échoué{failedJobs.length > 1 ? 's' : ''}</span>
         )}
       </div>
-      {/* Active Downloads */}
-      {activeJobs.length > 0 && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--night-text-primary)' }}>
-              Téléchargements Actifs ({activeJobs.length})
-            </h3>
-            <span style={{ fontSize: '12px', padding: '4px 12px', background: 'var(--night-accent-brown-500)', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
-              En cours
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {activeJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="frame-ornate"
-                  style={{
-                    padding: '16px',
-                    background: 'linear-gradient(135deg, rgba(143,106,61,0.05), rgba(125,114,103,0.05))',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                    <div>
-                      <h4 style={{ fontWeight: 600, color: 'var(--night-text-primary)', margin: 0, marginBottom: '4px' }}>
-                        {jobLabel(job)}
-                      </h4>
-                      <p style={{ fontSize: '12px', color: 'var(--night-text-secondary)', margin: 0 }}>
-                        ID: {job.id.substring(0, 12)}... · {job.state}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <button
-                        onClick={() => cancelJob(job.id)}
-                        style={{
-                          background: 'rgba(220,38,38,0.15)',
-                          border: '1px solid rgba(220,38,38,0.3)',
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          color: '#dc2626',
-                          cursor: 'pointer',
-                          fontWeight: 500,
-                        }}
-                        title="Annuler ce téléchargement"
-                      >
-                        ✕ Annuler
-                      </button>
-                      <StatusBadge status={displayStatus(job.state)} size="sm" />
-                    </div>
-                  </div>
-                  <DownloadProgress progress={progressPercent(job)} />
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
 
-      {/* Completed Downloads */}
-      {completedJobs.length > 0 && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--night-text-primary)' }}>
-              Téléchargements Terminés ({completedJobs.length})
-            </h3>
-            <span style={{ fontSize: '12px', padding: '4px 12px', background: '#059669', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
-              Complété
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {completedJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="frame-ornate"
-                  style={{
-                    padding: '12px 16px',
-                    background: 'linear-gradient(135deg, rgba(5,150,105,0.05), rgba(34,197,94,0.05))',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                >
-                  <span style={{ fontSize: '14px', color: 'var(--night-text-primary)', fontWeight: 500 }}>
-                    {jobLabel(job)}
+      {/* Unified job list — newest first */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {sortedJobs.map((job) => {
+          const isActive = job.state === 'running' || job.state === 'queued' || job.state === 'muxing';
+          const isFailed = job.state === 'failed' || job.state === 'canceled';
+          const isCompleted = job.state === 'completed';
+
+          let bgColor = 'var(--night-bg-secondary, #1a1a1a)';
+          if (isActive) bgColor = 'linear-gradient(135deg, rgba(143,106,61,0.08), rgba(125,114,103,0.05))';
+          if (isCompleted) bgColor = 'linear-gradient(135deg, rgba(5,150,105,0.07), rgba(34,197,94,0.04))';
+          if (isFailed) bgColor = 'linear-gradient(135deg, rgba(220,38,38,0.07), rgba(239,68,68,0.04))';
+
+          return (
+            <div
+              key={job.id}
+              className="frame-ornate"
+              style={{ padding: '14px 16px', background: bgColor }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                {/* Left: label + error/progress */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 600, fontSize: '14px', color: 'var(--night-text-primary)' }}>
+                      {jobLabel(job)}
+                    </span>
+                    <StatusBadge status={displayStatus(job.state)} size="sm" />
+                  </div>
+                  {isFailed && (
+                    <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>
+                      {friendlyError(job)}
+                    </p>
+                  )}
+                  {isActive && (
+                    <>
+                      <DownloadProgress progress={progressPercent(job)} showLabel={false} />
+                      <p style={{ fontSize: '11px', color: 'var(--night-text-secondary)', margin: '4px 0 0 0' }}>
+                        {progressPercent(job)}% · {job.state}
+                      </p>
+                    </>
+                  )}
+                  {isCompleted && (
+                    <p style={{ fontSize: '12px', color: '#059669', margin: 0 }}>
+                      Téléchargement terminé
+                    </p>
+                  )}
+                </div>
+                {/* Right: time + cancel button for active */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--night-text-secondary)' }}>
+                    {new Date(job.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  <StatusBadge status="completed" size="sm" />
+                  {isActive && (
+                    <button
+                      onClick={() => cancelJob(job.id)}
+                      style={{
+                        background: 'rgba(220,38,38,0.15)',
+                        border: '1px solid rgba(220,38,38,0.3)',
+                        borderRadius: '6px',
+                        padding: '3px 8px',
+                        fontSize: '11px',
+                        color: '#dc2626',
+                        cursor: 'pointer',
+                        fontWeight: 500,
+                      }}
+                    >
+                      ✕ Annuler
+                    </button>
+                  )}
                 </div>
-              ))}
-          </div>
-        </div>
-      )}
-
-      {/* Failed Downloads */}
-      {failedJobs.length > 0 && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 600, margin: 0, color: 'var(--night-text-primary)' }}>
-              Erreurs ({failedJobs.length})
-            </h3>
-            <span style={{ fontSize: '12px', padding: '4px 12px', background: '#dc2626', borderRadius: '12px', color: 'white', fontWeight: 500 }}>
-              Échoué
-            </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {failedJobs.map((job) => (
-                <div
-                  key={job.id}
-                  className="frame-ornate"
-                  style={{
-                    padding: '12px 16px',
-                    background: 'linear-gradient(135deg, rgba(220,38,38,0.05), rgba(239,68,68,0.05))',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div>
-                      <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--night-text-primary)', margin: 0, marginBottom: '4px' }}>
-                        {jobLabel(job)}
-                      </p>
-                      <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>
-                        {friendlyError(job)}
-                      </p>
-                    </div>
-                    <StatusBadge status="failed" size="sm" />
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };
