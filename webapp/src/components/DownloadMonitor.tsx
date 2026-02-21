@@ -21,9 +21,30 @@ function displayStatus(state: Job['state']): string {
 
 function jobLabel(job: Job): string {
   const params = job.params as Record<string, any> | undefined;
-  const title = params?.label || params?.animeTitle || params?.animeId || 'Téléchargement';
-  const ep = params?.episodeNumber;
-  return ep ? `${title} • Épisode ${ep}` : title;
+  if (!params) return `Téléchargement #${job.id.substring(0, 8)}`;
+  // Prefer the formatted label (e.g. "Naruto - S01E03")
+  if (params.label) return String(params.label);
+  // Fallback: build from parts
+  const title = params.animeTitle || params.animeId || 'Téléchargement';
+  const season = params.seasonNumber;
+  const ep = params.episodeNumber;
+  if (season && ep) {
+    const s = String(season).padStart(2, '0');
+    const e = String(ep).padStart(2, '0');
+    return `${title} - S${s}E${e}`;
+  }
+  if (ep) return `${title} • Épisode ${ep}`;
+  return title;
+}
+
+/** Translate backend error messages into user-friendly French */
+function friendlyError(job: Job): string {
+  const msg = job.error || '';
+  if (msg.includes('missing params.url')) return 'URL de téléchargement non disponible (source anime-sama requise)';
+  if (msg.includes('invalid params.url')) return 'URL de téléchargement invalide';
+  if (msg.includes('missing_ffmpeg')) return 'ffmpeg non installé sur le serveur';
+  if (job.errorCode === 'worker_canceled') return 'Worker arrêté pendant l\'attente';
+  return msg || 'Erreur inconnue';
 }
 
 export const DownloadMonitor: React.FC = () => {
@@ -43,10 +64,10 @@ export const DownloadMonitor: React.FC = () => {
 
   if (jobs.length === 0) {
     return (
-      <div className="text-center py-16">
+      <div style={{ textAlign: 'center', padding: '48px 16px' }}>
         <EmptyDownloadsIllustration />
-        <p className="text-gray-500 dark:text-gray-400 mt-4">
-          Aucun téléchargement en cours.
+        <p style={{ color: 'var(--night-text-secondary, #999)', marginTop: '16px' }}>
+          Aucun téléchargement. Recherchez un anime et lancez un téléchargement.
         </p>
       </div>
     );
@@ -57,7 +78,33 @@ export const DownloadMonitor: React.FC = () => {
   const failedJobs = jobs.filter((j) => j.state === 'failed' || j.state === 'canceled');
 
   return (
-    <div className="space-y-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Summary bar */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '16px',
+          padding: '12px 16px',
+          background: 'var(--night-bg-secondary, #1e1e1e)',
+          borderRadius: '8px',
+          fontSize: '13px',
+          color: 'var(--night-text-secondary, #999)',
+          flexWrap: 'wrap',
+        }}
+      >
+        <span>{jobs.length} téléchargement{jobs.length > 1 ? 's' : ''} au total</span>
+        {activeJobs.length > 0 && (
+          <span style={{ color: 'var(--night-accent-brown-400, #b8860b)' }}>
+            ● {activeJobs.length} en cours
+          </span>
+        )}
+        {completedJobs.length > 0 && (
+          <span style={{ color: '#059669' }}>✓ {completedJobs.length} terminé{completedJobs.length > 1 ? 's' : ''}</span>
+        )}
+        {failedJobs.length > 0 && (
+          <span style={{ color: '#dc2626' }}>✕ {failedJobs.length} échoué{failedJobs.length > 1 ? 's' : ''}</span>
+        )}
+      </div>
       {/* Active Downloads */}
       {activeJobs.length > 0 && (
         <div>
@@ -69,7 +116,7 @@ export const DownloadMonitor: React.FC = () => {
               En cours
             </span>
           </div>
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {activeJobs.map((job) => (
                 <div
                   key={job.id}
@@ -126,7 +173,7 @@ export const DownloadMonitor: React.FC = () => {
               Complété
             </span>
           </div>
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {completedJobs.map((job) => (
                 <div
                   key={job.id}
@@ -160,7 +207,7 @@ export const DownloadMonitor: React.FC = () => {
               Échoué
             </span>
           </div>
-          <div className="space-y-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {failedJobs.map((job) => (
                 <div
                   key={job.id}
@@ -175,11 +222,9 @@ export const DownloadMonitor: React.FC = () => {
                       <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--night-text-primary)', margin: 0, marginBottom: '4px' }}>
                         {jobLabel(job)}
                       </p>
-                      {job.error && (
-                        <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>
-                          {job.error}
-                        </p>
-                      )}
+                      <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>
+                        {friendlyError(job)}
+                      </p>
                     </div>
                     <StatusBadge status="failed" size="sm" />
                   </div>
