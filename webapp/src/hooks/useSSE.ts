@@ -5,11 +5,16 @@ export type SSEMessageHandler = (data: any) => void;
 const MAX_RETRY_DELAY = 30_000;
 const INITIAL_RETRY_DELAY = 1_000;
 
-export function useSSE(url: string, onMessage?: SSEMessageHandler, eventName = 'message') {
+export function useSSE(url: string, onMessage?: SSEMessageHandler, eventName: string | string[] = 'message') {
   const eventSourceRef = useRef<EventSource | null>(null);
   const callbackRef = useRef(onMessage);
   const retryDelayRef = useRef(INITIAL_RETRY_DELAY);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Normalize to array for uniform handling
+  const eventNames = Array.isArray(eventName) ? eventName : [eventName];
+  // Stable dep key derived from the sorted list
+  const eventNamesKey = [...eventNames].sort().join(',');
 
   useEffect(() => {
     callbackRef.current = onMessage;
@@ -41,10 +46,13 @@ export function useSSE(url: string, onMessage?: SSEMessageHandler, eventName = '
         retryDelayRef.current = INITIAL_RETRY_DELAY;
       };
 
-      if (eventName === 'message') {
-        eventSource.onmessage = handleMessage;
-      } else {
-        eventSource.addEventListener(eventName, handleMessage as EventListener);
+      // Register a listener for every requested event name
+      for (const name of eventNames) {
+        if (name === 'message') {
+          eventSource.onmessage = handleMessage;
+        } else {
+          eventSource.addEventListener(name, handleMessage as EventListener);
+        }
       }
 
       eventSource.onerror = () => {
@@ -69,7 +77,8 @@ export function useSSE(url: string, onMessage?: SSEMessageHandler, eventName = '
         eventSourceRef.current.close();
       }
     };
-  }, [url, eventName]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, eventNamesKey]);
 
   return {
     close: useCallback(() => {

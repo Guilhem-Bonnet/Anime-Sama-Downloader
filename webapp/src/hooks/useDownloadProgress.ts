@@ -14,6 +14,7 @@ export function useDownloadProgress(jobId?: string) {
   const { updateJobFromSSE } = useJobsStore();
 
   // Single SSE connection — handles both progress and completion events
+  const JOB_EVENTS = ['job.started', 'job.progress', 'job.result', 'job.created', 'job.failed', 'job.muxing', 'job.completed', 'job.canceled'];
   const { close } = useSSE(
     jobId ? `/api/v1/events` : '',
     jobId ? (data: { id: string; progress?: number; state?: JobState }) => {
@@ -22,6 +23,7 @@ export function useDownloadProgress(jobId?: string) {
       setProgress(pct);
       updateJobFromSSE(data as Partial<Job> & { id: string });
     } : undefined,
+    JOB_EVENTS,
   );
 
   return { progress, close };

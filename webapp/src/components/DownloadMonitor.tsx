@@ -52,12 +52,13 @@ export const DownloadMonitor: React.FC = () => {
 
   // Les jobs sont déjà chargés par Layout — ici on ne fait que les écouter via SSE.
 
-  // Single SSE connection for all job events
+  // Single SSE connection — écoute tous les événements job.* envoyés par le backend
+  const JOB_EVENTS = ['job.started', 'job.progress', 'job.result', 'job.created', 'job.failed', 'job.muxing', 'job.completed', 'job.canceled'];
   useSSE('/api/v1/events', (data: any) => {
     if (data && data.id) {
       updateJobFromSSE(data);
     }
-  });
+  }, JOB_EVENTS);
 
   // While loading and store is empty, show skeleton (not empty state)
   if (isLoading && jobs.length === 0) {
