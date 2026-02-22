@@ -136,11 +136,20 @@ export function AnimeDetailPage() {
         const LANGS = ['vostfr', 'vf'];
         const catalogueBase = catalogueUrl.replace(/\/?$/, '/');
 
+        // Sur AniList, chaque saison d'un même anime est parfois une entrée séparée
+        // dont la saison interne recommence à 1. Ex: "Hell's Paradise Season 2"
+        // a saison n=1 dans AniList, mais correspond à saison2 sur anime-sama.
+        // Heuristique: on extrait le numéro de saison depuis le titre pour corriger
+        // l'offset. "Hell's Paradise Season 2" → offset 1 → saison(1+1=2) sur anime-sama.
+        const titleSeasonMatch = anime.title.match(/\b(?:saison|season)\s*(\d+)\b/i);
+        const seasonOffset = titleSeasonMatch ? parseInt(titleSeasonMatch[1], 10) - 1 : 0;
+
         for (const [season, episodes] of bySeason) {
           let enqueued = false;
+          const animesamaSeason = season + seasonOffset;
 
           for (const lang of LANGS) {
-            const baseUrl = `${catalogueBase}saison${season}/${lang}/`;
+            const baseUrl = `${catalogueBase}saison${animesamaSeason}/${lang}/`;
             try {
               const resp = await apiAnimeSamaEnqueue({
                 baseUrl,
@@ -163,7 +172,7 @@ export function AnimeDetailPage() {
           }
 
           if (!enqueued) {
-            errors.push(`Saison ${season} : aucune source disponible (vostfr/vf) — épisodes peut-être pas encore uploadés sur anime-sama`);
+            errors.push(`Saison ${animesamaSeason} : aucune source disponible (vostfr/vf) — épisodes peut-être pas encore uploadés sur anime-sama`);
           }
         }
       }
