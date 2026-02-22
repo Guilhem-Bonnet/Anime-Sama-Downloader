@@ -113,7 +113,8 @@ export function AnimeDetailPage() {
         bySeason.get(season)!.push(ep);
       });
 
-      const warnings: string[] = [];
+      let totalEnqueued = 0;
+      const errors: string[] = [];
 
       for (const [season, episodes] of bySeason) {
         // 1. Résolution de l'URL anime-sama pour cette saison
@@ -125,12 +126,13 @@ export function AnimeDetailPage() {
             lang: 'vostfr',
           });
           baseUrl = resolveResp.candidates[0]?.baseUrl ?? null;
-        } catch (_) {
-          // resolver non disponible ou erreur réseau
+        } catch (e: any) {
+          errors.push(`Saison ${season} : erreur réseau (${e.message ?? 'inconnue'})`);
+          continue;
         }
 
         if (!baseUrl) {
-          warnings.push(`Saison ${season} : source anime-sama introuvable pour "${anime.title}"`);
+          errors.push(`Saison ${season} : "${anime.title}" introuvable sur anime-sama — ajoute-le via un abonnement manuel`);
           continue;
         }
 
@@ -141,18 +143,30 @@ export function AnimeDetailPage() {
           episodes,
         });
 
+        totalEnqueued += resp.enqueuedEpisodes.length;
+
         resp.skipped.forEach((s) => {
-          warnings.push(`Épisode ${s.episode} ignoré : ${s.reason}`);
+          errors.push(`Épisode ${s.episode} ignoré : ${s.reason}`);
         });
       }
 
-      // Rechargement du store pour avoir l'état final
+      // Si rien n'a été enqueué, montrer une erreur claire — NE PAS naviguer
+      if (totalEnqueued === 0) {
+        const msg = errors.length > 0
+          ? `Aucun épisode lancé :\n\n${errors.join('\n')}`
+          : `Aucun épisode disponible pour "${anime.title}"`;
+        alert(msg);
+        return;
+      }
+
+      // Au moins un job créé → rafraîchir le store et naviguer
       await loadJobs();
       setSelectedEpisodes(new Set());
       navigate('/downloads');
 
-      if (warnings.length > 0) {
-        console.warn('[AnimeDetailPage] avertissements enqueue:', warnings);
+      // Avertissements partiels (certains ont quand même été lancés)
+      if (errors.length > 0) {
+        console.warn('[AnimeDetailPage] avertissements partiels:', errors);
       }
     } catch (err: any) {
       alert(err.message || 'Échec de la création des téléchargements');
