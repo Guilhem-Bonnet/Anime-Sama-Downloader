@@ -30,7 +30,10 @@ type AnimeSamaCatalogueResolver struct {
 
 func NewAnimeSamaCatalogueResolver() *AnimeSamaCatalogueResolver {
 	return &AnimeSamaCatalogueResolver{
-		BaseURL: "https://anime-sama.si",
+		// anime-sama.tv donne de vraies 404 pour les slugs inexistants.
+		// anime-sama.si est un catch-all SPA qui renvoie 200 pour toutes les URLs
+		// → faux positifs dans ProbeSlug → mauvais slug retourné.
+		BaseURL: "https://anime-sama.tv",
 		Client: &http.Client{
 			Timeout: 12 * time.Second,
 		},
@@ -72,6 +75,23 @@ func titleVariantsForProbe(title string) []string {
 	clean2 = strings.Join(strings.Fields(clean2), " ")
 	if clean2 != "" && clean2 != clean {
 		variants = append(variants, clean2)
+	}
+	// Extrait le titre principal (avant ":") — les API comme AniList retournent
+	// souvent "Titre Principal: Sous-titre" mais anime-sama utilise juste le
+	// titre principal. Ex: "Hell's Paradise: Jigokuraku" → "Hell's Paradise".
+	if idx := strings.Index(t, ":"); idx > 0 {
+		before := strings.TrimSpace(t[:idx])
+		if before != "" {
+			variants = append(variants, before)
+		}
+	}
+	// Idem pour le sous-titre seul (après ":"), utile si c'est le titre japonais.
+	// Ex: "Hell's Paradise: Jigokuraku" → "Jigokuraku".
+	if idx := strings.Index(t, ":"); idx >= 0 && idx < len(t)-1 {
+		after := strings.TrimSpace(t[idx+1:])
+		if after != "" && after != t {
+			variants = append(variants, after)
+		}
 	}
 
 	seen := map[string]struct{}{}
@@ -142,8 +162,8 @@ func slugVariants(slug string) []string {
 	variants = append(variants, reHyphens.ReplaceAllString(base, "-"))
 
 	// apostrophe-s like: hells-... <-> hell-s-...
-	variants = append(variants, regexp.MustCompile(`([a-z])s-([a-z])`).ReplaceAllString(base, `$1-s-$2`))
-	variants = append(variants, regexp.MustCompile(`([a-z])-s-([a-z])`).ReplaceAllString(base, `$1s-$2`))
+	variants = append(variants, regexp.MustCompile(`([a-z])s-([a-z])`).ReplaceAllString(base, `${1}-s-${2}`))
+	variants = append(variants, regexp.MustCompile(`([a-z])-s-([a-z])`).ReplaceAllString(base, `${1}s-${2}`))
 
 	seen := map[string]struct{}{}
 	out := make([]string, 0, len(variants))
