@@ -376,6 +376,10 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 	buf := make([]byte, 128*1024)
 	var downloaded int64
 	lastUpdate := time.Now()
+	// Estimation de la taille pour les serveurs sans Content-Length (ex: sibnet).
+	// Utilisé pour calculer une progression approximative croissante.
+	// Formule asymptotique : downloaded / (downloaded + typicalBytes) → s'approche de 1.
+	const typicalEpisodeBytes = 350 << 20 // 350 MiB ≈ taille typique d'un épisode
 
 	for {
 		canceled, err := env.IsCanceled()
@@ -398,8 +402,15 @@ func (DownloadExecutor) Execute(ctx context.Context, job domain.Job, env ExecEnv
 		}
 
 		now := time.Now()
-		if total > 0 && now.Sub(lastUpdate) >= 250*time.Millisecond {
-			progress := float64(downloaded) / float64(total)
+		if now.Sub(lastUpdate) >= 250*time.Millisecond {
+			var progress float64
+			if total > 0 {
+				progress = float64(downloaded) / float64(total)
+			} else {
+				// Pas de Content-Length : progression asymptotique basée sur les bytes.
+				// s'approche mais n'atteint jamais 1 (réservé à la fin réelle).
+				progress = float64(downloaded) / float64(downloaded+typicalEpisodeBytes)
+			}
 			progress = math.Max(0, math.Min(0.999, progress))
 			_ = env.UpdateProgress(progress)
 			lastUpdate = now
