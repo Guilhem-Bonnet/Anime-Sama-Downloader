@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { apiAnimeSamaResolve, apiAnimeSamaEnqueue } from '../api';
+import { apiAnimeSamaResolve, apiAnimeSamaScan, apiAnimeSamaEnqueue } from '../api';
 import { useJobsStore } from '../stores/jobs.store';
 
 interface Episode {
@@ -116,38 +116,53 @@ export function AnimeDetailPage() {
       let totalEnqueued = 0;
       const errors: string[] = [];
 
-      for (const [season, episodes] of bySeason) {
-        // 1. Résolution de l'URL anime-sama pour cette saison
-        let baseUrl: string | null = null;
+      // 1. Résolution du catalogueUrl (une seule fois pour tout l'anime)
+      let catalogueUrl: string | null = null;
+      try {
+        const resolveResp = await apiAnimeSamaResolve({
+          titles: [anime.title],
+          maxCandidates: 3,
+        });
+        catalogueUrl = resolveResp.candidates[0]?.catalogueUrl ?? null;
+      } catch (e: any) {
+        errors.push(`Résolution impossible : ${e.message ?? 'erreur réseau'}`);
+      }
+
+      if (!catalogueUrl) {
+        errors.push(`"${anime.title}" introuvable sur anime-sama — ajoute-le via un abonnement manuel`);
+      } else {
+        // 2. Scan des options disponibles (vérifie que episodes.js existe pour chaque saison/langue)
+        let scanOptions: Array<{ baseUrl: string; season: number; lang: string }> = [];
         try {
-          const resolveResp = await apiAnimeSamaResolve({
-            titles: [anime.title],
-            season,
-            lang: 'vostfr',
+          const scanResp = await apiAnimeSamaScan({
+            catalogueUrl,
+            maxSeason: Math.max(...Array.from(bySeason.keys())) + 1,
+            langs: ['vostfr', 'vf'],
           });
-          baseUrl = resolveResp.candidates[0]?.baseUrl ?? null;
+          scanOptions = scanResp.options;
         } catch (e: any) {
-          errors.push(`Saison ${season} : erreur réseau (${e.message ?? 'inconnue'})`);
-          continue;
+          errors.push(`Scan des saisons impossible : ${e.message ?? 'erreur réseau'}`);
         }
 
-        if (!baseUrl) {
-          errors.push(`Saison ${season} : "${anime.title}" introuvable sur anime-sama — ajoute-le via un abonnement manuel`);
-          continue;
+        // 3. Enqueue par saison en utilisant le baseUrl vérifié par le scan
+        for (const [season, episodes] of bySeason) {
+          const option = scanOptions.find((o) => o.season === season);
+          if (!option) {
+            errors.push(`Saison ${season} : aucune source disponible (vostfr/vf) — épisodes peut-être pas encore uploadés`);
+            continue;
+          }
+
+          const resp = await apiAnimeSamaEnqueue({
+            baseUrl: option.baseUrl,
+            label: anime.title,
+            episodes,
+          });
+
+          totalEnqueued += resp.enqueuedEpisodes.length;
+          resp.skipped.forEach((s) => {
+            errors.push(`Épisode ${s.episode} ignoré : ${s.reason}`);
+          });
         }
-
-        // 2. Enqueue des épisodes avec les vraies URLs
-        const resp = await apiAnimeSamaEnqueue({
-          baseUrl,
-          label: anime.title,
-          episodes,
-        });
-
-        totalEnqueued += resp.enqueuedEpisodes.length;
-
-        resp.skipped.forEach((s) => {
-          errors.push(`Épisode ${s.episode} ignoré : ${s.reason}`);
-        });
       }
 
       // Si rien n'a été enqueué, montrer une erreur claire — NE PAS naviguer
